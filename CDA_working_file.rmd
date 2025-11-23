@@ -904,6 +904,40 @@ summary_results <- data.frame(
 kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
 ```
 
+Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the Mean Squared Error (MSE) from the training set.
+```{r model validation}
+# Predictions on test set
+pred <- predict(fit_final, newdata = test_data)
+
+# MSPR 
+mspr <- mean((test_data$ViolentCrimesPerPop - pred)^2)
+
+# MSE training
+mse_final <- mean(fit_final$residuals^2)
+
+cat("MSE (training set):", round(mse_final, 2), "\n")
+cat("MSPR (test set):", round(mspr, 2), "\n")
+cat("Ratio MSPR/MSE:", round(mspr/mse_final, 4), "\n")
+
+```
+
+
+```{r validation-plot, fig.width=8, fig.height=6}
+# Validation plot
+plot(test_data$ViolentCrimesPerPop, predictions,
+     xlab = "Observed ViolentCrimesPerPop", ylab = "Predicted",
+     main = "Observed vs Predicted")
+abline(0, 1, col = "red")
+
+# R-squared on test set
+ss_res <- sum((test_data$ViolentCrimesPerPop - predictions)^2)
+ss_tot <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+r2_test <- 1 - ss_res/ss_tot
+cat("\nR² on test set:", round(r2_test, 4), "\n")
+cat("R² on training set:", round(summary(fit_final)$r.squared, 4), "\n")
+```
+
+
 # References
 
 Becker GS (1968) Crime and Punishment: An Economic Approach. J Polit Econ 76: 169–217
