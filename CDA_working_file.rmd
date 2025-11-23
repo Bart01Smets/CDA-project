@@ -677,7 +677,7 @@ other <- setdiff(best_pred_sel, "PctPopUnderPov")
 Based on the model selection procedure, we fit the multivariate model including the selected interaction term.
 
 ```{r final model}
-# Estimate model with ineraction
+# Estimate model with interaction
 formula_final <- as.formula(paste("ViolentCrimesPerPop ~", 
                                   paste(best_pred_sel, collapse = " + "), "+",
                                   best_interaction))
