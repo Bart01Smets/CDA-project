@@ -387,7 +387,7 @@ In particular, the following variables appear to show a fairly linear trend:
 - *PctLess9thGrade*
 - *PctNotHSGrad*
 
-This implies that these variables are probably not suitable as additional predictors when *PctPopUnderPov* is already included in the model.
+This implies that these variables are probably not suitable as additional predictors when *PctPopUnderPov* is already included in the model <as this may cause multicollinearity>.
 
 
 ```{r scatter plots, fig.width=8, fig.height=12}
@@ -504,7 +504,7 @@ cat("\n95% Confidence Intervals:\n")
 print(confint(fit))
 ```
 
-*PctPopUnderPov* = increase in violent crimes per 100K population if poverty rate increases by one percentage point
+*PctPopUnderPov* = <mean> increase in violent crimes per 100K population if poverty rate increases by one percentage point
 
 ### Assumption checks
 
@@ -531,7 +531,7 @@ qqnorm(fit$residuals, main = "Normal Q-Q Plot of Residuals")
 qqline(fit$residuals, col = "red")
  par(mfrow = c(1, 1))
 ```
-Studentized residuals
+Studentized residuals <dit zijn de deleted toch?>
 
 ```{r studentized residuals}
 # Studentized residuals plot
