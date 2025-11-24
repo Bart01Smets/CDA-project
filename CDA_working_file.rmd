@@ -792,7 +792,7 @@ qqline(fit_final$residuals, col = "red")
 par(mfrow = c(1, 1))
 ```
 ## Transformation of Y
-We see that the assumptions of normality and equal error variances of the error terms. A possible solution is to apply a log transformation of Y. The result shows constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. We still see slightly heavy tails.
+We see that the assumptions of normality and equal error variances of the error terms are violated in the original model. A possible solution is to apply a log transformation of Y. The result shows approximate constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. The reduction in R-squared suggests that the model-fit was inflated due to heteroscedasticity.  We still see slightly heavy tails.
 
 ```{r}
 fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
@@ -835,7 +835,7 @@ qqline(resid(robust))
 ```
 
 A comparison of the coefficients reveal no substantial differences, indicating that the influential points are not the result of gross errors. <hier moeten nog extra checks van influence on inferences bij>.
-The identified leverage-points can be called 'good leverages' as they exhibit high leverage but their residuals are still small, this even improves the precision of the regression coefficients.
+The identified leverage-points can be called 'good leverages' as they exhibit high leverage but their residuals are still small, this even improves the precision of the regression coefficients. (zie referentie)
 
 ```{r influence inference}
 # Compare OLS vs Robust coefficients
@@ -850,7 +850,7 @@ print(round(comparison, 4))
 
 
 
-### Robustness checks
+### Robustness checks (dit mag dan weg)
 
 For the final regression function, we included robust regression for outliers and heterosced-robust standard errors.
 
@@ -874,7 +874,7 @@ comparison <- data.frame(
 print(round(comparison, 4))
 ```
 
-### Outlier and Influence Diagnostics
+### Outlier and Influence Diagnostics (dit nog houden eventueel)
 
 We use several diagnostic measures to identify influential observations
 
@@ -978,7 +978,22 @@ cat("MSPR (test set):", round(mspr, 2), "\n")
 cat("Ratio MSPR/MSE:", round(mspr/mse_final, 4), "\n")
 
 ```
+```{r als we log transform zouden gebruiken}
+# Predictions on test set
+pred_log <- predict(fit_log, newdata = test_data)
 
+pred <- exp(pred_log) - 1
+# MSPR 
+mspr <- mean((test_data$ViolentCrimesPerPop - pred)^2)
+
+# MSE training
+mse_final <- mean((exp(fitted(fit_log)) - 1 - train_data$ViolentCrimesPerPop)^2)
+
+cat("MSE (training set):", round(mse_final, 2), "\n")
+cat("MSPR (test set):", round(mspr, 2), "\n")
+cat("Ratio MSPR/MSE:", round(mspr/mse_final, 4), "\n")
+
+```
 
 ```{r validation plot, fig.width=8, fig.height=6}
 # validation
@@ -992,6 +1007,26 @@ ss_tot <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPo
 r2_test <- 1 - ss_res/ss_tot
 cat("\nR² on test set:", round(r2_test, 4), "\n")
 cat("R² on training set:", round(summary(fit_final)$r.squared, 4), "\n")
+```
+```{r aanpassing voor als we log transform gebruiken}
+# validation
+plot(test_data$ViolentCrimesPerPop, pred,
+     xlab = "Observed ViolentCrimesPerPop", ylab = "Predicted",
+     main = "Observed vs Predicted")
+
+# R-squared on test set
+ss_res <- sum((test_data$ViolentCrimesPerPop - pred)^2)
+ss_tot <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+r2_test <- 1 - ss_res/ss_tot
+cat("\nR² on test set (original scale):", round(r2_test, 4), "\n")
+
+#back to original scale 
+org_scale <- exp(fitted(fit_log)) -1
+ss_res_train <- sum((train_data$ViolentCrimesPerPop - org_scale)^2)
+ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
+r2_train_orig <- 1 - ss_res_train / ss_tot_train
+
+cat("R² on training set (original scale):", round(r2_train_orig, 4), "\n") 
 ```
 
 
