@@ -18,12 +18,12 @@ we work with 2142 correspondents, equally divided over the six groups (combinati
 • From table 1, does assume an equal number of girls and boys within each age-group,
 seem reasonable?
 
-Total looks like the average of girl and boy so yes? (I think)
+Total almost always looks like the average of girl and boy so yes? 
 
   1. We could consider evaluating age as a continuous variable.
 • Looking at Figure 1, would such a model provide a good fit? Explain
 
-Looks reasonable to me (evolution looks pretty linear), but difficult to say with only 3 datapoints.
+The effect looks non-linear, as the increase in total income between age 13 and 15 is a lot bigger than between 11 and 13. So it is probably better to keep it categorical. Difficult to say with only 3 datapoints though.
 
 2. Depending on your answer in 1. fit either a model with age and gender as categorical, but
 without interaction OR the same model without interaction but with age as a continuous
