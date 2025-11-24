@@ -122,6 +122,7 @@ violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/21
 ---- remotely get variable names ---- 
 ```{r}
 library(dplyr)
+library(stringr)
 library(rvest)
 url <- "https://archive.ics.uci.edu/dataset/211/communities+and+crime+unnormalized"
 
@@ -448,26 +449,6 @@ The scatter plots reveal one outlier for the ViolentCrimesPerPop variable. This 
 crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=TRUE), , drop = FALSE]
 ```
 
-
-```{r lm fast, eval=FALSE, include=FALSE}
-df <- crimes_table_subset_num_noNA
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov, data=df)
-
-summary(fit)
-
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov+perCapInc+PctEmploy+PctLess9thGrade+PctNotHSGrad+PctBSorMore+agePct12t29+PctImmig, data=df)
-
-summary(fit)
-
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov*perCapInc*PctEmploy*PctLess9thGrade*PctNotHSGrad*PctBSorMore*agePct12t29*PctImmig, data=df)
-
-summary(fit)
-
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov*perCapInc*PctEmploy*PctLess9thGrade*PctNotHSGrad*PctBSorMore*agePct12t29*PctImmig*racepctblack, data=df)
-
-summary(fit)
-
-```
 
 # Model Building
 
