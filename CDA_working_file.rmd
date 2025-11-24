@@ -459,8 +459,9 @@ n <- nrow(crimes_table_subset_num)
 training <- sample(1:n, size = floor(0.8 * n))
 train_data <- crimes_table_subset_num[training, ]
 test_data <- crimes_table_subset_num[-training, ]
+n_training <- nrow(train_data)
 
-cat("Training set size:", nrow(train_data), "\n")
+cat("Training set size:", n_training, "\n")
 cat("Test set size:", nrow(test_data), "\n")
 ```
 
@@ -488,7 +489,9 @@ cat("R-squared:", round(summary(fit)$r.squared, 4), "\n")
 cat("Adjusted R-squared:", round(summary(fit)$adj.r.squared, 4), "\n")
 
 # MSE
-mse_simple <- mean(fit$residuals^2)
+sse_simple <- sum(fit$residuals^2)
+mse_simple <- sse_simple/(n_training - 2)
+#mse_simple <- mean(fit$residuals^2) dit klopt niet denk ik
 cat("MSE:", round(mse_simple, 2), "\n")
 
 # Confidence intervals for coefficients
