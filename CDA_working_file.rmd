@@ -922,14 +922,14 @@ cat("Ratio MSPR/MSE:", round(mspr/mse_final, 4), "\n")
 ```
 
 
-```{r validation-plot, fig.width=8, fig.height=6}
+```{r validation plot, fig.width=8, fig.height=6}
 # validation
-plot(test_data$ViolentCrimesPerPop, predictions,
+plot(test_data$ViolentCrimesPerPop, pred,
      xlab = "Observed ViolentCrimesPerPop", ylab = "Predicted",
      main = "Observed vs Predicted")
 
 # R-squared on test set
-ss_res <- sum((test_data$ViolentCrimesPerPop - predictions)^2)
+ss_res <- sum((test_data$ViolentCrimesPerPop - pred)^2)
 ss_tot <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
 r2_test <- 1 - ss_res/ss_tot
 cat("\nR² on test set:", round(r2_test, 4), "\n")
