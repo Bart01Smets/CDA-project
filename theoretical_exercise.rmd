@@ -1,0 +1,49 @@
+# Continuous data Homework
+# Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van De Putte
+
+This theoretical exercise is based on the article on A Material Paradox: Socioeconomic Status,
+Young People’s Disposable Income and Consumer Culture by West et al. (2006). Everything
+is to be derived from its table 1, that is also presented in Figure 1. It provides information on
+income of teenagers in West Scotland. Based on the provided summary data, we will estimate
+regression coefficients for a multivariable regression model.
+
+We expect you to write out and justify calculations, whether in matrix- or simple
+form, but the calculations themselves can be done in R - restricted to (matrix-)
+multiplication, addition,…
+
+0. One piece of information missing, is the number of correspondents (by age and gender).
+Table 5 (not provided here) does provide some info on total sample size. We will assume
+we work with 2142 correspondents, equally divided over the six groups (combination of
+                                                                       age and gender)
+• From table 1, does assume an equal number of girls and boys within each age-group,
+seem reasonable?
+
+
+  1. We could consider evaluating age as a continuous variable.
+• Looking at Figure 1, would such a model provide a good fit? Explain
+
+
+2. Depending on your answer in 1. fit either a model with age and gender as categorical, but
+without interaction OR the same model without interaction but with age as a continuous
+predictor
+• Write out the model
+• Estimate the coefficients
+• Estimate the residual variance
+• Interpret the gender-effect parameter(s)
+• What would change above if sample consisted of brother-sister pairs?
+• (Continue as if all outcomes are independent)
+
+3. Fit a standard linear model with both age and gender as categorical variables. Include
+their interaction.
+• Write out the model
+• Estimate the coefficients
+• Estimate the residual variance
+• Interpret the gender-effect parameter(s)
+
+4. Compare both models in terms of:
+• Underlying assumptions
+• Formally test if the model with interaction (3.) fits the data better
+5. From the model with interaction (3.), derive a 95% prediction interval for the income of
+
+a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage?
+Why? If not, will the coverage tend to be higher or lower?
