@@ -792,7 +792,7 @@ qqline(fit_final$residuals, col = "red")
 par(mfrow = c(1, 1))
 ```
 ## Transformation of Y
-We see that the assumptions of normality and equal error variances of the error terms. A possible solution is to apply a log transformation of Y. The result shows constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. We still see slightly heavy tails.
+We see that the assumptions of normality and equal error variances of the error terms are violated in the original model. A possible solution is to apply a log transformation of Y. The result shows approximate constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. The reduction in R-squared suggests that the model-fit was inflated due to heteroscedasticity.  We still see slightly heavy tails.
 
 ```{r}
 fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
