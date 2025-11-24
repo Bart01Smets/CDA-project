@@ -804,6 +804,13 @@ summary(fit_log)
 plot(fit_log)
 par(mfrow = c(1, 1))
 ```
+## diagnostics
+
+deze kan ook al eerder gebruikt worden, die geeft echt alles en moet je niet apart dingen gaan berekenen zoals hieronder/boven (uit een van zijn pc labs) 
+
+```{r}
+diagplots <- olsrr::ols_plot_diagnostics(fit_log, print_plot = TRUE)
+```
 
 ### Robustness checks
 
