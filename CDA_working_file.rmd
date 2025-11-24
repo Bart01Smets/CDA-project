@@ -546,10 +546,10 @@ outliers_simple <- which(abs(stud_res) > 2)
 Table to get a visual illustration of whether outliers are more common in small pop
 ```{r outliers}
 # outliers are more present in small pop?
-if(length(outliers_simple) > 0) {
+
   outlier_data <- train_data[outliers_simple, .(population, ViolentCrimesPerPop, PctPopUnderPov)]
   print(outlier_data)
-}
+
 ```
 
 ## Model selection
