@@ -806,11 +806,49 @@ par(mfrow = c(1, 1))
 ```
 ## diagnostics
 
-deze kan ook al eerder gebruikt worden, die geeft echt alles en moet je niet apart dingen gaan berekenen zoals hieronder/boven (uit een van zijn pc labs) 
+deze kan ook al eerder gebruikt worden, die geeft echt alles en moet je niet apart dingen gaan berekenen zoals hieronder/boven (uit een van zijn pc labs). hierin kan je goed zien dat er toch redelijk wat influential outliers zijn, dus dat robust wel is.
 
 ```{r}
 diagplots <- olsrr::ols_plot_diagnostics(fit_log, print_plot = TRUE)
 ```
+
+Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
+
+```{r robust inference}
+library(sandwich)
+library(lmtest)
+library(MASS)
+
+robust <- rlm(formula(fit_log), data = train_data, psi = psi.bisquare)
+summary(robust, method = "XtX")
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit_log)
+par(mfrow=c(2,2))
+plot(robust, which = 1)
+
+qqnorm(resid(robust))
+qqline(resid(robust))
+
+```
+
+A comparison of the coefficients reveal no substantial differences, indicating that the influential points are not the result of gross errors. <hier moeten nog extra checks van influence on inferences bij>.
+The identified leverage-points can be called 'good leverages' as they exhibit high leverage but their residuals are still small, this even improves the precision of the regression coefficients.
+
+```{r influence inference}
+# Compare OLS vs Robust coefficients
+comparison <- data.frame(
+  OLS = coef(fit_log),
+  Robust = coef(robust),
+  Difference = coef(fit_log) - coef(robust)
+)
+
+print(round(comparison, 4))
+```
+
+
 
 ### Robustness checks
 
@@ -981,3 +1019,5 @@ States (Computer File) (1995)
 Redmond, M. A. and A. Baveja: A Data-Driven Software Tool for Enabling Cooperative 
 Information Sharing Among Police Departments. European Journal of Operational Research 
 141 (2002) 660-678.
+
+Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers and Leverage Points. Journal of the American Statistical Association, 85(411), 633–639. https://doi.org/10.1080/01621459.1990.10474920
