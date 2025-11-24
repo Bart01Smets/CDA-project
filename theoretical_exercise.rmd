@@ -18,10 +18,12 @@ we work with 2142 correspondents, equally divided over the six groups (combinati
 • From table 1, does assume an equal number of girls and boys within each age-group,
 seem reasonable?
 
+Total looks like the average of girl and boy so yes? (I think)
 
   1. We could consider evaluating age as a continuous variable.
 • Looking at Figure 1, would such a model provide a good fit? Explain
 
+Looks reasonable to me (evolution looks pretty linear), but difficult to say with only 3 datapoints.
 
 2. Depending on your answer in 1. fit either a model with age and gender as categorical, but
 without interaction OR the same model without interaction but with age as a continuous
@@ -43,7 +45,7 @@ their interaction.
 4. Compare both models in terms of:
 • Underlying assumptions
 • Formally test if the model with interaction (3.) fits the data better
-5. From the model with interaction (3.), derive a 95% prediction interval for the income of
 
+5. From the model with interaction (3.), derive a 95% prediction interval for the income of
 a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage?
 Why? If not, will the coverage tend to be higher or lower?
