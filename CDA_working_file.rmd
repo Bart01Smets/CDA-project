@@ -17,7 +17,7 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE,
 ```{r echo=FALSE}
 library(knitr)
 library (glue)
-
+library(dplyr)
 ```
 
 ## Research question
@@ -182,7 +182,7 @@ colnames(violent_crimes_table) <- var_names
 
 ```{r}
 crimes_table_subset <- violent_crimes_table %>% 
-  select(communityname,state,countyCode, communityCode, fold, population, 
+  dplyr::select(communityname,state,countyCode, communityCode, fold, population, 
          PctPopUnderPov, perCapInc, PctEmploy, PctLess9thGrade, PctNotHSGrad, PctBSorMore,
          NumImmig, racepctblack, agePct12t29, ViolentCrimesPerPop
          )
@@ -494,7 +494,7 @@ print(confint(fit))
 
 ### Assumption checks
 
-We check assumptions linearity, independence of errors, homoscedasticity, and normality of errors.
+We check assumptions linearity, independence of errors, homoscedasticity, and normality of errors. It is clear these assumptions are violated. In the next step, we extend the model by adding relevant predictors and reasses the assumptions.
 
 ```{r simple-lm-diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
@@ -517,7 +517,7 @@ qqnorm(fit$residuals, main = "Normal Q-Q Plot of Residuals")
 qqline(fit$residuals, col = "red")
  par(mfrow = c(1, 1))
 ```
-Studentized residuals <dit zijn de deleted toch?>
+Studentized residuals <dit zijn de deleted toch?> --> moet dit apart?
 
 ```{r studentized residuals}
 # Studentized residuals plot
@@ -619,7 +619,7 @@ avPlots(fit_multi, main = "Partial regression plots")
 
 ### Interaction Terms Selection
 
-Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance. We choose the best one.
+Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance. We choose the best one. -> in ons protocol staat 1 of meer en hier zijn meerdere significant?
 
 ```{r interaction term selection}
 # store all other pred except for main pred
@@ -777,8 +777,9 @@ qqline(fit_final$residuals, col = "red")
 
 par(mfrow = c(1, 1))
 ```
+
 ## Transformation of Y
-We see that the assumptions of normality and equal error variances of the error terms are violated in the original model. A possible solution is to apply a log transformation of Y. The result shows approximate constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. The reduction in R-squared suggests that the model-fit was inflated due to heteroscedasticity.  We still see slightly heavy tails.
+We see that the assumptions of normality and equal error variances of the error terms are again violated in the original multivariate model. A possible solution is to apply a log transformation of Y. The result shows approximate constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. The reduction in R-squared suggests that the model-fit was inflated due to heteroscedasticity.  We still see slightly heavy tails. 
 
 ```{r}
 fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
@@ -790,13 +791,201 @@ summary(fit_log)
 plot(fit_log)
 par(mfrow = c(1, 1))
 ```
+## Rerun selection
+We will repeat the model building process with the log-transformed ViolentCrimesPerPop.
+
+```{r adding column with log transform}
+train_data$logViolent <- log(train_data$ViolentCrimesPerPop + 1)
+```
+
+## Model selection
+
+We use an all-possible regressions procedure to select predictor variables. We include models with a maximum of 5 predictor variables and only models with 0, 1, or 2 education predictor variables. The best model is chosen based on the Bayesian Information Criterion.
+
+```{r model selection2, message=FALSE}
+library(leaps)
+
+# Define predictor variables for model selection
+predictors <- c("PctPopUnderPov", "perCapInc", "PctEmploy", 
+                "PctLess9thGrade", "PctNotHSGrad", "PctBSorMore",
+                "racepctblack", "agePct12t29", "PctImmig")
+
+# Educ variables
+educ <- c("PctLess9thGrade", "PctNotHSGrad", "PctBSorMore")
+
+# data for model selection
+data <- train_data[, c("logViolent", predictors), with = FALSE]
+
+# Test reg with max 5 predictors
+all_combos <- regsubsets(logViolent ~ ., data = data, 
+                         nvmax = 5, nbest = 10, method = "exhaustive")
+all_combos_sum <- summary(all_combos)
+```
+
+```{r BIC model selection2}
+# Create results dataframe
+results <- data.frame(
+  n_predictors = apply(all_combos_sum$which[, -1], 1, sum),
+  predictors = apply(all_combos_sum$which[, -1], 1, function(x) 
+    paste(names(x)[x], collapse = ", ")),
+  rsq = all_combos_sum$rsq,
+  adjrsq = all_combos_sum$adjr2,
+  cp = all_combos_sum$cp,
+  bic = all_combos_sum$bic
+)
+
+# Count education variables in each model
+count_edu_vars <- function(pred_string) {
+  sum(sapply(educ, function(v) grepl(v, pred_string)))
+}
+results$n_edu <- sapply(results$predictors, count_edu_vars)
+
+# Filter: only models with 0, 1, or 2 education variables
+BIC_ranking <- results[results$n_edu <= 2, ]
+
+# Sort by BIC (lower is better)
+BIC_ranking<- BIC_ranking[order(BIC_ranking$bic), ]
+
+print(head(BIC_ranking, 10))
+```
+
+We then run the multivariate regression equation
+
+```{r best model selection2}
+# Print best model
+best <- which.min(BIC_ranking$bic)
+best_pred <- BIC_ranking$predictors[best]
+cat("\nBest model:\n")
+cat("Predictors:", best_pred, "\n")
+cat("BIC:", round(BIC_ranking$bic[best], 2), "\n")
+cat("Adjusted R²:", round(BIC_ranking$adjrsq[best], 4), "\n")
+
+# store pred
+best_pred_sel <- strsplit(best_pred, ", ")[[1]]
+
+# multivariate regression with these predictors
+formula_multi <- as.formula(paste("logViolent ~", 
+                                   paste(best_pred_sel, collapse = " + ")))
+fit_multi <- lm(formula_multi, data = train_data)
+summary(fit_multi)
+```
+
+### Partial Regression Plots
+
+```{r partial-regression-plots2, fig.width=10, fig.height=8}
+library(car)
+avPlots(fit_multi, main = "Partial regression plots")
+```
+
+### Interaction Terms Selection
+
+Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance. We choose the best one. -> in ons protocol staat 1 of meer en hier zijn meerdere significant?
+
+```{r interaction term selection2}
+# store all other pred except for main pred
+other <- setdiff(best_pred_sel, "PctPopUnderPov")
+
+  # Create interaction terms
+  interaction_terms <- paste("PctPopUnderPov", other, sep = ":")
+  
+  # Evaluate each interaction term individually
+  interaction_results <- data.frame(
+    interaction = interaction_terms,
+    t_value = NA,
+    p_value = NA,
+    delta_adjrsq = NA
+  )
+  
+  for(i in seq_along(interaction_terms)) {
+    formula_single_int <- as.formula(paste("logViolent ~", 
+                                           paste(best_pred_sel, collapse = " + "), "+",
+                                           interaction_terms[i]))
+    fit_single_int <- lm(formula_single_int, data = train_data)
+    coef_summary <- summary(fit_single_int)$coefficients
+    int_row <- nrow(coef_summary)
+    interaction_results$t_value[i] <- coef_summary[int_row, "t value"]
+    interaction_results$p_value[i] <- coef_summary[int_row, "Pr(>|t|)"]
+    interaction_results$delta_adjrsq[i] <- summary(fit_single_int)$adj.r.squared - 
+                                           summary(fit_multi)$adj.r.squared
+  }
+  
+  interaction_results <- interaction_results[order(interaction_results$p_value), ]
+  cat("Interaction terms ranked by p-value:\n")
+  print(interaction_results)
+  
+  # Select best interaction
+  best_interaction <- interaction_results$interaction[1]
+  cat("\nSelected interaction term:", best_interaction, "\n")
+```
+
+## Multivariate Model
+
+Based on the model selection procedure, we fit the multivariate model including the selected interaction term.
+
+```{r final model2}
+# Estimate model with interaction
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(best_pred_sel, collapse = " + "), "+",
+                                  best_interaction))
+
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+
+# confint
+print(confint(fit_final))
+```
+
+### Multicollinearity Check
+
+Before checking model assumptions, we first assess multicollinearity using the Variance Inflation Factor (VIF) and remove a variable if necessary.
+```{r multicoll check2}
+library(car)
+vif <- vif(fit_final)
+print(vif)
+```
+
+We see that our model performs only a little less well, but this way we did account for multicollinearity and our estimates are correct.
+
+```{r compare2}
+# Compare models
+cat("Comparison of models:\n")
+cat("Original model adjusted R²: ", round(summary(fit_multi)$adj.r.squared, 4), "\n")
+cat("interaction term model adjusted R²:  ", round(summary(fit_final)$adj.r.squared, 4), "\n")
+
+```
+
+### Assumption checks final model
+
+```{r final-model-diagnostics, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
+
+#Residuals vs Fitted
+plot(fit_final$fitted.values, fit_final$residuals,
+     xlab = "Fitted values", ylab = "Residuals",
+     main = "Residuals vs Fitted (Final Model)")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit_final$fitted.values, fit_final$residuals), col = "blue")
+
+# Squared residuals vs Fitted
+plot(fit_final$fitted.values, fit_final$residuals^2,
+     xlab = "Fitted values", ylab = "Squared Residuals",
+     main = "Squared Residuals vs Fitted")
+lines(lowess(fit_final$fitted.values, fit_final$residuals^2), col = "blue")
+
+# QQ-plot
+qqnorm(fit_final$residuals, main = "Normal Q-Q Plot (Final Model)")
+qqline(fit_final$residuals, col = "red")
+
+par(mfrow = c(1, 1))
+```
+
 ## diagnostics
 
 deze kan ook al eerder gebruikt worden, die geeft echt alles en moet je niet apart dingen gaan berekenen zoals hieronder/boven (uit een van zijn pc labs). hierin kan je goed zien dat er toch redelijk wat influential outliers zijn, dus dat robust wel is.
 
 ```{r}
 library(olsrr)
-diagplots <- olsrr::ols_plot_diagnostics(fit_log, print_plot = TRUE)
+diagplots <- olsrr::ols_plot_diagnostics(fit_final, print_plot = TRUE)
 ```
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
@@ -806,7 +995,7 @@ library(sandwich)
 library(lmtest)
 library(MASS)
 
-robust <- rlm(formula(fit_log), data = train_data, psi = psi.bisquare)
+robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
 summary(robust, method = "XtX")
 ```
 
@@ -827,9 +1016,9 @@ The identified leverage-points can be called 'good leverages' as they exhibit hi
 ```{r influence inference}
 # Compare OLS vs Robust coefficients
 comparison <- data.frame(
-  OLS = coef(fit_log),
+  OLS = coef(fit_final),
   Robust = coef(robust),
-  Difference = coef(fit_log) - coef(robust)
+  Difference = coef(fit_final) - coef(robust)
 )
 
 print(round(comparison, 4))
@@ -949,6 +1138,7 @@ summary_results <- data.frame(
 kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
 ```
 
+## validation -> moet nog aangepast worden
 Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the Mean Squared Error (MSE) from the training set.
 ```{r model validation}
 # Predictions on test set
@@ -995,6 +1185,7 @@ r2_test <- 1 - ss_res/ss_tot
 cat("\nR² on test set:", round(r2_test, 4), "\n")
 cat("R² on training set:", round(summary(fit_final)$r.squared, 4), "\n")
 ```
+
 ```{r aanpassing voor als we log transform gebruiken}
 # validation
 plot(test_data$ViolentCrimesPerPop, pred,
