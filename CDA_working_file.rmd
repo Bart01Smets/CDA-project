@@ -628,10 +628,6 @@ avPlots(fit_multi, main = "Partial regression plots")
 ### Interaction Terms Selection
 
 Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance. We choose the best one. -> in ons protocol staat 1 of meer en hier zijn meerdere significant?
-```{r}
-sum$coefficients
-```
-
 
 ```{r interaction term selection}
 selected_vars <- row.names(multi_var_summary$coefficients[-(1:2),])
