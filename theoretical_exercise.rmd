@@ -49,29 +49,29 @@ XtransX <- matrix(0, 4, 4)
 
 # 11 yo, male
 x1 <- c(1, 0, 0, 0)
-XtransX <- XtX + n * outer(x1, x1)
+XtransX <- XtransX + n * outer(x1, x1)
 
 # 11yo, female
 x2 <- c(1, 0, 0, 1)
-XtransX <- XtX + n * outer(x2, x2)
+XtransX <- XtransX + n * outer(x2, x2)
 
 # 13 yo, male
 x3 <- c(1, 1, 0, 0)
-XtransX <- XtX + n * outer(x3, x3)
+XtransX <- XtransX + n * outer(x3, x3)
 
 # 13yo, female
 x4 <- c(1, 1, 0, 1)
-XtransX <- XtX + n * outer(x4, x4)
+XtransX <- XtransX + n * outer(x4, x4)
 
 # 15yo, male
 x5 <- c(1, 0, 1, 0)
-XttransX <- XtX + n * outer(x5, x5)
+XttransX <- XtransX + n * outer(x5, x5)
 
 # 15yo, female
 x6 <- c(1, 0, 1, 1)
-XtransX <- XtX + n * outer(x6, x6)
+XtransX <- XtransX + n * outer(x6, x6)
 
-print(XtX)
+print(XtransX)
 
 # Get Xtransposed*y
 
