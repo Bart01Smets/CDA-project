@@ -101,6 +101,7 @@ print(beta_hat[4])
 
 • Estimate the residual variance
 ```{r res var}
+ssd_in <- sum((n - 1) * sds^2)
 ```
 
 • Interpret the gender-effect parameter(s)
