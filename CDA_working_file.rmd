@@ -511,8 +511,8 @@ cat("BIC:", BIC(fit), "\n")
 sse_simple <- sum(fit$residuals^2) 
 mse_simple <- sse_simple/(n_training - 2) 
 cat("SSE:", round(sse_simple, 2), "\n")
-# Berekening BIC-waarde in R: -2 * as.numeric(logLik(fit)) + attr(logLik(fit), "df") * log(1595)
-# Niet hetzelfde als 1595*log(sse_simple) - 1595*log(1595) + 2*log(1595)
+# Calculation of BIC-waarde in R: -2 * as.numeric(logLik(fit)) + attr(logLik(fit), "df") * log(n)
+# Not the one from the course slides n*log(sse_simple) - n*log(n) + p*log(n), but ok?
 cat("MSE:", round(mse_simple, 2), "\n")
 
 # Confidence intervals for coefficients
@@ -632,8 +632,34 @@ multi_var_summary
 ### Partial Regression Plots
 
 ```{r partial-regression-plots, fig.width=10, fig.height=8}
-library(car)
-avPlots(fit_multi, main = "Partial regression plots")
+lm_cost_load <- lm(cost ~ load, data = airdata)
+temp <- airdata
+temp$resid_costload <- resid(lm_cost_load)
+lm_utl_load <- lm(utl ~ load, data = temp)
+temp$resid_utlload <- resid(lm_utl_load)
+
+ggplot(temp, aes(x = resid_utlload, y = resid_costload)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_smooth(method = "loess", se = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Partial Residual Plot - Add utl",
+       x = "Residuals cost ~ load", y = "Residuals utl ~ load")
+
+
+lm_cost_utl <- lm(cost ~ utl, data = airdata)
+temp <- airdata
+temp$resid_costutl <- resid(lm_cost_utl)
+lm_load_utl <- lm(load ~ utl, data = temp)
+temp$resid_loadutl <- resid(lm_load_utl)
+
+ggplot(temp, aes(x = resid_loadutl, y = resid_costutl)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  geom_smooth(method = "loess", se = FALSE) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Partial Residual Plot - Add load",
+       x = "Residuals cost ~ utl", y = "Residuals load ~ utl")
 ```
 
 ### Interaction Terms Selection
@@ -949,6 +975,7 @@ print(confint(fit_final))
 Before checking model assumptions, we first assess multicollinearity using the Variance Inflation Factor (VIF) and remove a variable if necessary.
 ```{r multicoll check2}
 library(car)
+# practicum: car::vif(fit)
 vif <- vif(fit_final)
 print(vif)
 ```
@@ -1080,6 +1107,8 @@ dfbetas_threshold <- 2 / sqrt(n_train)
 diagnostics <- data.frame(
   obs = 1:n_train,
   population = train_data$population,
+  # zowel studentized deleted residuals als studentized residuals insteken?
+  # DFBETAS ook insteken (per beta kan je dat bepalen) (chapter 10 Diagnostics slide 40)
   stud_residual = stud_res_final,
   leverage = leverage,
   cooks_d = cooks_d,
