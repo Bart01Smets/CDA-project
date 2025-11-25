@@ -123,6 +123,7 @@ violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/21
 ```{r}
 library(dplyr)
 library(rvest)
+library(stringr)
 url <- "https://archive.ics.uci.edu/dataset/211/communities+and+crime+unnormalized"
 
 # Read the HTML page
@@ -445,27 +446,28 @@ print(wrap_plots(plots, ncol = 3))
 The scatter plots reveal one outlier for the ViolentCrimesPerPop variable. This outlier is the community Chestercity.
 
 ```{r outlier}
-crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=TRUE), , drop = FALSE]
+crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, 
+                          decreasing=TRUE), , drop = FALSE]
 ```
 
 
 ```{r lm fast, eval=FALSE, include=FALSE}
-df <- crimes_table_subset_num_noNA
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov, data=df)
-
-summary(fit)
-
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov+perCapInc+PctEmploy+PctLess9thGrade+PctNotHSGrad+PctBSorMore+agePct12t29+PctImmig, data=df)
-
-summary(fit)
-
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov*perCapInc*PctEmploy*PctLess9thGrade*PctNotHSGrad*PctBSorMore*agePct12t29*PctImmig, data=df)
-
-summary(fit)
-
-fit <- lm(ViolentCrimesPerPop~PctPopUnderPov*perCapInc*PctEmploy*PctLess9thGrade*PctNotHSGrad*PctBSorMore*agePct12t29*PctImmig*racepctblack, data=df)
-
-summary(fit)
+# df <- crimes_table_subset_num_noNA
+# fit <- lm(ViolentCrimesPerPop~PctPopUnderPov, data=df)
+# 
+# summary(fit)
+# 
+# fit <- lm(ViolentCrimesPerPop~PctPopUnderPov+perCapInc+PctEmploy+PctLess9thGrade+PctNotHSGrad+PctBSorMore+agePct12t29+PctImmig, data=df)
+# 
+# summary(fit)
+# 
+# fit <- lm(ViolentCrimesPerPop~PctPopUnderPov*perCapInc*PctEmploy*PctLess9thGrade*PctNotHSGrad*PctBSorMore*agePct12t29*PctImmig, data=df)
+# 
+# summary(fit)
+# 
+# fit <- lm(ViolentCrimesPerPop~PctPopUnderPov*perCapInc*PctEmploy*PctLess9thGrade*PctNotHSGrad*PctBSorMore*agePct12t29*PctImmig*racepctblack, data=df)
+# 
+# summary(fit)
 
 ```
 
@@ -568,70 +570,55 @@ Table to get a visual illustration of whether outliers are more common in small 
 We use an all-possible regressions procedure to select predictor variables. We include models with a maximum of 5 predictor variables and only models with 0, 1, or 2 education predictor variables. The best model is chosen based on the Bayesian Information Criterion.
 
 ```{r model selection, message=FALSE}
-library(leaps)
 
+max_extra_predictors <- 4
 # Define predictor variables for model selection
-predictors <- c("PctPopUnderPov", "perCapInc", "PctEmploy", 
+predictors <- c("perCapInc", "PctEmploy", 
                 "PctLess9thGrade", "PctNotHSGrad", "PctBSorMore",
                 "racepctblack", "agePct12t29", "PctImmig")
 
 # Educ variables
 educ <- c("PctLess9thGrade", "PctNotHSGrad", "PctBSorMore")
 
-# data for model selection
-data <- train_data[, c("ViolentCrimesPerPop", predictors), with = FALSE]
-
-# Test reg with max 5 predictors
-all_combos <- regsubsets(ViolentCrimesPerPop ~ ., data = data, 
-                         nvmax = 5, nbest = 10, method = "exhaustive")
-all_combos_sum <- summary(all_combos)
-```
-
-```{r BIC model selection}
-# Create results dataframe
-results <- data.frame(
-  n_predictors = apply(all_combos_sum$which[, -1], 1, sum),
-  predictors = apply(all_combos_sum$which[, -1], 1, function(x) 
-    paste(names(x)[x], collapse = ", ")),
-  rsq = all_combos_sum$rsq,
-  adjrsq = all_combos_sum$adjr2,
-  cp = all_combos_sum$cp,
-  bic = all_combos_sum$bic
-)
-
-# Count education variables in each model
-count_edu_vars <- function(pred_string) {
-  sum(sapply(educ, function(v) grepl(v, pred_string)))
+formulas <- list()
+for (i in 1:max_extra_predictors) {
+  tmp <- combn(predictors, i)
+  tmp <- apply(tmp, 2, paste, collapse=" + ")
+  tmp <- paste0("ViolentCrimesPerPop~PctPopUnderPov + ", tmp)
+  formulas[[i]] <- tmp
 }
-results$n_edu <- sapply(results$predictors, count_edu_vars)
+formulas <- unlist(formulas)
+formulas <- sapply(formulas, as.formula)
+models <- lapply(formulas, lm, data=train_data)
 
-# Filter: only models with 0, 1, or 2 education variables
-BIC_ranking <- results[results$n_edu <= 2, ]
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = ""), character(1))
 
-# Sort by BIC (lower is better)
-BIC_ranking<- BIC_ranking[order(BIC_ranking$bic), ]
-
-print(head(BIC_ranking, 10))
+# build the frame
+model_ranking <- data.frame(
+  formula = formula_vector,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  BIC = bics
+)
+model_ranking <- model_ranking[order(model_ranking$BIC), ]
+head(model_ranking, 10)
 ```
 
 We then run the multivariate regression equation
 
-```{r best model selection}
+```{r show best model}
 # Print best model
-best <- which.min(BIC_ranking$bic)
-best_pred <- BIC_ranking$predictors[best]
+best <- which.min(model_ranking$BIC)
+best_pred <- model_ranking$formula[best]
 cat("\nBest model:\n")
-cat("Predictors:", best_pred, "\n")
-cat("BIC:", round(BIC_ranking$bic[best], 2), "\n")
-cat("Adjusted R²:", round(BIC_ranking$adjrsq[best], 4), "\n")
+cat(best_pred, "\n")
+cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
 
-# store pred
-best_pred_sel <- strsplit(best_pred, ", ")[[1]]
-
-# multivariate regression with these predictors
-formula_multi <- as.formula(paste("ViolentCrimesPerPop ~", 
-                                   paste(best_pred_sel, collapse = " + ")))
-fit_multi <- lm(formula_multi, data = train_data)
+fit_multi <- lm(best_pred, data = train_data)
 summary(fit_multi)
 ```
 
