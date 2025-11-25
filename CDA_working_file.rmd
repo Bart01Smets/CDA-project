@@ -914,7 +914,7 @@ other <- setdiff(best_pred_sel, "PctPopUnderPov")
   print(interaction_results)
   
   # Select best interaction
-  best_interaction <- interaction_results$interaction[1]
+  best_interaction <- c(interaction_results$interaction[1:3])
   cat("\nSelected interaction term:", best_interaction, "\n")
 ```
 
@@ -926,7 +926,7 @@ Based on the model selection procedure, we fit the multivariate model including 
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(best_pred_sel, collapse = " + "), "+",
-                                  best_interaction))
+                                  paste(best_interaction, collapse = " + ")))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
