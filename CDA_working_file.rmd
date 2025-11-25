@@ -359,7 +359,7 @@ However the choice for predictors for the model will be dealt with thoroughly du
 
 It is noticeable that the variable *racepctblack* is the one most strongly correlated with the outcome variable ($r = 0.63$), even more than *PctPopUnderPov*, the head predictor that was chosen for this research.
 
-It is noticable the the variables *PctImmig* and *PctImmig* have correlation coefficients tthat are really low.
+It is noticable the the variables *PctImmig* and *PctImmig* have correlation coefficients that are really low.
 
 ```{r discrib_extended, eval=FALSE, include=FALSE}
 Hmisc::describe(crimes_table_subset)
@@ -497,19 +497,23 @@ cat("Regression equation: ViolentCrimesPerPop =",
     round(coef(fit)[1], 2), "+", 
     round(coef(fit)[2], 2), "* PctPopUnderPov\n\n")
 
-# R-squared
+# R-squared and BIC-value
 cat("R-squared:", round(summary(fit)$r.squared, 4), "\n")
 cat("Adjusted R-squared:", round(summary(fit)$adj.r.squared, 4), "\n")
+cat("BIC:", BIC(fit), "\n")
 
 # MSE
-sse_simple <- sum(fit$residuals^2)
+sse_simple <- sum(fit$residuals^2) #controle BIC: 1595*log(sse_simple/1595) + 2*log(1595)
 mse_simple <- sse_simple/(n_training - 2)
-#mse_simple <- mean(fit$residuals^2) dit klopt niet denk ik
+cat("SSE:", round(sse_simple, 2), "\n")
 cat("MSE:", round(mse_simple, 2), "\n")
 
 # Confidence intervals for coefficients
 cat("\n95% Confidence Intervals:\n")
 print(confint(fit))
+
+# ANOVA
+anova(fit)
 ```
 
 *PctPopUnderPov* = <mean> increase in violent crimes per 100K population if poverty rate increases by one percentage point
