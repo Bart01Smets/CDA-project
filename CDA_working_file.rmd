@@ -330,6 +330,9 @@ for(columnname in names(crimes_table_subset_num_na)){
 }
 ```
 
+# Multivariate descriptives
+
+After investigating the univariate descriptives, multivariate descriptives are calculated.
 
 # Multivariate descriptives
 
@@ -622,7 +625,8 @@ cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
 
 fit_multi <- lm(best_pred, data = train_data)
-summary(fit_multi)
+multi_var_summary <- summary(fit_multi)
+multi_var_summary
 ```
 
 ### Partial Regression Plots
