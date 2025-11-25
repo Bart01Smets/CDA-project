@@ -632,19 +632,37 @@ multi_var_summary
 ### Partial Regression Plots
 
 ```{r partial-regression-plots, fig.width=10, fig.height=8}
-temp <- train_data
-lm_ViolentCrimesPerPop <- lm(ViolentCrimesPerPop ~ PctLess9thGrade + PctNotHSGrad + racepctblack + PctImmig, data = temp)
-temp$resid_outcome <- resid(lm_ViolentCrimesPerPop)
-lm_PctPopUnderPov <- lm(PctPopUnderPov ~ PctLess9thGrade + PctNotHSGrad + racepctblack + PctImmig, data = temp)
-temp$resid_pred <- resid(lm_PctPopUnderPov)
+predictor_list <- strsplit(best_pred, split = " ")[[1]]
+predictor_list <- grep(pattern = "\\w", predictor_list[3:length(predictor_list)], value = TRUE)
+
+partial_residual_plot <- function(data, outcome, predictor, predictor_list) {
+  temp <- train_data
+  controls <- setdiff(predictor_list, predictor)
+  
+  formula_outcome  <- as.formula(paste(outcome, "~", paste(controls, collapse = " + ")))
+  formula_pred <- as.formula(paste(predictor, "~", paste(controls, collapse = " + ")))
+  
+  lm_outcome <- lm(formula_outcome, data = temp)
+  temp$resid_outcome <- resid(lm_outcome)
+  lm_pred <- lm(formula_pred, data = temp)
+  temp$resid_pred <- resid(lm_pred)
 
 ggplot(temp, aes(x = resid_pred, y = resid_outcome)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   geom_smooth(method = "loess", se = FALSE) +
   geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(title = "Partial Residual Plot - Add PctPopUnderPov",
-       x = "Residuals PctPopUnderPov ~ other variables", y = "Residuals ViolentCrimesPerPop ~ other variables")
+  labs(x = paste("Residuals ", predictor, " ~ controls", sep = ""), y = paste("Residuals ", outcome, " ~ controls", sep = ""))
+}
+
+plots <- lapply(predictor_list, function(predictor_added) {
+    partial_residual_plot(train_data, "ViolentCrimesPerPop", predictor_added, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+
 ```
 
 ### Interaction Terms Selection
