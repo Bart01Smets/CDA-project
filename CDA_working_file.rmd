@@ -790,8 +790,8 @@ We see that the assumptions of normality and equal error variances of the error 
 
 ```{r}
 fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
-                PctPopUnderPov + PctNotHSGrad + racepctblack + 
-                PctImmig + PctPopUnderPov:PctNotHSGrad,
+                PctPopUnderPov + PctBSorMore + racepctblack + 
+                PctImmig + PctPopUnderPov:PctBSorMore,
               data = train_data)
 
 summary(fit_log)
@@ -824,7 +824,7 @@ formulas <- list()
 for (i in 1:max_extra_predictors) {
   tmp <- combn(predictors, i)
   tmp <- apply(tmp, 2, paste, collapse=" + ")
-  tmp <- paste0("ViolentCrimesPerPop~PctPopUnderPov + ", tmp)
+  tmp <- paste0("logViolent~PctPopUnderPov + ", tmp)
   formulas[[i]] <- tmp
 }
 formulas <- unlist(formulas)
@@ -1149,16 +1149,17 @@ cat("MSPR (test set):", round(mspr, 2), "\n")
 cat("Ratio MSPR/MSE:", round(mspr/mse_final, 4), "\n")
 
 ```
+
 ```{r als we log transform zouden gebruiken}
 # Predictions on test set
-pred_log <- predict(fit_log, newdata = test_data)
+test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
+pred <- predict(fit_final, newdata = test_data)
 
-pred <- exp(pred_log) - 1
 # MSPR 
-mspr <- mean((test_data$ViolentCrimesPerPop - pred)^2)
+mspr <- mean((test_data$logViolent - pred)^2)
 
 # MSE training
-mse_final <- mean((exp(fitted(fit_log)) - 1 - train_data$ViolentCrimesPerPop)^2)
+mse_final <- mean(fit_final$residuals^2)
 
 cat("MSE (training set):", round(mse_final, 2), "\n")
 cat("MSPR (test set):", round(mspr, 2), "\n")
@@ -1182,23 +1183,17 @@ cat("R² on training set:", round(summary(fit_final)$r.squared, 4), "\n")
 
 ```{r aanpassing voor als we log transform gebruiken}
 # validation
-plot(test_data$ViolentCrimesPerPop, pred,
-     xlab = "Observed ViolentCrimesPerPop", ylab = "Predicted",
+plot(test_data$logViolent, pred,
+     xlab = "Observed ViolentCrimesPerPop (log scale)", ylab = "Predicted",
      main = "Observed vs Predicted")
 
 # R-squared on test set
-ss_res <- sum((test_data$ViolentCrimesPerPop - pred)^2)
-ss_tot <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+ss_res <- sum((test_data$logViolent - pred)^2)
+ss_tot <- sum((test_data$logViolent - mean(test_data$logViolent))^2)
 r2_test <- 1 - ss_res/ss_tot
-cat("\nR² on test set (original scale):", round(r2_test, 4), "\n")
+cat("\nR² on test set (log scale):", round(r2_test, 4), "\n")
 
-#back to original scale 
-org_scale <- exp(fitted(fit_log)) -1
-ss_res_train <- sum((train_data$ViolentCrimesPerPop - org_scale)^2)
-ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
-r2_train_orig <- 1 - ss_res_train / ss_tot_train
-
-cat("R² on training set (original scale):", round(r2_train_orig, 4), "\n") 
+cat("R² on training set (log scale):", round(summary(fit_final)$r.squared, 4), "\n") 
 ```
 
 
