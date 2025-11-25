@@ -629,40 +629,45 @@ avPlots(fit_multi, main = "Partial regression plots")
 Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance. We choose the best one. -> in ons protocol staat 1 of meer en hier zijn meerdere significant?
 
 ```{r interaction term selection}
-# store all other pred except for main pred
-other <- setdiff(best_pred_sel, "PctPopUnderPov")
+selected_vars <- row.names(multi_var_summary$coefficients[-(1:2),])
+interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
+ 
+formulas <- sapply(interaction_terms, function(i) {
+  paste0(best_pred, " + ", i)
+})
 
-  # Create interaction terms
-  interaction_terms <- paste("PctPopUnderPov", other, sep = ":")
+formulas <- lapply(formulas, as.formula)
+models <- lapply(formulas, lm, data=train_data)
+
+interaction_models_form <- vapply(formulas, function(f) 
+  paste(deparse(f), collapse = ""), character(1))
+summary_val_extraction <- function(x, item) {
+  tmp <- summary(x)$coefficients
+  tmp[nrow(tmp), item]
+}
+p_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "Pr(>|t|)"))
+t_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "t value"))
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+delta_adj_r_square <- sapply(models, function(m) 
+  summary(m)$adj.r.squared - summary(fit_multi)$adj.r.squared)
+
+interaction_table <- data.frame(
+  p.vals = p_vals_interaction,
+  t.vals = t_vals_interaction,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  delta.adj = delta_adj_r_square,
+  BIC = bics
+)
+interaction_table <- interaction_table[order(interaction_table$p.vals), ]
+interaction_table
   
-  # Evaluate each interaction term individually
-  interaction_results <- data.frame(
-    interaction = interaction_terms,
-    t_value = NA,
-    p_value = NA,
-    delta_adjrsq = NA
-  )
-  
-  for(i in seq_along(interaction_terms)) {
-    formula_single_int <- as.formula(paste("ViolentCrimesPerPop ~", 
-                                           paste(best_pred_sel, collapse = " + "), "+",
-                                           interaction_terms[i]))
-    fit_single_int <- lm(formula_single_int, data = train_data)
-    coef_summary <- summary(fit_single_int)$coefficients
-    int_row <- nrow(coef_summary)
-    interaction_results$t_value[i] <- coef_summary[int_row, "t value"]
-    interaction_results$p_value[i] <- coef_summary[int_row, "Pr(>|t|)"]
-    interaction_results$delta_adjrsq[i] <- summary(fit_single_int)$adj.r.squared - 
-                                           summary(fit_multi)$adj.r.squared
-  }
-  
-  interaction_results <- interaction_results[order(interaction_results$p_value), ]
-  cat("Interaction terms ranked by p-value:\n")
-  print(interaction_results)
-  
-  # Select best interaction
-  best_interaction <- interaction_results$interaction[1]
-  cat("\nSelected interaction term:", best_interaction, "\n")
+best_interaction <- row.names(interaction_table[1,])
 ```
 
 ## Multivariate Model
@@ -671,9 +676,7 @@ Based on the model selection procedure, we fit the multivariate model including 
 
 ```{r final model}
 # Estimate model with interaction
-formula_final <- as.formula(paste("ViolentCrimesPerPop ~", 
-                                  paste(best_pred_sel, collapse = " + "), "+",
-                                  best_interaction))
+formula_final <- as.formula(paste(best_pred, "+", best_interaction))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
