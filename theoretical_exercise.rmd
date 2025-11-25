@@ -29,11 +29,90 @@ The effect looks non-linear, as the increase in total income between age 13 and 
 without interaction OR the same model without interaction but with age as a continuous
 predictor
 • Write out the model
+
+Y_i = β_0 + β_1 * Age13_i + β_2 * Age15_i + β_3 * Female_i + ε_i
+
 • Estimate the coefficients
+```{r coeff}
+
+# Data input
+ntot <- 2142
+n <- 357 #(2142/6)
+
+age <- c(11, 11, 13, 13, 15, 15)
+gender <- c("Male", "Female", "Male", "Female", "Male", "Female")
+mean <- c(4.56, 4.38, 8.78, 8.30, 15.94, 15.13)
+sds <- c(4.10, 4.16, 6.97, 6.57, 16.21, 12.90)
+
+#est coeff
+XtransX <- matrix(0, 4, 4)
+
+# 11 yo, male
+x1 <- c(1, 0, 0, 0)
+XtransX <- XtX + n * outer(x1, x1)
+
+# 11yo, female
+x2 <- c(1, 0, 0, 1)
+XtransX <- XtX + n * outer(x2, x2)
+
+# 13 yo, male
+x3 <- c(1, 1, 0, 0)
+XtransX <- XtX + n * outer(x3, x3)
+
+# 13yo, female
+x4 <- c(1, 1, 0, 1)
+XtransX <- XtX + n * outer(x4, x4)
+
+# 15yo, male
+x5 <- c(1, 0, 1, 0)
+XttransX <- XtX + n * outer(x5, x5)
+
+# 15yo, female
+x6 <- c(1, 0, 1, 1)
+XtransX <- XtX + n * outer(x6, x6)
+
+print(XtX)
+
+# Get Xtransposed*y
+
+Xtransy <- n * (x1 * mean[1] + 
+            x2 * mean[2] + 
+            x3 * mean[3] + 
+            x4 * mean[4] + 
+            x5 * mean[5] + 
+            x6 * mean[6])
+
+print(Xtransy)
+
+#Solve eq
+beta_hat <- solve(XtransX) %*% Xtransy
+
+print(beta_hat[1]) #intercept
+
+print(beta_hat[2])
+
+print(beta_hat[3])
+
+print(beta_hat[4])
+
+
+```
+
+
 • Estimate the residual variance
+```{r res var}
+```
+
 • Interpret the gender-effect parameter(s)
 • What would change above if sample consisted of brother-sister pairs?
+
+The assumption of independence would be violated as observations are correlated (brothers and sisters come from same family). Coeff remain same, but SE's underestimated?
+
 • (Continue as if all outcomes are independent)
+
+
+
+
 
 3. Fit a standard linear model with both age and gender as categorical variables. Include
 their interaction.
