@@ -192,7 +192,7 @@ crimes_table_subset <- violent_crimes_table %>%
 
 The dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting, which resulted in missing total violent crime values for those states. We will investigate whether this missingness has probably a large effect on the model and if necessary use imputations.
 
-# Data preparation and descriptive analysis
+# Data preparation
 
 ```{r, include=FALSE}
 library(ggplot2)
@@ -241,6 +241,8 @@ crimes_table_subset = na.omit(crimes_table_subset)
 colSums(crimes_table_subset == "?", na.rm = TRUE)
 ```
 
+# Univariate descriptives
+
 After removing NA values from the database univariate descriptives are calculated.
 
 ```{r summary statistics}
@@ -279,8 +281,6 @@ na_subset %>%
 
 To gain insight into the univariate distributions, boxplots and histograms are generated.
 
-
-
 ```{r boxplots, fig.width=8, fig.height=12}
 numeric_cols <- sapply(crimes_table_subset, is.numeric)
 crimes_table_subset_num <- crimes_table_subset[, ..numeric_cols]
@@ -311,6 +311,7 @@ for(columnname in names(crimes_table_subset_num_na)){
           )
 }
 ```
+To investigate the impact of these missing values, the distribution of the other variables is compared in the missing data vs. the non-missing data. This is done using the histograms.
 ```{r histograms na comparison, fig.width=8, fig.height=12}
 numeric_cols_na <- sapply(na_subset, is.numeric)
 crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
@@ -329,6 +330,9 @@ for(columnname in names(crimes_table_subset_num_na)){
 }
 ```
 
+# Multivariate descriptives
+
+After investigating the univariate descriptives, multivariate descriptives are calculated.
 
 The correlation matrix shows the extent to which the variables in the dataset are correlated with each other.
 Below, all variables are listed, sorted from highest to lowest correlation with the outcome variable.
@@ -392,14 +396,13 @@ In particular, the following variables appear to show a fairly linear trend:
 
 This implies that these variables are probably not suitable as additional predictors when *PctPopUnderPov* is already included in the model <as this may cause multicollinearity>.
 
-
 ```{r scatter plots, fig.width=8, fig.height=12}
 x_vars <- colnames(crimes_table_subset_num)
 dict_labels <- setNames(sapply(x_vars, function(x_var) get_label(crimes_table_subset_num[[x_var]])), x_vars)
 
 library(ggplot2)
 library(patchwork)
-df <- crimes_table_subset_num[,-c("population", "fold")]
+df <- crimes_table_subset_num[,-c("population")]
 y_var <- "ViolentCrimesPerPop"
 x_vars <- setdiff(colnames(df), y_var)
 plots <- lapply(x_vars, function(x_var) {
@@ -411,11 +414,10 @@ plots <- lapply(x_vars, function(x_var) {
     labs(x = str_wrap(paste(x_var, " (", dict_labels[x_var], ")", sep = ""), width = 45))
 }
 )
-
 # Print 9 plots per pg
 print(wrap_plots(plots, ncol = 3))
 
-df <- crimes_table_subset_num[,-c("ViolentCrimesPerPop", "population", "fold")]
+df <- crimes_table_subset_num[,-c("population", "ViolentCrimesPerPop")]
 y_var <- "PctPopUnderPov"
 x_vars <- setdiff(colnames(df), y_var)
 plots <- lapply(x_vars, function(x_var) {
@@ -430,16 +432,36 @@ plots <- lapply(x_vars, function(x_var) {
 
 # Print 9 plots per pg
 print(wrap_plots(plots, ncol = 3))
-
 ```
 
 
-The scatter plots reveal one outlier for the ViolentCrimesPerPop variable. This outlier is the community Chestercity.
+The scatter plots reveal one outlier for the ViolentCrimesPerPop variable. This outlier is the community Chestercity. For now the datapoint is kept for further analysis.
 
 ```{r outlier}
 crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=TRUE), , drop = FALSE]
 ```
 
+
+In the protocol it's stated that small communities may have a higher probability to have more extreme values of the predictor and response variables. To investigate this scatter plots are created with *population* as x variable. It is clear that communities with a very small population show a very large spread for all variables.
+
+```{r scatter plots population, fig.width=8, fig.height=12}
+df <- crimes_table_subset_num
+x_var <- "population"
+y_vars <- setdiff(colnames(df), x_var)
+plots <- lapply(y_vars, function(y_var) {
+    ggplot(df, aes_string(x_var,y_var))+
+    geom_point(alpha = 0.6, size = 0.7) +
+    geom_smooth(method = "lm", color = "blue", se = FALSE)+
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(y = str_wrap(y_var, width = 45))
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+
+```
 
 # Model Building
 
