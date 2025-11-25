@@ -632,34 +632,19 @@ multi_var_summary
 ### Partial Regression Plots
 
 ```{r partial-regression-plots, fig.width=10, fig.height=8}
-lm_cost_load <- lm(cost ~ load, data = airdata)
-temp <- airdata
-temp$resid_costload <- resid(lm_cost_load)
-lm_utl_load <- lm(utl ~ load, data = temp)
-temp$resid_utlload <- resid(lm_utl_load)
+temp <- train_data
+lm_ViolentCrimesPerPop <- lm(ViolentCrimesPerPop ~ PctLess9thGrade + PctNotHSGrad + racepctblack + PctImmig, data = temp)
+temp$resid_outcome <- resid(lm_ViolentCrimesPerPop)
+lm_PctPopUnderPov <- lm(PctPopUnderPov ~ PctLess9thGrade + PctNotHSGrad + racepctblack + PctImmig, data = temp)
+temp$resid_pred <- resid(lm_PctPopUnderPov)
 
-ggplot(temp, aes(x = resid_utlload, y = resid_costload)) +
+ggplot(temp, aes(x = resid_pred, y = resid_outcome)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   geom_smooth(method = "loess", se = FALSE) +
   geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(title = "Partial Residual Plot - Add utl",
-       x = "Residuals cost ~ load", y = "Residuals utl ~ load")
-
-
-lm_cost_utl <- lm(cost ~ utl, data = airdata)
-temp <- airdata
-temp$resid_costutl <- resid(lm_cost_utl)
-lm_load_utl <- lm(load ~ utl, data = temp)
-temp$resid_loadutl <- resid(lm_load_utl)
-
-ggplot(temp, aes(x = resid_loadutl, y = resid_costutl)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  geom_smooth(method = "loess", se = FALSE) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(title = "Partial Residual Plot - Add load",
-       x = "Residuals cost ~ utl", y = "Residuals load ~ utl")
+  labs(title = "Partial Residual Plot - Add PctPopUnderPov",
+       x = "Residuals PctPopUnderPov ~ other variables", y = "Residuals ViolentCrimesPerPop ~ other variables")
 ```
 
 ### Interaction Terms Selection
