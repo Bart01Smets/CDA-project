@@ -243,7 +243,7 @@ colSums(crimes_table_subset == "?", na.rm = TRUE)
 
 # Univariate descriptives
 
-After removing NA values from the database univariate descriptives are calculated.
+After removing NA values from the database univariate descriptives are calculated, both the missing values and the non-missing values. 
 
 ```{r summary statistics}
 str(crimes_table_subset)
@@ -311,7 +311,7 @@ for(columnname in names(crimes_table_subset_num_na)){
           )
 }
 ```
-To investigate the impact of these missing values, the distribution of the other variables is compared in the missing data vs. the non-missing data. This is done using the histograms.
+To investigate the impact of the missing values, the distribution of the other variables is compared in the missing data vs. the non-missing data. This is done using the histograms. Neither the summary statistics nor the scatter plots indicate that the missing data have characteristics that differ substantially from the non-missing data
 ```{r histograms na comparison, fig.width=8, fig.height=12}
 numeric_cols_na <- sapply(na_subset, is.numeric)
 crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
@@ -329,6 +329,7 @@ for(columnname in names(crimes_table_subset_num_na)){
           )
 }
 ```
+
 
 # Multivariate descriptives
 
@@ -468,6 +469,7 @@ print(wrap_plots(plots, ncol = 3))
 Before performing linear regression and building models, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model.
 
 ```{r dataset split}
+set.seed(123)
 n <- nrow(crimes_table_subset_num)
 training <- sample(1:n, size = floor(0.8 * n))
 train_data <- crimes_table_subset_num[training, ]
@@ -503,9 +505,11 @@ cat("Adjusted R-squared:", round(summary(fit)$adj.r.squared, 4), "\n")
 cat("BIC:", BIC(fit), "\n")
 
 # MSE
-sse_simple <- sum(fit$residuals^2) #controle BIC: 1595*log(sse_simple/1595) + 2*log(1595)
-mse_simple <- sse_simple/(n_training - 2)
+sse_simple <- sum(fit$residuals^2) 
+mse_simple <- sse_simple/(n_training - 2) 
 cat("SSE:", round(sse_simple, 2), "\n")
+# Berekening BIC-waarde in R: -2 * as.numeric(logLik(fit)) + attr(logLik(fit), "df") * log(1595)
+# Niet hetzelfde als 1595*log(sse_simple) - 1595*log(1595) + 2*log(1595)
 cat("MSE:", round(mse_simple, 2), "\n")
 
 # Confidence intervals for coefficients
