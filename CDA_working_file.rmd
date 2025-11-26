@@ -632,19 +632,37 @@ multi_var_summary
 ### Partial Regression Plots
 
 ```{r partial-regression-plots, fig.width=10, fig.height=8}
-temp <- train_data
-lm_ViolentCrimesPerPop <- lm(ViolentCrimesPerPop ~ PctLess9thGrade + PctNotHSGrad + racepctblack + PctImmig, data = temp)
-temp$resid_outcome <- resid(lm_ViolentCrimesPerPop)
-lm_PctPopUnderPov <- lm(PctPopUnderPov ~ PctLess9thGrade + PctNotHSGrad + racepctblack + PctImmig, data = temp)
-temp$resid_pred <- resid(lm_PctPopUnderPov)
+predictor_list <- strsplit(best_pred, split = " ")[[1]]
+predictor_list <- grep(pattern = "\\w", predictor_list[3:length(predictor_list)], value = TRUE)
+
+partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
+  temp <- train_data
+  controls <- setdiff(predictor_list, predictor)
+  
+  formula_outcome  <- as.formula(paste(outcome, "~", paste(controls, collapse = " + ")))
+  formula_pred <- as.formula(paste(predictor, "~", paste(controls, collapse = " + ")))
+  
+  lm_outcome <- lm(formula_outcome, data = temp)
+  temp$resid_outcome <- resid(lm_outcome)
+  lm_pred <- lm(formula_pred, data = temp)
+  temp$resid_pred <- resid(lm_pred)
 
 ggplot(temp, aes(x = resid_pred, y = resid_outcome)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
   geom_smooth(method = "loess", se = FALSE) +
   geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(title = "Partial Residual Plot - Add PctPopUnderPov",
-       x = "Residuals PctPopUnderPov ~ other variables", y = "Residuals ViolentCrimesPerPop ~ other variables")
+  labs(x = paste("Residuals ", predictor, " ~ controls", sep = ""), y = paste("Residuals ", outcome, " ~ controls", sep = ""))
+}
+
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "ViolentCrimesPerPop", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+
 ```
 
 ### Interaction Terms Selection
@@ -717,7 +735,7 @@ vif <- vif(fit_final)
 print(vif)
 ```
 
-There is multicollinearity, as PctNotHSGrad and PctLess9thGrade are highly correlated (also already derived before from Ilja's plots). Thus, we remove the variable with the highest VIF (PctLess9thGrade). We then do our model evaluation again, and find that the most relevant interaction term to include is now PctPopUnderPov*PctLess9thGrade
+As already mentioned in the section on descriptives there is multicollinearity, as PctNotHSGrad and PctLess9thGrade are highly correlated. Thus, we remove the variable with the highest VIF (PctLess9thGrade). We then do our model evaluation again, and find that the most relevant interaction term to include is now PctPopUnderPov*PctLess9thGrade
 
 ```{r address multicollinearity}
 # Highest vif variable
@@ -725,7 +743,7 @@ main_effects_vif <- vif[!grepl(":", names(vif))]
 highest_vif_var <- names(which.max(main_effects_vif))
 
 # remove 
-best_predictors_reduced <- setdiff(best_pred_sel, highest_vif_var)
+best_predictors_reduced <- setdiff(predictor_list, highest_vif_var)
 
 # Re-evaluate interaction terms without the removed variable
 other_predictors_reduced <- setdiff(best_predictors_reduced, "PctPopUnderPov")
@@ -893,8 +911,16 @@ summary(fit_multi)
 ### Partial Regression Plots
 
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
-library(car)
-avPlots(fit_multi, main = "Partial regression plots")
+predictor_list <- strsplit(best_pred, split = " ")[[1]]
+predictor_list <- grep(pattern = "\\w", predictor_list[3:length(predictor_list)], value = TRUE)
+
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "ViolentCrimesPerPop", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
 ```
 
 ### Interaction Terms Selection
@@ -903,7 +929,7 @@ Following the protocol, we add all interaction terms of the predictor variables 
 
 ```{r interaction term selection2}
 # store all other pred except for main pred
-other <- setdiff(best_pred_sel, "PctPopUnderPov")
+other <- setdiff(predictor_list, "PctPopUnderPov")
 
   # Create interaction terms
   interaction_terms <- paste("PctPopUnderPov", other, sep = ":")
@@ -918,7 +944,7 @@ other <- setdiff(best_pred_sel, "PctPopUnderPov")
   
   for(i in seq_along(interaction_terms)) {
     formula_single_int <- as.formula(paste("logViolent ~", 
-                                           paste(best_pred_sel, collapse = " + "), "+",
+                                           paste(predictor_list, collapse = " + "), "+",
                                            interaction_terms[i]))
     fit_single_int <- lm(formula_single_int, data = train_data)
     coef_summary <- summary(fit_single_int)$coefficients
@@ -945,7 +971,7 @@ Based on the model selection procedure, we fit the multivariate model including 
 ```{r final model2}
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
-                                  paste(best_pred_sel, collapse = " + "), "+",
+                                  paste(predictor_list, collapse = " + "), "+",
                                   paste(best_interaction, collapse = " + ")))
 
 fit_final <- lm(formula_final, data = train_data)
