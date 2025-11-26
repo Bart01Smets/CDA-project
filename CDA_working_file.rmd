@@ -563,11 +563,23 @@ outliers_simple <- which(abs(stud_res) > 2)
 
 
 Table to get a visual illustration of whether outliers are more common in small pop
-```{r outliers}
+```{r outliers vs population1}
 # outliers are more present in small pop?
+outlier_data <- train_data[outliers_simple, .(population, ViolentCrimesPerPop, PctPopUnderPov)]
+print(outlier_data)
 
-  outlier_data <- train_data[outliers_simple, .(population, ViolentCrimesPerPop, PctPopUnderPov)]
-  print(outlier_data)
+# Residuals vs population
+plot(lapply(train_data$population, log10), fit$residuals,
+     xlab = "log(population)", ylab = "Residuals",
+     main = "Residuals vs log(population)")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
+
+plot(lapply(train_data$population, log10), stud_res,
+     xlab = "log(population)", ylab = "Residuals",
+     main = "Studentized Residuals vs log(population)")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
 
 ```
 
@@ -669,7 +681,7 @@ print(wrap_plots(plots, ncol = 3))
 
 Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance. We choose the best one. -> in ons protocol staat 1 of meer en hier zijn meerdere significant?
 
-```{r interaction term selection}
+```{r interaction term selection 1}
 selected_vars <- row.names(multi_var_summary$coefficients[-(1:2),])
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
  
@@ -893,7 +905,7 @@ head(model_ranking, 10)
 
 We then run the multivariate regression equation
 
-```{r show best model2}
+```{r show best model 2}
 # Print best model
 best <- which.min(model_ranking$BIC)
 best_pred <- model_ranking$formula[best]
@@ -903,10 +915,9 @@ cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
 
 fit_multi <- lm(best_pred, data = train_data)
-summary(fit_multi)
+multi_var_summary <- summary(fit_multi)
+multi_var_summary
 ```
-
-
 
 ### Partial Regression Plots
 
@@ -927,41 +938,46 @@ print(wrap_plots(plots, ncol = 3))
 
 Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance. We choose the best one. -> in ons protocol staat 1 of meer en hier zijn meerdere significant?
 
-```{r interaction term selection2}
-# store all other pred except for main pred
-other <- setdiff(predictor_list, "PctPopUnderPov")
+```{r interaction term selection 2}
+selected_vars <- row.names(multi_var_summary$coefficients[-(1:2),])
+interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
+ 
+formulas <- sapply(interaction_terms, function(i) {
+  paste0(best_pred, " + ", i)
+})
 
-  # Create interaction terms
-  interaction_terms <- paste("PctPopUnderPov", other, sep = ":")
+formulas <- lapply(formulas, as.formula)
+models <- lapply(formulas, lm, data=train_data)
+
+interaction_models_form <- vapply(formulas, function(f) 
+  paste(deparse(f), collapse = ""), character(1))
+summary_val_extraction <- function(x, item) {
+  tmp <- summary(x)$coefficients
+  tmp[nrow(tmp), item]
+}
+p_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "Pr(>|t|)"))
+t_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "t value"))
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+delta_adj_r_square <- sapply(models, function(m) 
+  summary(m)$adj.r.squared - summary(fit_multi)$adj.r.squared)
+
+interaction_table <- data.frame(
+  p.vals = p_vals_interaction,
+  t.vals = t_vals_interaction,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  delta.adj = delta_adj_r_square,
+  BIC = bics
+)
+interaction_table <- interaction_table[order(interaction_table$p.vals), ]
+interaction_table
   
-  # Evaluate each interaction term individually
-  interaction_results <- data.frame(
-    interaction = interaction_terms,
-    t_value = NA,
-    p_value = NA,
-    delta_adjrsq = NA
-  )
-  
-  for(i in seq_along(interaction_terms)) {
-    formula_single_int <- as.formula(paste("logViolent ~", 
-                                           paste(predictor_list, collapse = " + "), "+",
-                                           interaction_terms[i]))
-    fit_single_int <- lm(formula_single_int, data = train_data)
-    coef_summary <- summary(fit_single_int)$coefficients
-    int_row <- nrow(coef_summary)
-    interaction_results$t_value[i] <- coef_summary[int_row, "t value"]
-    interaction_results$p_value[i] <- coef_summary[int_row, "Pr(>|t|)"]
-    interaction_results$delta_adjrsq[i] <- summary(fit_single_int)$adj.r.squared - 
-                                           summary(fit_multi)$adj.r.squared
-  }
-  
-  interaction_results <- interaction_results[order(interaction_results$p_value), ]
-  cat("Interaction terms ranked by p-value:\n")
-  print(interaction_results)
-  
-  # Select best interaction
-  best_interaction <- c(interaction_results$interaction[1:3])
-  cat("\nSelected interaction term:", best_interaction, "\n")
+best_interaction <- row.names(interaction_table[1,])
 ```
 
 ## Multivariate Model
@@ -970,9 +986,22 @@ Based on the model selection procedure, we fit the multivariate model including 
 
 ```{r final model2}
 # Estimate model with interaction
+#formula_final <- as.formula(paste("logViolent ~", 
+                                  #paste(predictor_list, collapse = " + "), "+",
+                                  #paste(best_interaction, collapse = " + ")))
+
+
+# even handmatig aan modelselectie doen
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
-                                  paste(best_interaction, collapse = " + ")))
+                                  "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctImmig + PctPopUnderPov:PctBSorMore"))
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+
+# we kunnen opteren om PctPopUnderPov:PctImmig als interactie te laten vallen
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "), "+",
+                                  "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctBSorMore"))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
@@ -1024,6 +1053,27 @@ qqnorm(fit_final$residuals, main = "Normal Q-Q Plot (Final Model)")
 qqline(fit_final$residuals, col = "red")
 
 par(mfrow = c(1, 1))
+```
+
+
+```{r outliers vs population2}
+# outliers are more present in small pop?
+outlier_data <- train_data[outliers_simple, .(population, ViolentCrimesPerPop, PctPopUnderPov)]
+print(outlier_data)
+
+# Residuals vs population
+plot(lapply(train_data$population, log10), fit$residuals,
+     xlab = "log(population)", ylab = "Residuals",
+     main = "Residuals vs log(population)")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
+
+plot(lapply(train_data$population, log10), stud_res,
+     xlab = "log(population)", ylab = "Residuals",
+     main = "Studentized Residuals vs log(population)")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
+
 ```
 
 ## diagnostics
