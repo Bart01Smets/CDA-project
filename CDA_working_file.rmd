@@ -806,7 +806,7 @@ best_predictors <- best_predictors_reduced
 
 ### Assumption checks final model
 
-```{r final-model-diagnostics, fig.width=10, fig.height=8}
+```{r final model-diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
 
 #Residuals vs Fitted
@@ -1037,7 +1037,7 @@ diagplots <- olsrr::ols_plot_diagnostics(fit_final, print_plot = TRUE)
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
 
-```{r robust inference}
+```{r robust-inference}
 library(sandwich)
 library(lmtest)
 library(MASS)
