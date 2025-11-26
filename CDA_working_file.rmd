@@ -989,10 +989,19 @@ Based on the model selection procedure, we fit the multivariate model including 
 #formula_final <- as.formula(paste("logViolent ~", 
                                   #paste(predictor_list, collapse = " + "), "+",
                                   #paste(best_interaction, collapse = " + ")))
-# even handmatig doen
+
+
+# even handmatig aan modelselectie doen
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
                                   "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctImmig + PctPopUnderPov:PctBSorMore"))
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+
+# we kunnen opteren om PctPopUnderPov:PctImmig als interactie te laten vallen
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "), "+",
+                                  "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctBSorMore"))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
