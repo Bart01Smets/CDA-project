@@ -575,13 +575,13 @@ plot(train_data$logpopulation, fit$residuals,
      xlab = "log(population)", ylab = "Residuals",
      main = "Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
-lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
+lines(lowess(train_data$logpopulation, fit$residuals), col = "blue")
 
 plot(train_data$logpopulation, stud_res,
      xlab = "log(population)", ylab = "Residuals",
      main = "Studentized Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
-lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
+lines(lowess(train_data$logpopulation, stud_res), col = "blue")
 
 ```
 
@@ -1065,15 +1065,17 @@ plot(train_data$logpopulation, fit$residuals,
      xlab = "log(population)", ylab = "Residuals",
      main = "Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
-lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
+lines(lowess(train_data$logpopulation, fit$residuals), col = "blue")
 
 plot(train_data$logpopulation, stud_res,
      xlab = "log(population)", ylab = "Residuals",
      main = "Studentized Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
-lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
+lines(lowess(train_data$logpopulation, stud_res), col = "blue")
 
 ```
+
+
 
 ## diagnostics
 
