@@ -1236,25 +1236,11 @@ summary_results <- data.frame(
 kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
 ```
 
-## validation -> moet nog aangepast worden
+## validation
 Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the Mean Squared Error (MSE) from the training set.
+
+
 ```{r model validation}
-# Predictions on test set
-pred <- predict(fit_final, newdata = test_data)
-
-# MSPR 
-mspr <- mean((test_data$ViolentCrimesPerPop - pred)^2)
-
-# MSE training
-mse_final <- mean(fit_final$residuals^2)
-
-cat("MSE (training set):", round(mse_final, 2), "\n")
-cat("MSPR (test set):", round(mspr, 2), "\n")
-cat("Ratio MSPR/MSE:", round(mspr/mse_final, 4), "\n")
-
-```
-
-```{r als we log transform zouden gebruiken}
 # Predictions on test set
 test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
 pred <- predict(fit_final, newdata = test_data)
@@ -1270,22 +1256,36 @@ cat("MSPR (test set):", round(mspr, 2), "\n")
 cat("Ratio MSPR/MSE:", round(mspr/mse_final, 4), "\n")
 
 ```
+```{r model validation and population size}
+logpop_values <- seq(4.1, 6, 0.1)
 
-```{r validation plot, fig.width=8, fig.height=6}
-# validation
-plot(test_data$ViolentCrimesPerPop, pred,
-     xlab = "Observed ViolentCrimesPerPop", ylab = "Predicted",
-     main = "Observed vs Predicted")
+mspr_fun <- function(logpop, data, fit_final){
+  # filtering
+  data_filtered <- data[data$logpopulation < logpop + 0.1 & data$logpopulation > logpop - 0.1, ]
+  # Predictions on test set
+  pred <- predict(fit_final, newdata = data_filtered)
+  mspr <- mean((data_filtered$logViolent - pred)^2)
+}
 
-# R-squared on test set
-ss_res <- sum((test_data$ViolentCrimesPerPop - pred)^2)
-ss_tot <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
-r2_test <- 1 - ss_res/ss_tot
-cat("\nR² on test set:", round(r2_test, 4), "\n")
-cat("R² on training set:", round(summary(fit_final)$r.squared, 4), "\n")
+
+mspr_values_test <- sapply(logpop_values, FUN=mspr_fun, data=test_data, fit_final=fit_final)
+mspr_values_train <- sapply(logpop_values, FUN=mspr_fun, data=train_data, fit_final=fit_final)
+
+df_plot_logpop_mspr <- data.frame(logpop = logpop_values, mspr_values_test, mspr_values_train)
+
+ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_test)) +
+    geom_point(alpha = 0.6, size = 1.7) +
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(title = "Mean squared prediction error for test data vs logpop", x = "logpop", y = "mspr")
+ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
+    geom_point(alpha = 0.6, size = 1.7) +
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
 ```
 
-```{r aanpassing voor als we log transform gebruiken}
+```{r validation plot, fig.width=8, fig.height=6}
 # validation
 plot(test_data$logViolent, pred,
      xlab = "Observed ViolentCrimesPerPop (log scale)", ylab = "Predicted",
