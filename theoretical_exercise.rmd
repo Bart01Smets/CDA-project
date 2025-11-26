@@ -108,7 +108,63 @@ print(beta_hat[4])
 
 • Estimate the residual variance
 
-$$\hat{\sigma}^2 = \frac{\sum_{j=1}^{6} (n_j - 1) s_j^2}{N - p}$$
+
+$$
+\hat{\sigma}^2 = \frac{SSR}{N - p},
+$$
+
+where
+
+$$
+SSR = \sum_{i=1}^N (y_i - \hat{y}_i)^2
+$$
+
+is the sum of squared residuals
+
+For any individual \(i\) in group \(j\)
+
+$$
+\hat{y}_i = \bar{y}_j.
+$$
+
+--> residual is given by
+
+$$
+y_i - \hat{y}_i = y_i - \bar{y}_j.
+$$
+
+Therefore, 
+
+$$
+SSR = \sum_{j=1}^6 \sum_{i \in \text{group } j} (y_i - \bar{y}_j)^2.
+$$
+
+sample variance in group \(j\) is gvien by:
+
+$$
+s_j^2
+  = \frac{1}{n_j - 1}
+    \sum_{i \in j} (y_i - \bar{y}_j)^2.
+$$
+
+
+$$
+(n_j - 1)s_j^2
+  = \sum_{i \in j} (y_i - \bar{y}_j)^2.
+$$
+
+Thus, with the formula discussed earlier
+
+$$
+SSR = \sum_{j=1}^6 (n_j - 1)s_j^2.
+$$
+Plug into formula
+
+$$
+\hat{\sigma}^2
+  = \frac{SSR}{N - p}
+  = \frac{\sum_{j=1}^6 (n_j - 1)s_j^2}{N - p}.
+$$
 
 ```{r res var}
 ssd_in <- sum((n - 1) * sds^2)
