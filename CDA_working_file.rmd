@@ -398,7 +398,7 @@ In particular, the following variables appear to show a fairly linear trend:
 - *PctLess9thGrade*
 - *PctNotHSGrad*
 
-This implies that these variables are probably not suitable as additional predictors when *PctPopUnderPov* is already included in the model <as this may cause multicollinearity>.
+This implies that these variables are probably not suitable as additional predictors when *PctPopUnderPov* is already included in the model as this may cause multicollinearity.
 
 ```{r scatter plots, fig.width=8, fig.height=12}
 x_vars <- colnames(crimes_table_subset_num)
@@ -446,11 +446,13 @@ crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasin
 ```
 
 
-In the protocol it's stated that small communities may have a higher probability to have more extreme values of the predictor and response variables. To investigate this scatter plots are created with *population* as x variable. It is clear that communities with a very small population show a very large spread for all variables.
+In the protocol it's stated that small communities may have a higher probability to have more extreme values of the predictor and response variables. To investigate this scatter plots are created with log(*population*) as x variable. It is clear that communities with a very small population show a very large spread for all variables.
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
+crimes_table_subset_num$logpopulation <- lapply(crimes_table_subset_num$population, log10)
+crimes_table_subset_num$logpopulation <- log10(crimes_table_subset_num$population)
 df <- crimes_table_subset_num
-x_var <- "population"
+x_var <- "logpopulation"
 y_vars <- setdiff(colnames(df), x_var)
 plots <- lapply(y_vars, function(y_var) {
     ggplot(df, aes_string(x_var,y_var))+
@@ -458,7 +460,7 @@ plots <- lapply(y_vars, function(y_var) {
     geom_smooth(method = "lm", color = "blue", se = FALSE)+
     geom_smooth(method = "loess", color = "red", se = FALSE)+
     theme_bw(base_size = 8) +
-    labs(y = str_wrap(y_var, width = 45))
+    labs(x = "log(population)", y = str_wrap(y_var, width = 45))
 }
 )
 
@@ -569,13 +571,13 @@ outlier_data <- train_data[outliers_simple, .(population, ViolentCrimesPerPop, P
 print(outlier_data)
 
 # Residuals vs population
-plot(lapply(train_data$population, log10), fit$residuals,
+plot(train_data$logpopulation, fit$residuals,
      xlab = "log(population)", ylab = "Residuals",
      main = "Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
 lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
 
-plot(lapply(train_data$population, log10), stud_res,
+plot(train_data$logpopulation, stud_res,
      xlab = "log(population)", ylab = "Residuals",
      main = "Studentized Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
@@ -644,8 +646,7 @@ multi_var_summary
 ### Partial Regression Plots
 
 ```{r partial-regression-plots, fig.width=10, fig.height=8}
-predictor_list <- strsplit(best_pred, split = " ")[[1]]
-predictor_list <- grep(pattern = "\\w", predictor_list[3:length(predictor_list)], value = TRUE)
+predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 
 partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
   temp <- train_data
@@ -922,9 +923,7 @@ multi_var_summary
 ### Partial Regression Plots
 
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
-predictor_list <- strsplit(best_pred, split = " ")[[1]]
-predictor_list <- grep(pattern = "\\w", predictor_list[3:length(predictor_list)], value = TRUE)
-
+predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 plots <- lapply(predictor_list, function(predictor) {
     partial_regression_plot(train_data, "ViolentCrimesPerPop", predictor, predictor_list)
 }
@@ -1062,13 +1061,13 @@ outlier_data <- train_data[outliers_simple, .(population, ViolentCrimesPerPop, P
 print(outlier_data)
 
 # Residuals vs population
-plot(lapply(train_data$population, log10), fit$residuals,
+plot(train_data$logpopulation, fit$residuals,
      xlab = "log(population)", ylab = "Residuals",
      main = "Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
 lines(lowess(fit$fitted.values, fit$residuals), col = "blue")
 
-plot(lapply(train_data$population, log10), stud_res,
+plot(train_data$logpopulation, stud_res,
      xlab = "log(population)", ylab = "Residuals",
      main = "Studentized Residuals vs log(population)")
 abline(h = 0, col = "red", lty = 2)
