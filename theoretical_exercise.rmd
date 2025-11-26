@@ -119,13 +119,13 @@ print(beta_hat[4])
 
 
 $$
-\hat{\sigma}^2 = \frac{SSR}{N - p},
+\hat{\sigma}^2 = \frac{SSE}{N - p},
 $$
 
 where
 
 $$
-SSR = \sum_{i=1}^N (y_i - \hat{y}_i)^2
+SSE = \sum_{i=1}^N (y_i - \hat{y}_i)^2
 $$
 
 is the sum of squared residuals
@@ -183,7 +183,7 @@ print(resvar)
 ```
 
 • Interpret the gender-effect parameter(s)
-Females have a lower income on average than males, across all age groups together. The difference is small though (0.49 pounds).
+Females have a lower income on average than males, across all age groups together. The difference of the expected value is small though (0.49 pounds).
 
 • What would change above if sample consisted of brother-sister pairs?
 
