@@ -1,3 +1,12 @@
+---
+title: "Theoretical Exercise Analysis of Continuous Data"
+author: "Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van de Putte"
+date: "2025-11-26"
+output:
+  pdf_document: default
+  html_document: default
+---
+
 # Continuous data Homework
 # Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van De Putte
 
@@ -30,7 +39,7 @@ without interaction OR the same model without interaction but with age as a cont
 predictor
 • Write out the model
 
-Y_i = β_0 + β_1 * Age13_i + β_2 * Age15_i + β_3 * Female_i + ε_i
+$$Y_i = \beta_0 + \beta_1 \cdot \text{Age13}_i + \beta_2 \cdot \text{Age15}_i + \beta_3 \cdot \text{Female}_i + \varepsilon_i$$
 
 • Estimate the coefficients
 
