@@ -33,6 +33,13 @@ predictor
 Y_i = β_0 + β_1 * Age13_i + β_2 * Age15_i + β_3 * Female_i + ε_i
 
 • Estimate the coefficients
+
+$$\hat{\beta} = (X'X)^{-1}X'y$$
+with 
+$$X'X = \sum_{j=1}^{6} n_j \cdot x_j x_j'$$
+and
+$$X'y = \sum_{j=1}^{6} n_j x_j\bar{y}_j$$
+
 ```{r coeff}
 
 # Data input
@@ -65,7 +72,7 @@ XtransX <- XtransX + n * outer(x4, x4)
 
 # 15yo, male
 x5 <- c(1, 0, 1, 0)
-XttransX <- XtransX + n * outer(x5, x5)
+XtransX <- XtransX + n * outer(x5, x5)
 
 # 15yo, female
 x6 <- c(1, 0, 1, 1)
@@ -100,14 +107,22 @@ print(beta_hat[4])
 
 
 • Estimate the residual variance
+
+$$\hat{\sigma}^2 = \frac{\sum_{j=1}^{6} (n_j - 1) s_j^2}{N - p}$$
+
 ```{r res var}
 ssd_in <- sum((n - 1) * sds^2)
+dof<-ntot-4
+resvar<- ssd_in/dof
+print(resvar)
 ```
 
 • Interpret the gender-effect parameter(s)
+Females have a lower income on average than males, across all age groups together. The difference is small though (0.49 pounds).
+
 • What would change above if sample consisted of brother-sister pairs?
 
-The assumption of independence would be violated as observations are correlated (brothers and sisters come from same family). Coeff remain same, but SE's underestimated?
+The assumption of independence would be violated as observations are correlated (brothers and sisters come from same family).
 
 • (Continue as if all outcomes are independent)
 
