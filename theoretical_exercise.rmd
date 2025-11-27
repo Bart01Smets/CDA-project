@@ -214,11 +214,18 @@ print(resvar)
 ```
 
 • Interpret the gender-effect parameter(s)
+The expected value of the income of a female is 0.49 pounds less that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
+
+
+
 Females have a lower income on average than males, across all age groups together. The difference of the expected value is small though (0.49 pounds).
+
+
+
 
 • What would change above if sample consisted of brother-sister pairs?
 
-The assumption of independence would be violated as observations are correlated (brothers and sisters come from same family).
+The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family).
 
 • (Continue as if all outcomes are independent)
 
