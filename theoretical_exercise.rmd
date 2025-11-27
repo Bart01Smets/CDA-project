@@ -67,7 +67,7 @@ beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
 
 HAT <- X %*% solve(t(X) %*% X) %*% t(X)
 SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
-SSE <- sum(n*(sds_vector^2)) + SSE_mod*n
+SSE <- sum((n-1)*(sds_vector^2)) + SSE_mod*n
 MSE <- SSE/(ntot-4)
 
 ```
@@ -260,8 +260,8 @@ beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
 
 HAT <- X %*% solve(t(X) %*% X) %*% t(X)
 SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
-SSE <- sum(n*(sds_vector^2)) + SSE_mod*n
-MSE <- SSE/(ntot-nr_of_betas)
+SSE <- sum((n-1)*(sds_vector^2)) + SSE_mod*n
+MSE <- SSE/(ntot-4)
 
 ```
 
