@@ -15,10 +15,10 @@ x4 <- c(1, 1, 0, 1) # 13yo, female
 x5 <- c(1, 0, 1, 0) # 15yo, male
 x6 <- c(1, 0, 1, 1) # 15yo, female
 
-
 # check simulation
 n_sim <- 1000
-beta_simulation_vector <- matrix(rep(0, n_sim * 4), ncol = 4)
+nr_of_betas <- 6
+beta_simulation_vector <- matrix(rep(0, n_sim * nr_of_betas), ncol = nr_of_betas)
 mse_simulation_vector <- rep(0, n_sim)
 sse_simulation_vector <- rep(0, n_sim)
 
@@ -42,8 +42,9 @@ for(i in seq(1,n_sim)){
   beta_simulation_vector[i,] <- solve(t(X_simulation) %*% X_simulation) %*% t(X_simulation) %*% Y_simulation
   # check fit means
   df_simulation <- data.frame(X_simulation, y = Y_simulation)
-  colnames(df_simulation) <- c("intercept", "age11", "age13", "female", "y")
-  fit_simulation <- lm(y ~ age11 + age13 + female, df_simulation)
+  colnames(df_simulation) <- c("intercept", "age13", "age15", "female", "y")
+  fit_simulation <- lm(y ~ age13 + age15 + female + age13*female + age15*female, df_simulation)
+  beta_simulation_vector[i,] <- coef(fit_simulation)
   res <- residuals(fit_simulation)
   mse_simulation_vector[i] <- mean(res^2)
   sse_simulation_vector[i] <- sum(res^2)
