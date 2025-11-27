@@ -43,6 +43,37 @@ $$Y_i = \beta_0 + \beta_1 \cdot \text{Age13}_i + \beta_2 \cdot \text{Age15}_i + 
 
 • Estimate the coefficients
 
+```{r matrices 2}
+# Solution with matrices
+
+# Data input
+ntot <- 2142
+n <- ntot/6 #(357)
+
+age <- c(11, 11, 13, 13, 15, 15)
+gender <- c("Male", "Female", "Male", "Female", "Male", "Female")
+mean_vector <- c(4.56, 4.38, 8.78, 8.30, 15.94, 15.13)
+sds_vector <- c(4.10, 4.16, 6.97, 6.57, 16.21, 12.90)
+
+x1 <- c(1, 0, 0, 0) # 11yo, male
+x2 <- c(1, 0, 0, 1) # 11yo, female
+x3 <- c(1, 1, 0, 0) # 13yo, male
+x4 <- c(1, 1, 0, 1) # 13yo, female
+x5 <- c(1, 0, 1, 0) # 15yo, male
+x6 <- c(1, 0, 1, 1) # 15yo, female
+
+X <- rbind(x1, x2, x3, x4, x5, x6)
+beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
+
+HAT <- X %*% solve(t(X) %*% X) %*% t(X)
+SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
+SSE <- sum(n*(sds_vector^2)) + SSE_mod*n
+MSE <- SSE/(ntot-4)
+
+```
+
+
+
 $$\hat{\beta} = (X'X)^{-1}X'y$$
 with 
 $$X'X = \sum_{j=1}^{6} n_j \cdot x_j x_j'$$
@@ -148,7 +179,7 @@ $$
 SSR = \sum_{j=1}^6 \sum_{i \in \text{group } j} (y_i - \bar{y}_j)^2.
 $$
 
-sample variance in group \(j\) is gvien by:
+sample variance in group \(j\) is given by:
 
 $$
 s_j^2
@@ -201,6 +232,39 @@ their interaction.
 • Estimate the coefficients
 • Estimate the residual variance
 • Interpret the gender-effect parameter(s)
+
+$$Y_i = \beta_0 + \beta_1 \cdot \text{Age13}_i + \beta_2 \cdot \text{Age15}_i + \beta_3 \cdot \text{Female}_i + \beta_4 \cdot \text{Age13}_i \cdot \text{Female}_i + \beta_5 \cdot \text{Age15}_i \cdot \text{Female}_i+ \varepsilon_i$$
+
+```{r matrices 3}
+# Solution with matrices
+
+# Data input
+ntot <- 2142
+n <- ntot/6 #(357)
+nr_of_betas <- 6
+
+age <- c(11, 11, 13, 13, 15, 15)
+gender <- c("Male", "Female", "Male", "Female", "Male", "Female")
+mean_vector <- c(4.56, 4.38, 8.78, 8.30, 15.94, 15.13)
+sds_vector <- c(4.10, 4.16, 6.97, 6.57, 16.21, 12.90)
+
+x1 <- c(1, 0, 0, 0, 0, 0) # 11yo, male
+x2 <- c(1, 0, 0, 1, 0, 0) # 11yo, female
+x3 <- c(1, 1, 0, 0, 0, 0) # 13yo, male
+x4 <- c(1, 1, 0, 1, 1, 0) # 13yo, female
+x5 <- c(1, 0, 1, 0, 0, 0) # 15yo, male
+x6 <- c(1, 0, 1, 1, 0, 1) # 15yo, female
+
+X <- rbind(x1, x2, x3, x4, x5, x6)
+beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
+
+HAT <- X %*% solve(t(X) %*% X) %*% t(X)
+SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
+SSE <- sum(n*(sds_vector^2)) + SSE_mod*n
+MSE <- SSE/(ntot-nr_of_betas)
+
+```
+
 
 4. Compare both models in terms of:
 • Underlying assumptions
