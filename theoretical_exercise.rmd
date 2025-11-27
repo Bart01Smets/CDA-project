@@ -1,3 +1,12 @@
+---
+title: "Theoretical Exercise Analysis of Continuous Data"
+author: "Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van de Putte"
+date: "2025-11-26"
+output:
+  pdf_document: default
+  html_document: default
+---
+
 # Continuous data Homework
 # Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van De Putte
 
@@ -29,11 +38,162 @@ The effect looks non-linear, as the increase in total income between age 13 and 
 without interaction OR the same model without interaction but with age as a continuous
 predictor
 • Write out the model
+
+$$Y_i = \beta_0 + \beta_1 \cdot \text{Age13}_i + \beta_2 \cdot \text{Age15}_i + \beta_3 \cdot \text{Female}_i + \varepsilon_i$$
+
 • Estimate the coefficients
+
+$$\hat{\beta} = (X'X)^{-1}X'y$$
+with 
+$$X'X = \sum_{j=1}^{6} n_j \cdot x_j x_j'$$
+and
+$$X'y = \sum_{j=1}^{6} n_j x_j\bar{y}_j$$
+
+```{r coeff}
+
+# Data input
+ntot <- 2142
+n <- 357 #(2142/6)
+
+age <- c(11, 11, 13, 13, 15, 15)
+gender <- c("Male", "Female", "Male", "Female", "Male", "Female")
+mean <- c(4.56, 4.38, 8.78, 8.30, 15.94, 15.13)
+sds <- c(4.10, 4.16, 6.97, 6.57, 16.21, 12.90)
+
+#est coeff
+XtransX <- matrix(0, 4, 4)
+
+# 11 yo, male
+x1 <- c(1, 0, 0, 0)
+XtransX <- XtransX + n * outer(x1, x1)
+
+# 11yo, female
+x2 <- c(1, 0, 0, 1)
+XtransX <- XtransX + n * outer(x2, x2)
+
+# 13 yo, male
+x3 <- c(1, 1, 0, 0)
+XtransX <- XtransX + n * outer(x3, x3)
+
+# 13yo, female
+x4 <- c(1, 1, 0, 1)
+XtransX <- XtransX + n * outer(x4, x4)
+
+# 15yo, male
+x5 <- c(1, 0, 1, 0)
+XtransX <- XtransX + n * outer(x5, x5)
+
+# 15yo, female
+x6 <- c(1, 0, 1, 1)
+XtransX <- XtransX + n * outer(x6, x6)
+
+print(XtransX)
+
+# Get Xtransposed*y
+
+Xtransy <- n * (x1 * mean[1] + 
+            x2 * mean[2] + 
+            x3 * mean[3] + 
+            x4 * mean[4] + 
+            x5 * mean[5] + 
+            x6 * mean[6])
+
+print(Xtransy)
+
+#Solve eq
+beta_hat <- solve(XtransX) %*% Xtransy
+
+print(beta_hat[1]) #intercept
+
+print(beta_hat[2])
+
+print(beta_hat[3])
+
+print(beta_hat[4])
+
+
+```
+
+
 • Estimate the residual variance
+
+
+$$
+\hat{\sigma}^2 = \frac{SSE}{N - p},
+$$
+
+where
+
+$$
+SSE = \sum_{i=1}^N (y_i - \hat{y}_i)^2
+$$
+
+is the sum of squared residuals
+
+For any individual \(i\) in group \(j\)
+
+$$
+\hat{y}_i = \bar{y}_j.
+$$
+
+--> residual is given by
+
+$$
+y_i - \hat{y}_i = y_i - \bar{y}_j.
+$$
+
+Therefore, 
+
+$$
+SSR = \sum_{j=1}^6 \sum_{i \in \text{group } j} (y_i - \bar{y}_j)^2.
+$$
+
+sample variance in group \(j\) is gvien by:
+
+$$
+s_j^2
+  = \frac{1}{n_j - 1}
+    \sum_{i \in j} (y_i - \bar{y}_j)^2.
+$$
+
+
+$$
+(n_j - 1)s_j^2
+  = \sum_{i \in j} (y_i - \bar{y}_j)^2.
+$$
+
+Thus, with the formula discussed earlier
+
+$$
+SSR = \sum_{j=1}^6 (n_j - 1)s_j^2.
+$$
+Plug into formula
+
+$$
+\hat{\sigma}^2
+  = \frac{SSR}{N - p}
+  = \frac{\sum_{j=1}^6 (n_j - 1)s_j^2}{N - p}.
+$$
+
+```{r res var}
+ssd_in <- sum((n - 1) * sds^2)
+dof<-ntot-4
+resvar<- ssd_in/dof
+print(resvar)
+```
+
 • Interpret the gender-effect parameter(s)
+Females have a lower income on average than males, across all age groups together. The difference of the expected value is small though (0.49 pounds).
+
 • What would change above if sample consisted of brother-sister pairs?
+
+The assumption of independence would be violated as observations are correlated (brothers and sisters come from same family).
+
 • (Continue as if all outcomes are independent)
+
+
+
+
 
 3. Fit a standard linear model with both age and gender as categorical variables. Include
 their interaction.
