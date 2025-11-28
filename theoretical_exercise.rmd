@@ -216,8 +216,16 @@ The gender-effect parameters can be interpreted as follows.
 
 4. Compare both models in terms of:
 • Underlying assumptions
+
+gender-effect independent of age-effect...
+
 • Formally test if the model with interaction (3.) fits the data better
+
+In theorie obs MSE niet? Maar volgens de simulaties wel, omdat een deel van de variantie binnen de groepen ook gemodelleerd wordt door het model?
 
 5. From the model with interaction (3.), derive a 95% prediction interval for the income of
 a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage?
 Why? If not, will the coverage tend to be higher or lower?
+
+In principe gaat een lineair model wel uit van homoscedasticiteit, dus dan gaat je coverage niet uitkomen (aangezien de data duidelijk heteroscedastisch zijn)
+Je zou voor de bepalen van je predictie interval wel kunnen rekening houden met de variantie waargenomen voor meisjes van 15 jaar.
