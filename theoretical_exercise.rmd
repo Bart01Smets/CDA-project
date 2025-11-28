@@ -7,6 +7,18 @@ output:
   html_document: default
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,       # code verbergen
+  message = FALSE,    # geen messages
+  warning = FALSE     # geen warnings
+)
+```
+
+```{r settings}
+options(width = 100) 
+```
+
 # Continuous data Homework
 # Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van De Putte
 
@@ -38,14 +50,14 @@ The effect looks non-linear, as the increase in total income between age 13 and 
 without interaction OR the same model without interaction but with age as a continuous
 predictor
 • Write out the model
-
-$$Y_i = \beta_0 + \beta_1 \cdot \text{Age13}_i + \beta_2 \cdot \text{Age15}_i + \beta_3 \cdot \text{Female}_i + \varepsilon_i$$
-
 • Estimate the coefficients
+• Estimate the residual variance
 
+We will model the income of an individual $i$ of group $j$ by the following formula.
+$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \varepsilon_{ij}$$
+Design matrix X:
 ```{r matrices 2}
 # Solution with matrices
-
 # Data input
 ntot <- 2142
 n <- ntot/6 #(357)
@@ -64,173 +76,69 @@ x6 <- c(1, 0, 1, 1) # 15yo, female
 
 X <- rbind(x1, x2, x3, x4, x5, x6)
 beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
-
 HAT <- X %*% solve(t(X) %*% X) %*% t(X)
 SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
 SSE <- sum((n-1)*(sds_vector^2)) + SSE_mod*n
 MSE <- SSE/(ntot-4)
-
+X
 ```
+So we assume six groups with $n_j$ (`r n`) members.
 
+- $x1$ is the group with 11 year old males;
+- $x2$ is the group with 11 year old females;
+- $x3$ is the group with 13 year old males;
+- $x4$ is the group with 13 year old females;
+- $x5$ is the group with 15 year old males;
+- $x6$ is the group with 15 year old females.
 
-
-$$\hat{\beta} = (X'X)^{-1}X'y$$
-with 
-$$X'X = \sum_{j=1}^{6} n_j \cdot x_j x_j'$$
-and
-$$X'y = \sum_{j=1}^{6} n_j x_j\bar{y}_j$$
-
-```{r coeff}
-
-# Data input
-ntot <- 2142
-n <- 357 #(2142/6)
-
-age <- c(11, 11, 13, 13, 15, 15)
-gender <- c("Male", "Female", "Male", "Female", "Male", "Female")
-mean <- c(4.56, 4.38, 8.78, 8.30, 15.94, 15.13)
-sds <- c(4.10, 4.16, 6.97, 6.57, 16.21, 12.90)
-
-#est coeff
-XtransX <- matrix(0, 4, 4)
-
-# 11 yo, male
-x1 <- c(1, 0, 0, 0)
-XtransX <- XtransX + n * outer(x1, x1)
-
-# 11yo, female
-x2 <- c(1, 0, 0, 1)
-XtransX <- XtransX + n * outer(x2, x2)
-
-# 13 yo, male
-x3 <- c(1, 1, 0, 0)
-XtransX <- XtransX + n * outer(x3, x3)
-
-# 13yo, female
-x4 <- c(1, 1, 0, 1)
-XtransX <- XtransX + n * outer(x4, x4)
-
-# 15yo, male
-x5 <- c(1, 0, 1, 0)
-XtransX <- XtransX + n * outer(x5, x5)
-
-# 15yo, female
-x6 <- c(1, 0, 1, 1)
-XtransX <- XtransX + n * outer(x6, x6)
-
-print(XtransX)
-
-# Get Xtransposed*y
-
-Xtransy <- n * (x1 * mean[1] + 
-            x2 * mean[2] + 
-            x3 * mean[3] + 
-            x4 * mean[4] + 
-            x5 * mean[5] + 
-            x6 * mean[6])
-
-print(Xtransy)
-
-#Solve eq
-beta_hat <- solve(XtransX) %*% Xtransy
-
-print(beta_hat[1]) #intercept
-
-print(beta_hat[2])
-
-print(beta_hat[3])
-
-print(beta_hat[4])
-
-
+$\beta$ can be estimated using the following equation:
+$$\hat{\beta} = (X'X)^{-1}X'Y$$
+After computation, the following vector is obtained for $\hat{\beta}$:
+```{r beta1}
+rownames(beta) <- c("Intercept", "Age13", "Age15", "Female")
+colnames(beta) <- "beta estimated"
+print(beta)
 ```
+These are the estimated slope coefficients.
 
+To estimate the residual variance, the SSE (sum of squared errors of the residuals) will be calculated. The SSE is not restricted to the SSE due to the modelling of the means of the groups (since the model without interaction terms will not give exact predictions of the group means). Also inside the groups there is a natural deviation from the mean. The SSE can be calculated as the sum of
 
-• Estimate the residual variance
+- $n_j \cdot SSE_{model}$: the sum of squared residuals that is due to the fact that a linear model with 4 parameters is fitted to 6 data points. $SS_{model}$ is multiplicated with $n_j$ (the number of observations in each group), because $SSE_{model}$ is the sum for only six datapoints;
+- $SSE_{groups}$: the sum of squared residuals that is due to the fact that there is a variance in the groups.
 
+$$SSE_{total} = n_j \cdot SSE_{model} + SSE_{groups} = n_j \cdot \sum_{j=1}^{6} (\hat{y_{j}}-y_{j})^2 + \sum_{j=1}^{6}\sum_{i=1}^{n_j} (y_{ij}-y_{j})^2$$
+with $\hat{y_j}$ the estimated average income of individuals of group $j$, $y_{j}$ the observed average income of individuals of group $j$ and $y_{ij}$ the observed income of an individual of group $j$.
 
-$$
-\hat{\sigma}^2 = \frac{SSE}{N - p},
-$$
+To estimate $SSE_{model}$ the following equations are used.
+$$H = X(X'X)^{-1}X'$$
+$$SSE_{model} = Y'(I-H)Y$$
+After calculation for $SSE_{model}$ a value of `r SSE_mod` can be obtained.
 
-where
+To calculate $SSE_{groups}$ for each group the formula $j$ $\sum_{i=1}^{n_j} (y_{ij}-\bar{y_{j}})^2$ is calculated based on the given standard deviations. We consider that these standard deviations are calculated from the data itself, so consider $n_j - 1$ degrees of freedom.
 
-$$
-SSE = \sum_{i=1}^N (y_i - \hat{y}_i)^2
-$$
+$$s_j^2 = \frac{1}{n_j - 1} \sum_{i=1}^{n_j} (y_{ij} - y_j)^2 \quad\text{so}\quad \sum_{i=1}^{n_j} (y_{ij} - y_j)^2 = (n_j - 1) \cdot s_j^2$$
+So $SSE_{groups}$ can be calculated as follows.
+$$SSE_{groups} = \sum_{j=1}^{6}\sum_{i=1}^{n_j} (y_{ij}-y_{j})^2 = \sum_{j=1}^{6}\left[(n_j - 1) \cdot s_j^2 \right]$$
+And $MSE$ as follows.
+$$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$
+with:
 
-is the sum of squared residuals
+- $SSE_{model} =$ `r SSE_mod`;
+- $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
+- $n_{tot} =$ `r ntot`;
+- $p = 4$.
 
-For any individual \(i\) in group \(j\)
-
-$$
-\hat{y}_i = \bar{y}_j.
-$$
-
---> residual is given by
-
-$$
-y_i - \hat{y}_i = y_i - \bar{y}_j.
-$$
-
-Therefore, 
-
-$$
-SSR = \sum_{j=1}^6 \sum_{i \in \text{group } j} (y_i - \bar{y}_j)^2.
-$$
-
-sample variance in group \(j\) is given by:
-
-$$
-s_j^2
-  = \frac{1}{n_j - 1}
-    \sum_{i \in j} (y_i - \bar{y}_j)^2.
-$$
-
-
-$$
-(n_j - 1)s_j^2
-  = \sum_{i \in j} (y_i - \bar{y}_j)^2.
-$$
-
-Thus, with the formula discussed earlier
-
-$$
-SSR = \sum_{j=1}^6 (n_j - 1)s_j^2.
-$$
-Plug into formula
-
-$$
-\hat{\sigma}^2
-  = \frac{SSR}{N - p}
-  = \frac{\sum_{j=1}^6 (n_j - 1)s_j^2}{N - p}.
-$$
-
-```{r res var}
-ssd_in <- sum((n - 1) * sds^2)
-dof<-ntot-4
-resvar<- ssd_in/dof
-print(resvar)
-```
+After calculation we derive that MSE is equal to `r MSE`.
 
 • Interpret the gender-effect parameter(s)
-The expected value of the income of a female is 0.49 pounds less that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
 
-
-
-Females have a lower income on average than males, across all age groups together. The difference of the expected value is small though (0.49 pounds).
-
-
-
+The expected value of the income of a female is `r -beta[4]` pounds less that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
 
 • What would change above if sample consisted of brother-sister pairs?
 
 The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family).
 
 • (Continue as if all outcomes are independent)
-
-
-
 
 
 3. Fit a standard linear model with both age and gender as categorical variables. Include
@@ -240,8 +148,8 @@ their interaction.
 • Estimate the residual variance
 • Interpret the gender-effect parameter(s)
 
-$$Y_i = \beta_0 + \beta_1 \cdot \text{Age13}_i + \beta_2 \cdot \text{Age15}_i + \beta_3 \cdot \text{Female}_i + \beta_4 \cdot \text{Age13}_i \cdot \text{Female}_i + \beta_5 \cdot \text{Age15}_i \cdot \text{Female}_i+ \varepsilon_i$$
-
+We will model the income of an individual $i$ of group $j$ by the following formula.
+$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$
 ```{r matrices 3}
 # Solution with matrices
 
@@ -268,10 +176,43 @@ beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
 HAT <- X %*% solve(t(X) %*% X) %*% t(X)
 SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
 SSE <- sum((n-1)*(sds_vector^2)) + SSE_mod*n
-MSE <- SSE/(ntot-4)
-
+MSE <- SSE/(ntot-6)
 ```
 
+To solve this exercise the following $X$-matrix can be used:
+```{r}
+X
+```
+So the $X$-matrix has two extra columns, because of the two extra parameters.
+
+$\beta$ can again be estimated using the following equation:
+$$\hat{\beta} = (X'X)^{-1}X'Y$$
+After computation, the following vector is obtained for $\hat{\beta}$:
+```{r beta2}
+rownames(beta) <- c("Intercept", "Age13", "Age15", "Female", "Age13*Female", "Age15*Female")
+colnames(beta) <- "beta estimated"
+print(beta)
+```
+
+The MSE can be calculated using the same formulas as mentioned in exercise 2.
+$$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$
+with:
+
+- $SSE_{model} =$ `r SSE_mod`;
+- $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
+- $n_{tot} =$ `r ntot`;
+- $p = 6$.
+
+After calculation we derive that MSE is equal to `r MSE`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formulae to calculate is now smaller (more parameters in the model).
+
+It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is equal to zero, because a model with six parameters is fitted to 6 datapoints. So the group the estimates for the averages of the groups will be exactly equal to the observed averages.
+
+$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$
+The gender-effect parameters can be interpreted as follows.
+
+- $\beta_3 =$ `r beta[4]`: a female of 11 years old is expected to have an income of `r -beta[4]` (-$\beta_3$) pound less than a male of 11 years old;
+- $\beta_4 =$ `r beta[5]`: `r beta[4]` ($\beta_3$) + `r beta[5]` ($\beta_4$) $=$ `r beta[4]+beta[5]`, so a female of 13 years old is expected to have an income of `r -beta[4]-beta[5]` pound less than a male of 13 years old;
+- $\beta_5 =$ `r beta[6]`: `r beta[4]` ($\beta_3$) + `r beta[6]` ($\beta_5$) $=$ `r beta[4]+beta[6]`, so a female of 15 years old is expected to have an income of `r -beta[4]-beta[6]` pound less than a male of 15 years old;
 
 4. Compare both models in terms of:
 • Underlying assumptions

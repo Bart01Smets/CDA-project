@@ -16,7 +16,7 @@ x5 <- c(1, 0, 1, 0) # 15yo, male
 x6 <- c(1, 0, 1, 1) # 15yo, female
 
 # check simulation
-n_sim <- 10000
+n_sim <- 100000
 nr_of_betas <- length(x1)
 beta_simulation_vector <- matrix(rep(0, n_sim * nr_of_betas), ncol = nr_of_betas)
 mse_simulation_vector <- rep(0, n_sim)
@@ -55,11 +55,11 @@ mean(sse_simulation_vector)
 
 #### Met 10000 simulaties
 # > apply(beta_simulation_vector, 2, mean)
-# [1]  4.7186454  4.0673794 11.0621381 -0.4923581
+# [1]  4.7151774  4.0700677 11.0636506 -0.4896918
 # > mean(mse_simulation_vector)
-# [1] 92.31798
+# [1] 92.36081
 # > mean(sse_simulation_vector)
-# [1] 197745.1
+# [1] 197836.8
 
 
 
