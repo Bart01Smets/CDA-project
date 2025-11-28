@@ -221,7 +221,7 @@ gender-effect independent of age-effect...
 
 • Formally test if the model with interaction (3.) fits the data better
 
-In theorie obs MSE niet? Maar volgens de simulaties wel, omdat een deel van de variantie binnen de groepen ook gemodelleerd wordt door het model?
+In theorie obs MSE niet? Maar volgens de simulaties wel, omdat een deel van de variantie binnen de groepen ook gemodelleerd wordt door het model? SSE zal wel beter zijn. Rkwadraat? Rkwadraat adjusted?...
 
 5. From the model with interaction (3.), derive a 95% prediction interval for the income of
 a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage?
