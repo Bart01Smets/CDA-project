@@ -44,7 +44,7 @@ Total almost always looks like the average of girl and boy so yes?
   1. We could consider evaluating age as a continuous variable.
 • Looking at Figure 1, would such a model provide a good fit? Explain
 
-The effect looks non-linear, as the increase in total income between age 13 and 15 is a lot bigger than between 11 and 13. So it is probably better to keep it categorical. Difficult to say with only 3 datapoints though.
+By treating age as a continuous variable, assumptions about functional form are made. Here, the effect looks non-linear, as the increase in total income between age 13 and 15 is a lot bigger than between 11 and 13. Therefore it seems more reasonable to keep it categorical. Difficult to say with only 3 datapoints though. 
 
 2. Depending on your answer in 1. fit either a model with age and gender as categorical, but
 without interaction OR the same model without interaction but with age as a continuous
@@ -63,7 +63,9 @@ ntot <- 2142
 n <- ntot/6 #(357)
 
 age <- c(11, 11, 13, 13, 15, 15)
+#age <- rep(c(11,13,15), each = 2)
 gender <- c("Male", "Female", "Male", "Female", "Male", "Female")
+#gender <- rep(c("Male", "Female"), times = 3)
 mean_vector <- c(4.56, 4.38, 8.78, 8.30, 15.94, 15.13)
 sds_vector <- c(4.10, 4.16, 6.97, 6.57, 16.21, 12.90)
 
@@ -132,11 +134,11 @@ After calculation we derive that MSE is equal to `r MSE`.
 
 • Interpret the gender-effect parameter(s)
 
-The expected value of the income of a female is `r -beta[4]` pounds less that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
+The expected value of the <moet hier nog 'mean' staan?> income of a female is `r -beta[4]` pounds less than that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
 
 • What would change above if sample consisted of brother-sister pairs?
 
-The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family).
+The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family <where for example the same amount for pocket money will be given>).
 
 • (Continue as if all outcomes are independent)
 
@@ -203,21 +205,24 @@ with:
 - $n_{tot} =$ `r ntot`;
 - $p = 6$.
 
-After calculation we derive that MSE is equal to `r MSE`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formulae to calculate is now smaller (more parameters in the model).
+After calculation we derive that MSE is equal to `r MSE`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formula is now smaller (more parameters in the model).
 
-It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is equal to zero, because a model with six parameters is fitted to 6 datapoints. So the group the estimates for the averages of the groups will be exactly equal to the observed averages.
+It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is (ik zou essentially ipv equal zeggen -> voorzichtiger) equal to zero, because a model with six parameters is fitted to 6 data points. So the group the (bedoel je 'of'?) estimates for the averages of the groups will be exactly equal to the observed averages.
 
-$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$
+$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$  (waarom staat die hier nog eens?)
+
 The gender-effect parameters can be interpreted as follows.
 
 - $\beta_3 =$ `r beta[4]`: a female of 11 years old is expected to have an income of `r -beta[4]` (-$\beta_3$) pound less than a male of 11 years old;
-- $\beta_4 =$ `r beta[5]`: `r beta[4]` ($\beta_3$) + `r beta[5]` ($\beta_4$) $=$ `r beta[4]+beta[5]`, so a female of 13 years old is expected to have an income of `r -beta[4]-beta[5]` pound less than a male of 13 years old;
+- $\beta_4 =$ `r beta[5]`: `r beta[4]` ($\beta_3$) + `r beta[5]` ($\beta_4$) $=$ `r beta[4]+beta[5]`, so a female of 13 years old is expected to have an income of `r -beta[4]-beta[5]` pounds less than a male of 13 years old;
 - $\beta_5 =$ `r beta[6]`: `r beta[4]` ($\beta_3$) + `r beta[6]` ($\beta_5$) $=$ `r beta[4]+beta[6]`, so a female of 15 years old is expected to have an income of `r -beta[4]-beta[6]` pound less than a male of 15 years old;
 
 4. Compare both models in terms of:
 • Underlying assumptions
 
-gender-effect independent of age-effect...
+In the model without interaction, gender is assumed to have the same effect regardless of ages (gender-effect independent of age_effect). In theory this means that gender would only influence the intercept and not the slope. Since in this model only qualitative variables are included, we take this to mean that the vertical distance between predicted means for males and females are is constant across age categories. The regression functions for all combinations are parallel to each other.
+
+In the second model, where interaction is included, the effect of gender is no longer independent and changes with age. This is a reinforcement-type effect: with increasing age, the gender gap increases as well (the 'slope' becomes steeper).
 
 • Formally test if the model with interaction (3.) fits the data better
 
