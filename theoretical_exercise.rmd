@@ -69,7 +69,6 @@ HAT <- X %*% solve(t(X) %*% X) %*% t(X)
 SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
 SSE <- sum(n*(sds_vector^2)) + SSE_mod*n
 MSE <- SSE/(ntot-4)
-
 ```
 
 
