@@ -1109,7 +1109,7 @@ qqline(resid(robust))
 ```
 
 A comparison of the coefficients reveal no substantial differences, indicating that the influential points are not the result of gross errors. <hier moeten nog extra checks van influence on inferences bij>.
-The identified leverage-points can be called 'good leverages' as they exhibit high leverage but their residuals are still small, this even improves the precision of the regression coefficients. (zie referentie) Wat bedoelen we hiermee? Het feit dat de regressiecoefficienten niet zoveel verschillen na robust regression kan misschien liggen aan het feit dat er zodanig veel punten zijn, dat de invloed van punten met een hoge leverage eigenlijk uiteindelijk niet zo groot is? Of dat ze elkaar compenseren uiteraard. Er staat "zie referentie" -> welke referentie?)
+The identified leverage-points can be called 'good leverages' as they exhibit high leverage but their residuals are still small, this even improves the precision of the regression coefficients. (zie referentie) It'
 
 ```{r influence inference}
 # Compare OLS vs Robust coefficients
@@ -1330,7 +1330,7 @@ cat("R² on training set (log scale):", round(summary(fit_final)$r.squared, 4), 
 
 # Statistical discussion
 
-The dataset is not random or representative of all US communities. The main missing data source is ViolentCrimesPerPop, where 221 observations are missing because of incomplete rape reporting in Midwestern States. As violent crime is calculated as the sum of a few components, including rape, missing values are not random and come from  state-specific reporting. Removing these observations thus leads to the underrepresentation of  certain regions and could bias national estimates. We hebben in the descriptives section wel getest of de karakteristieken van de missing data verschillend zijn tov de non missing data en we hebben geen duidelijke verschillen gevonden.
+The dataset is not random or representative of all US communities. The main missing data source is ViolentCrimesPerPop, where 221 observations are missing because of incomplete rape reporting in Midwestern States. As violent crime is calculated as the sum of a few components, including rape, missing values are not random and come from  state-specific reporting. Removing these observations thus leads to the underrepresentation ofcertain regions and could bias national estimates. We hebben in the descriptives section wel getest of de karakteristieken van de missing data verschillend zijn tov de non missing data en we hebben geen duidelijke verschillen gevonden.
 
 Second, the LEMAS survey includes all police departments with at least 100 officers and only a random sample of smaller ones. Because of this, large communities (and thus more urban communities) are overrepresented, but many small towns are not represented in the dataset. Thus, relationships found in the analysis should be interpreted at the city-level, and may be less likely to translate to the rural communities.
 
