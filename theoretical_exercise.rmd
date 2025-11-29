@@ -76,12 +76,12 @@ x4 <- c(1, 1, 0, 1) # 13yo, female
 x5 <- c(1, 0, 1, 0) # 15yo, male
 x6 <- c(1, 0, 1, 1) # 15yo, female
 
-X <- rbind(x1, x2, x3, x4, x5, x6)
-beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
-HAT <- X %*% solve(t(X) %*% X) %*% t(X)
-SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
-SSE <- sum((n-1)*(sds_vector^2)) + SSE_mod*n
-MSE <- SSE/(ntot-4)
+X1 <- rbind(x1, x2, x3, x4, x5, x6)
+beta1 <- solve(t(X1) %*% X1) %*% t(X1) %*% mean_vector
+HAT1 <- X1 %*% solve(t(X1) %*% X1) %*% t(X1)
+SSE_mod1 <- t(mean_vector) %*% (diag(6) - HAT1) %*% mean_vector
+SSE1 <- sum((n-1)*(sds_vector^2)) + SSE_mod1*n
+MSE1 <- SSE1/(ntot-4)
 ```
 So we assume six groups with $n_j$ (`r n`) members.
 
@@ -96,9 +96,9 @@ $\beta$ can be estimated using the following equation:
 $$\hat{\beta} = (X'X)^{-1}X'Y$$
 After computation, the following vector is obtained for $\hat{\beta}$:
 ```{r beta1}
-rownames(beta) <- c("Intercept", "Age13", "Age15", "Female")
-colnames(beta) <- "beta estimated"
-print(beta)
+rownames(beta1) <- c("Intercept", "Age13", "Age15", "Female")
+colnames(beta1) <- "beta estimated"
+print(beta1)
 ```
 These are the estimated slope coefficients.
 
@@ -113,7 +113,7 @@ with $\hat{y_j}$ the estimated average income of individuals of group $j$, $y_{j
 To estimate $SSE_{model}$ the following equations are used.
 $$H = X(X'X)^{-1}X'$$
 $$SSE_{model} = Y'(I-H)Y$$
-After calculation for $SSE_{model}$ a value of `r SSE_mod` can be obtained.
+After calculation for $SSE_{model}$ a value of `r SSE_mod1` can be obtained.
 
 To calculate $SSE_{groups}$ for each group the formula $j$ $\sum_{i=1}^{n_j} (y_{ij}-\bar{y_{j}})^2$ is calculated based on the given standard deviations. We consider that these standard deviations are calculated from the data itself, so consider $n_j - 1$ degrees of freedom.
 
@@ -124,7 +124,7 @@ And $MSE$ as follows.
 $$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$
 with:
 
-- $SSE_{model} =$ `r SSE_mod`;
+- $SSE_{model} =$ `r SSE_mod1`;
 - $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
 - $n_{tot} =$ `r ntot`;
 - $p = 4$.
@@ -133,7 +133,7 @@ After calculation we derive that MSE is equal to `r MSE`.
 
 • Interpret the gender-effect parameter(s)
 
-The expected value of the <moet hier nog 'mean' staan?> income of a female is `r -beta[4]` pounds less than that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
+The expected value of the <moet hier nog 'mean' staan?> income of a female is `r -beta1[4]` pounds less than that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
 
 • What would change above if sample consisted of brother-sister pairs?
 
@@ -173,18 +173,18 @@ x5 <- c(1, 0, 1, 0, 0, 0) # 15yo, male
 x6 <- c(1, 0, 1, 1, 0, 1) # 15yo, female
 
 
-X <- rbind(x1, x2, x3, x4, x5, x6)
-beta <- solve(t(X) %*% X) %*% t(X) %*% mean_vector
+X2 <- rbind(x1, x2, x3, x4, x5, x6)
+beta2 <- solve(t(X2) %*% X2) %*% t(X2) %*% mean_vector
 
-HAT <- X %*% solve(t(X) %*% X) %*% t(X)
-SSE_mod <- t(mean_vector) %*% (diag(6) - HAT) %*% mean_vector
-SSE <- sum((n-1)*(sds_vector^2)) + SSE_mod*n
-MSE <- SSE/(ntot-6)
+HAT2 <- X2 %*% solve(t(X2) %*% X2) %*% t(X2)
+SSE_mod2 <- t(mean_vector) %*% (diag(6) - HAT2) %*% mean_vector
+SSE2 <- sum((n-1)*(sds_vector^2)) + SSE_mod2*n
+MSE2 <- SSE2/(ntot-6)
 ```
 
 To solve this exercise the following $X$-matrix can be used:
 ```{r}
-X
+X2
 ```
 So the $X$-matrix has two extra columns, because of the two extra parameters.
 
@@ -192,16 +192,16 @@ $\beta$ can again be estimated using the following equation:
 $$\hat{\beta} = (X'X)^{-1}X'Y$$
 After computation, the following vector is obtained for $\hat{\beta}$:
 ```{r beta2}
-rownames(beta) <- c("Intercept", "Age13", "Age15", "Female", "Age13*Female", "Age15*Female")
-colnames(beta) <- "beta estimated"
-print(beta)
+rownames(beta2) <- c("Intercept", "Age13", "Age15", "Female", "Age13*Female", "Age15*Female")
+colnames(beta2) <- "beta estimated"
+print(beta2)
 ```
 
 The MSE can be calculated using the same formulas as mentioned in exercise 2.
 $$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$
 with:
 
-- $SSE_{model} =$ `r SSE_mod`;
+- $SSE_{model} =$ `r SSE_mod2`;
 - $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
 - $n_{tot} =$ `r ntot`;
 - $p = 6$.
@@ -214,9 +214,9 @@ $$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15
 
 The gender-effect parameters can be interpreted as follows.
 
-- $\beta_3 =$ `r beta[4]`: a female of 11 years old is expected to have an income of `r -beta[4]` (-$\beta_3$) pound less than a male of 11 years old;
-- $\beta_4 =$ `r beta[5]`: `r beta[4]` ($\beta_3$) + `r beta[5]` ($\beta_4$) $=$ `r beta[4]+beta[5]`, so a female of 13 years old is expected to have an income of `r -beta[4]-beta[5]` pounds less than a male of 13 years old;
-- $\beta_5 =$ `r beta[6]`: `r beta[4]` ($\beta_3$) + `r beta[6]` ($\beta_5$) $=$ `r beta[4]+beta[6]`, so a female of 15 years old is expected to have an income of `r -beta[4]-beta[6]` pound less than a male of 15 years old;
+- $\beta_3 =$ `r beta2[4]`: a female of 11 years old is expected to have an income of `r -beta[4]2` (-$\beta_3$) pound less than a male of 11 years old;
+- $\beta_4 =$ `r beta2[5]`: `r beta2[4]` ($\beta_3$) + `r beta2[5]` ($\beta_4$) $=$ `r beta2[4]+beta2[5]`, so a female of 13 years old is expected to have an income of `r -beta[4]-beta[5]` pounds less than a male of 13 years old;
+- $\beta_5 =$ `r beta2[6]`: `r beta2[4]` ($\beta_3$) + `r beta2[6]` ($\beta_5$) $=$ `r beta2[4]+beta2[6]`, so a female of 15 years old is expected to have an income of `r -beta2[4]-beta2[6]` pound less than a male of 15 years old;
 
 4. Compare both models in terms of:
 • Underlying assumptions
@@ -230,6 +230,18 @@ In the second model, where interaction is included, the effect of gender is no l
 In theorie obs MSE niet? Maar volgens de simulaties wel, omdat een deel van de variantie binnen de groepen ook gemodelleerd wordt door het model? SSE zal wel beter zijn. Rkwadraat? Rkwadraat adjusted?...
 
 Gewoon F-test met berekende SSE's van Q2 en Q3 vglen?
+
+We will use the F-statistic to determine if the model with interaction fits the data better:
+$H0$ : all interaction coefficients = 0
+
+```{r}
+f <- ((SSE1 - SSE2) / 2) / (SSE2 / (ntot - 6))
+critical_value <- qf(0.95, df1 = 2, df2 = 2136)
+f
+critical_value
+```
+
+$F^*$ = `r f ` > `r critical_value`, therefore we conclude that the model with interaction does not reduce SSE much and we can reject the null hypothesis. 
 
 5. From the model with interaction (3.), derive a 95% prediction interval for the income of
 a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage?
