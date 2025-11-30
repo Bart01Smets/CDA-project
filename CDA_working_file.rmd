@@ -246,8 +246,8 @@ colSums(crimes_table_subset == "?", na.rm = TRUE)
 After removing NA values from the database univariate descriptives are calculated, both the missing values and the non-missing values. 
 
 ```{r summary statistics}
-str(crimes_table_subset)
-summary(crimes_table_subset)
+#str(crimes_table_subset)
+#summary(crimes_table_subset)
 
 crimes_table_subset %>%
   pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
@@ -334,10 +334,6 @@ for(columnname in names(crimes_table_subset_num_na)){
 
 After investigating the univariate descriptives, multivariate descriptives are calculated.
 
-# Multivariate descriptives
-
-After investigating the univariate descriptives, multivariate descriptives are calculated.
-
 The correlation matrix shows the extent to which the variables in the dataset are correlated with each other.
 Below, all variables are listed, sorted from highest to lowest correlation with the outcome variable.
 
@@ -363,12 +359,8 @@ However the choice for predictors for the model will be dealt with thoroughly du
 
 It is noticeable that the variable *racepctblack* is the one most strongly correlated with the outcome variable ($r = 0.63$), even more than *PctPopUnderPov*, the head predictor that was chosen for this research.
 
-It is noticable the the variables *PctImmig* and *PctImmig* have correlation coefficients that are really low.
+It is noticable the the variables *PctImmig* and *PctPopUnderPov* have correlation coefficients that are really low. *PctImmig* would therefore not be a suitable parameter in a univariate model. Nevertheless, it will be included in the model building process. Especially in models with interaction effects, *PctImmig* may still be a useful predictor
 
-```{r discrib_extended, eval=FALSE, include=FALSE}
-Hmisc::describe(crimes_table_subset)
-
-```
 ```{r correlations}
 cor_matrix <- cor(crimes_table_subset_num[,-'population'])
 cor_values <- as.data.frame(as.table(cor_matrix))
@@ -439,7 +431,7 @@ print(wrap_plots(plots, ncol = 3))
 ```
 
 
-The scatter plots reveal one outlier for the ViolentCrimesPerPop variable. This outlier is the community Chestercity. For now the datapoint is kept for further analysis.
+The scatter plots reveal one outlier for the *ViolentCrimesPerPop* variable. This outlier is the community Chestercity. For now the datapoint is kept for further analysis. In the diagnostics section, we will further investigate which data points can be considered outliers and what their influence is on the model.
 
 ```{r outlier}
 crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=TRUE), , drop = FALSE]
@@ -550,12 +542,8 @@ lines(lowess(fit$fitted.values, fit$residuals^2), col = "blue")
 # QQ-plot of residuals (normality)
 qqnorm(fit$residuals, main = "Normal Q-Q Plot of Residuals")
 qqline(fit$residuals, col = "red")
- par(mfrow = c(1, 1))
-```
-Studentized residuals <dit zijn de deleted toch?> --> moet dit apart?
-
-```{r studentized residuals}
-# Studentized residuals plot
+ 
+# Studentized residuals
 stud_res <- rstudent(fit)
 plot(fit$fitted.values, stud_res,
      xlab = "Fitted values", ylab = "Studentized Residuals",
@@ -563,26 +551,20 @@ plot(fit$fitted.values, stud_res,
 outliers_simple <- which(abs(stud_res) > 2)
 ```
 
-
 Table to get a visual illustration of whether outliers are more common in small pop
 ```{r outliers vs population1}
-# outliers are more present in small pop?
-outlier_data <- train_data[outliers_simple, .(population, ViolentCrimesPerPop, PctPopUnderPov)]
-print(outlier_data)
-
+par(mfrow = c(1, 2))
 # Residuals vs population
 plot(train_data$logpopulation, fit$residuals,
-     xlab = "log(population)", ylab = "Residuals",
-     main = "Residuals vs log(population)")
+     xlab = "log(population)", ylab = "Residuals")
 abline(h = 0, col = "red", lty = 2)
 lines(lowess(train_data$logpopulation, fit$residuals), col = "blue")
 
 plot(train_data$logpopulation, stud_res,
-     xlab = "log(population)", ylab = "Residuals",
-     main = "Studentized Residuals vs log(population)")
+     xlab = "log(population)", ylab = "Studentized Residuals")
 abline(h = 0, col = "red", lty = 2)
 lines(lowess(train_data$logpopulation, stud_res), col = "blue")
-
+par(mfrow = c(1, 1))
 ```
 
 ## Model selection
@@ -624,7 +606,6 @@ model_ranking <- data.frame(
   BIC = bics
 )
 model_ranking <- model_ranking[order(model_ranking$BIC), ]
-head(model_ranking, 10)
 ```
 
 We then run the multivariate regression equation
@@ -1228,7 +1209,7 @@ There is no use in interpreting interaction-term coefficients on their own, as t
 #### interpretation of PctPopUnderPov
 
 
-The effect of PctPopUnderPov varies with racepctblack, PctLess9thGrade and PctBsorMore through the interaction terms. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the log of expected violent crimes as `r summary(fit_final)$coefficients[2,1]` + `r summary(fit_final)$coefficients[7,1]` * racepctblack + `r  summary(fit_final)$coefficients[8,1]` * pctless9thgrade + `r summary(fit_final)$coeffecients[9,1]` * cptbsormore. Interpretation is more intuitive if we back transform the logdata.The effect of an increase in PctPopUnderPop with one unit (one percent) on violent crimes per 100k is then calculated by:  exp(`r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:racepctblack"]` * racepctblack + `r b["PctPopUnderPov:PctLess9thGrade"]` * pctless9thgrade + `r b["PctPopUnderPov:PctBSorMore"]` * cptbsormore) -1 when all other variables are held constant. 
+The effect of PctPopUnderPov varies with racepctblack, PctLess9thGrade and PctBsorMore through the interaction terms. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the log of expected violent crimes as `r summary(fit_final)$coefficients[2,1]` + `r summary(fit_final)$coefficients[7,1]` * racepctblack + `r  summary(fit_final)$coefficients[8,1]` * pctless9thgrade + `r summary(fit_final)$coeffecients[9,1]` * cptbsormore. Interpretation is more intuitive if we back transform the logdata. The effect of an increase in PctPopUnderPop with one unit (one percent) on violent crimes per 100k is then calculated by:  exp(`r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:racepctblack"]` * racepctblack + `r b["PctPopUnderPov:PctLess9thGrade"]` * pctless9thgrade + `r b["PctPopUnderPov:PctBSorMore"]` * cptbsormore) -1 when all other variables are held constant. 
 If we take for example the mean of the 3 interacting terms to calculate the effect of PctPoponderpov when the interacting variables are held at their average and we back transform it we can find `r exp(coef_mean) -1`.
 We can interpret the estimated percentage change, `r percentage_change`%, as the estimated increase in expected value of violent crimes (per population of 100k) per percentage increase of pop under pov, when the interacting variables are held at their average and all other variables are held constant. 
 
