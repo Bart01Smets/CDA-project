@@ -608,7 +608,7 @@ model_ranking <- data.frame(
 model_ranking <- model_ranking[order(model_ranking$BIC), ]
 ```
 
-We then run the multivariate regression equation
+The best model according to the procedure is: 
 
 ```{r show best model}
 # Print best model
