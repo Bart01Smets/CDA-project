@@ -608,7 +608,10 @@ model_ranking <- data.frame(
 model_ranking <- model_ranking[order(model_ranking$BIC), ]
 ```
 
-The best model according to the procedure is: 
+The best model according to the procedure is:
+$$
+ViolentCrimesPerPop_i = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \beta_2 \cdot PctLess9thGrade_i + \beta_3 \cdot PctNotHSGrad_i + \beta_4 \cdot PctImmig_i + \epsilon_i
+$$
 
 ```{r show best model}
 # Print best model
