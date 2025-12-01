@@ -886,7 +886,7 @@ summary(fit_final)
 
 We see that our model performs only a little less well, but this way we did account for multicollinearity and our estimates are correct. After removing PctLess9thGrade and therefore its interaction term, we see that the interaction between PctPopUnderPov:PctBSorMore is not longer significant and therefore also removed from the model. After adjusting for multicollinearity we see an expected small drop in R-squared, but the model still explains a substantial proportion of the variation in log violent crimes. 
 
-```{r removing multicoll}
+```{r formula adjustment}
 
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
