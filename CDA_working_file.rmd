@@ -551,7 +551,7 @@ plot(fit_simple$fitted.values, stud_res,
 outliers_simple <- which(abs(stud_res) > 2)
 ```
 
-Table to get a visual illustration of whether outliers are more common in small pop
+Figures to get a visual illustration of whether outliers are more common in small pop.
 ```{r outliers vs population1}
 par(mfrow = c(1, 2))
 # Residuals vs population
@@ -1174,9 +1174,9 @@ Dusja multivariate model stuk beter dan univariate model als je kijkt naar de ta
 mse_final <- mean(fit_final$residuals^2)
 summary_results <- data.frame(
   Model = c("Simple (PctPopUnderPov only)", "Final Multivariate"),
-  R_squared = c(round(summary(fit)$r.squared, 4),
+  R_squared = c(round(summary(fit_simple)$r.squared, 4),
                       round(summary(fit_final)$r.squared, 4)),
-  Adj_R_squared = c(round(summary(fit)$adj.r.squared, 4),
+  Adj_R_squared = c(round(summary(fit_simple)$adj.r.squared, 4),
                           round(summary(fit_final)$adj.r.squared, 4)),
   MSE = c(round(mse_simple, 2), round(mse_final, 2))
 )
@@ -1320,6 +1320,30 @@ ss_res_train <- sum((train_data$logViolent - pred_interval_train_log[, "fit"])^2
 ss_tot_train <- sum((train_data$logViolent - mean(train_data$logViolent))^2)
 r2_train <- 1 - ss_res_train/ss_tot_train
 cat("R² on training set:", round(r2_train, 4), "\n") 
+```
+```{r model validation MSPR and Rsquared backtransformed, fig.width=8, fig.height=6}
+# MSPR for test data
+mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+
+# MSPR for training data
+mspr_train <- mean((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+
+cat("MSPR (training set):", round(mspr_train, 2), "\n")
+cat("MSPR (test set):", round(mspr_test, 2), "\n")
+cat("Ratio MSPR/MSE:", round(mspr_test/mspr_train, 4), "\n")
+
+#R-squared on test data
+ss_res_test <- sum((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+ss_tot_test <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+r2_test <- 1 - ss_res_test/ss_tot_test
+cat("R² on test set:", round(r2_test, 4), "\n")
+
+# R-squared on training data
+ss_res_train <- sum((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
+r2_train <- 1 - ss_res_train/ss_tot_train
+cat("R² on training set:", round(r2_train, 4), "\n") 
+
 ```
 
 ```{r model validation MSPR and Rsquared simple, fig.width=8, fig.height=6}
