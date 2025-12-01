@@ -20,42 +20,25 @@ options(width = 100)
 ```
 
 # Continuous data Homework
+
 # Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van De Putte
 
-This theoretical exercise is based on the article on A Material Paradox: Socioeconomic Status,
-Young People’s Disposable Income and Consumer Culture by West et al. (2006). Everything
-is to be derived from its table 1, that is also presented in Figure 1. It provides information on
-income of teenagers in West Scotland. Based on the provided summary data, we will estimate
-regression coefficients for a multivariable regression model.
+This theoretical exercise is based on the article on A Material Paradox: Socioeconomic Status, Young People’s Disposable Income and Consumer Culture by West et al. (2006). Everything is to be derived from its table 1, that is also presented in Figure 1. It provides information on income of teenagers in West Scotland. Based on the provided summary data, we will estimate regression coefficients for a multivariable regression model.
 
-We expect you to write out and justify calculations, whether in matrix- or simple
-form, but the calculations themselves can be done in R - restricted to (matrix-)
-multiplication, addition,…
+We expect you to write out and justify calculations, whether in matrix- or simple form, but the calculations themselves can be done in R - restricted to (matrix-) multiplication, addition,…
 
-0. One piece of information missing, is the number of correspondents (by age and gender).
-Table 5 (not provided here) does provide some info on total sample size. We will assume
-we work with 2142 correspondents, equally divided over the six groups (combination of
-                                                                       age and gender)
-• From table 1, does assume an equal number of girls and boys within each age-group,
-seem reasonable?
+0.  One piece of information missing, is the number of correspondents (by age and gender). Table 5 (not provided here) does provide some info on total sample size. We will assume we work with 2142 correspondents, equally divided over the six groups (combination of age and gender) • From table 1, does assume an equal number of girls and boys within each age-group, seem reasonable?
 
-The average of the total group doesn't deviate a lot from the average of the average for girls and the average for boys. So the number of boys and the number of girls in the study will not be very different. 
+The average of the total group doesn't deviate a lot from the average of the average for girls and the average for boys. So the number of boys and the number of girls in the study will not be very different.
 
-  1. We could consider evaluating age as a continuous variable.
-• Looking at Figure 1, would such a model provide a good fit? Explain
+1.  We could consider evaluating age as a continuous variable. • Looking at Figure 1, would such a model provide a good fit? Explain
 
-By treating age as a continuous variable, assumptions about functional form are made. Here, the effect looks non-linear, as the increase in total income between age 13 and 15 is a lot bigger than between 11 and 13. Therefore it seems more reasonable to keep it categorical. Difficult to say with only 3 datapoints though. 
+By treating age as a continuous variable, assumptions about functional form are made. Here, the effect looks non-linear, as the increase in total income between age 13 and 15 is a lot bigger than between 11 and 13. Therefore it seems more reasonable to keep it categorical. Difficult to say with only 3 datapoints though.
 
-2. Depending on your answer in 1. fit either a model with age and gender as categorical, but
-without interaction OR the same model without interaction but with age as a continuous
-predictor
-• Write out the model
-• Estimate the coefficients
-• Estimate the residual variance
+2.  Depending on your answer in 1. fit either a model with age and gender as categorical, but without interaction OR the same model without interaction but with age as a continuous predictor • Write out the model • Estimate the coefficients • Estimate the residual variance
 
-We will model the income of an individual $i$ of group $j$ by the following formula.
-$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \varepsilon_{ij}$$
-Design matrix X:
+We will model the income of an individual $i$ of group $j$ by the following formula. $$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \varepsilon_{ij}$$ Design matrix X:
+
 ```{r matrices 2}
 # Solution with matrices
 # Data input
@@ -83,75 +66,60 @@ SSE_mod1 <- t(mean_vector) %*% (diag(6) - HAT1) %*% mean_vector
 SSE1 <- sum((n-1)*(sds_vector^2)) + SSE_mod1*n
 MSE1 <- SSE1/(ntot-4)
 ```
+
 So we assume six groups with $n_j$ (`r n`) members.
 
-- $x1$ is the group with 11 year old males;
-- $x2$ is the group with 11 year old females;
-- $x3$ is the group with 13 year old males;
-- $x4$ is the group with 13 year old females;
-- $x5$ is the group with 15 year old males;
-- $x6$ is the group with 15 year old females.
+-   $x1$ is the group with 11 year old males;
+-   $x2$ is the group with 11 year old females;
+-   $x3$ is the group with 13 year old males;
+-   $x4$ is the group with 13 year old females;
+-   $x5$ is the group with 15 year old males;
+-   $x6$ is the group with 15 year old females.
 
-$\beta$ can be estimated using the following equation:
-$$\hat{\beta} = (X'X)^{-1}X'Y$$
-After computation, the following vector is obtained for $\hat{\beta}$:
+$\beta$ can be estimated using the following equation: $$\hat{\beta} = (X'X)^{-1}X'Y$$ After computation, the following vector is obtained for $\hat{\beta}$:
+
 ```{r beta1}
 rownames(beta1) <- c("Intercept", "Age13", "Age15", "Female")
 colnames(beta1) <- "beta estimated"
 print(beta1)
 ```
+
 These are the estimated slope coefficients.
 
 To estimate the residual variance, the SSE (sum of squared errors of the residuals) will be calculated. The SSE is not restricted to the SSE due to the modelling of the means of the groups (since the model without interaction terms will not give exact predictions of the group means). Also inside the groups there is a natural deviation from the mean. The SSE can be calculated as the sum of
 
-- $n_j \cdot SSE_{model}$: the sum of squared residuals that is due to the fact that a linear model with 4 parameters is fitted to 6 data points. $SS_{model}$ is multiplicated with $n_j$ (the number of observations in each group), because $SSE_{model}$ is the sum for only six datapoints;
-- $SSE_{groups}$: the sum of squared residuals that is due to the fact that there is a variance in the groups.
+-   $n_j \cdot SSE_{model}$: the sum of squared residuals that is due to the fact that a linear model with 4 parameters is fitted to 6 data points. $SS_{model}$ is multiplicated with $n_j$ (the number of observations in each group), because $SSE_{model}$ is the sum for only six datapoints;
+-   $SSE_{groups}$: the sum of squared residuals that is due to the fact that there is a variance in the groups.
 
-$$SSE_{total} = n_j \cdot SSE_{model} + SSE_{groups} = n_j \cdot \sum_{j=1}^{6} (\hat{y_{j}}-y_{j})^2 + \sum_{j=1}^{6}\sum_{i=1}^{n_j} (y_{ij}-y_{j})^2$$
-with $\hat{y_j}$ the estimated average income of individuals of group $j$, $y_{j}$ the observed average income of individuals of group $j$ and $y_{ij}$ the observed income of an individual of group $j$.
+$$SSE_{total} = n_j \cdot SSE_{model} + SSE_{groups} = n_j \cdot \sum_{j=1}^{6} (\hat{y_{j}}-y_{j})^2 + \sum_{j=1}^{6}\sum_{i=1}^{n_j} (y_{ij}-y_{j})^2$$ with $\hat{y_j}$ the estimated average income of individuals of group $j$, $y_{j}$ the observed average income of individuals of group $j$ and $y_{ij}$ the observed income of an individual of group $j$.
 
-To estimate $SSE_{model}$ the following equations are used.
-$$H = X(X'X)^{-1}X'$$
-$$SSE_{model} = Y'(I-H)Y$$
-After calculation for $SSE_{model}$ a value of `r SSE_mod1` can be obtained.
+To estimate $SSE_{model}$ the following equations are used. $$H = X(X'X)^{-1}X'$$ $$SSE_{model} = Y'(I-H)Y$$ After calculation for $SSE_{model}$ a value of `r SSE_mod1` can be obtained.
 
 To calculate $SSE_{groups}$ for each group the formula $j$ $\sum_{i=1}^{n_j} (y_{ij}-\bar{y_{j}})^2$ is calculated based on the given standard deviations. We consider that these standard deviations are calculated from the data itself, so consider $n_j - 1$ degrees of freedom.
 
-$$s_j^2 = \frac{1}{n_j - 1} \sum_{i=1}^{n_j} (y_{ij} - y_j)^2 \quad\text{so}\quad \sum_{i=1}^{n_j} (y_{ij} - y_j)^2 = (n_j - 1) \cdot s_j^2$$
-So $SSE_{groups}$ can be calculated as follows.
-$$SSE_{groups} = \sum_{j=1}^{6}\sum_{i=1}^{n_j} (y_{ij}-y_{j})^2 = \sum_{j=1}^{6}\left[(n_j - 1) \cdot s_j^2 \right]$$
-And $MSE$ as follows.
-$$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$
-with:
+$$s_j^2 = \frac{1}{n_j - 1} \sum_{i=1}^{n_j} (y_{ij} - y_j)^2 \quad\text{so}\quad \sum_{i=1}^{n_j} (y_{ij} - y_j)^2 = (n_j - 1) \cdot s_j^2$$ So $SSE_{groups}$ can be calculated as follows. $$SSE_{groups} = \sum_{j=1}^{6}\sum_{i=1}^{n_j} (y_{ij}-y_{j})^2 = \sum_{j=1}^{6}\left[(n_j - 1) \cdot s_j^2 \right]$$ And $MSE$ as follows. $$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$ with:
 
-- $SSE_{model} =$ `r SSE_mod1`;
-- $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
-- $n_{tot} =$ `r ntot`;
-- $p = 4$.
+-   $SSE_{model} =$ `r SSE_mod1`;
+-   $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
+-   $n_{tot} =$ `r ntot`;
+-   $p = 4$.
 
-After calculation we derive that MSE is equal to `r MSE`.
+After calculation we derive that MSE is equal to `r MSE1`.
 
 • Interpret the gender-effect parameter(s)
 
-The expected value of the <moet hier nog 'mean' staan?> income of a female is `r -beta1[4]` pounds less than that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
+The expected value of the \<moet hier nog 'mean' staan?\> income of a female is `r -beta1[4]` pounds less than that of a male, assumed that they are in the same age group (11 years, 13 years or 15 years).
 
 • What would change above if sample consisted of brother-sister pairs?
 
-The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family). 
-This means that SE's are too small as you only have 1071 indep families, not 2142. Siblings give overlapping info. You'd thus underestimate uncertainty as confidence intervals are too small.
-
+The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family). This means that SE's are too small as you only have 1071 indep families, not 2142. Siblings give overlapping info. You'd thus underestimate uncertainty as confidence intervals are too small.
 
 • (Continue as if all outcomes are independent)
 
-3. Fit a standard linear model with both age and gender as categorical variables. Include
-their interaction.
-• Write out the model
-• Estimate the coefficients
-• Estimate the residual variance
-• Interpret the gender-effect parameter(s)
+3.  Fit a standard linear model with both age and gender as categorical variables. Include their interaction. • Write out the model • Estimate the coefficients • Estimate the residual variance • Interpret the gender-effect parameter(s)
 
-We will model the income of an individual $i$ of group $j$ by the following formula.
-$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$
+We will model the income of an individual $i$ of group $j$ by the following formula. $$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$
+
 ```{r matrices 3}
 # Solution with matrices
 
@@ -183,41 +151,39 @@ MSE2 <- SSE2/(ntot-6)
 ```
 
 To solve this exercise the following $X$-matrix can be used:
+
 ```{r}
 X2
 ```
+
 So the $X$-matrix has two extra columns, because of the two extra parameters.
 
-$\beta$ can again be estimated using the following equation:
-$$\hat{\beta} = (X'X)^{-1}X'Y$$
-After computation, the following vector is obtained for $\hat{\beta}$:
+$\beta$ can again be estimated using the following equation: $$\hat{\beta} = (X'X)^{-1}X'Y$$ After computation, the following vector is obtained for $\hat{\beta}$:
+
 ```{r beta2}
 rownames(beta2) <- c("Intercept", "Age13", "Age15", "Female", "Age13*Female", "Age15*Female")
 colnames(beta2) <- "beta estimated"
 print(beta2)
 ```
 
-The MSE can be calculated using the same formulas as mentioned in exercise 2.
-$$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$
-with:
+The MSE can be calculated using the same formulas as mentioned in exercise 2. $$MSE = \frac{SSE_{total}}{n_{tot}-p} = \frac{n_j \cdot SSE_{model} + SSE_{groups}}{n_{tot}-p}$$ with:
 
-- $SSE_{model} =$ `r SSE_mod2`;
-- $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
-- $n_{tot} =$ `r ntot`;
-- $p = 6$.
+-   $SSE_{model} =$ `r SSE_mod2`;
+-   $SSE_{groups} =$ `r sum((n-1)*(sds_vector^2))`;
+-   $n_{tot} =$ `r ntot`;
+-   $p = 6$.
 
-After calculation we derive that MSE is equal to `r MSE`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formula is now smaller (more parameters in the model).
+After calculation we derive that MSE is equal to `r MSE2`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formula is now smaller (more parameters in the model).
 
-It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is (ik zou essentially ipv equal zeggen -> voorzichtiger) equal to zero, because a model with six parameters is fitted to 6 data points. So the estimates of the averages of the groups will be exactly equal to the observed averages.
+It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is (ik zou essentially ipv equal zeggen -\> voorzichtiger) equal to zero, because a model with six parameters is fitted to 6 data points. So the estimates of the averages of the groups will be exactly equal to the observed averages.
 
 The gender-effect parameters can be interpreted as follows.
 
-- $\beta_3 =$ `r beta2[4]`: a female of 11 years old is expected to have an income of `r -beta[4]2` (-$\beta_3$) pound less than a male of 11 years old;
-- $\beta_4 =$ `r beta2[5]`: `r beta2[4]` ($\beta_3$) + `r beta2[5]` ($\beta_4$) $=$ `r beta2[4]+beta2[5]`, so a female of 13 years old is expected to have an income of `r -beta[4]-beta[5]` pounds less than a male of 13 years old;
-- $\beta_5 =$ `r beta2[6]`: `r beta2[4]` ($\beta_3$) + `r beta2[6]` ($\beta_5$) $=$ `r beta2[4]+beta2[6]`, so a female of 15 years old is expected to have an income of `r -beta2[4]-beta2[6]` pound less than a male of 15 years old;
+-   $\beta_3 =$ `r beta2[4]`: a female of 11 years old is expected to have an income of `r -beta2[4]` (-$\beta_3$) pound less than a male of 11 years old;
+-   $\beta_4 =$ `r beta2[5]`: `r beta2[4]` ($\beta_3$) + `r beta2[5]` ($\beta_4$) $=$ `r beta2[4]+beta2[5]`, so a female of 13 years old is expected to have an income of `r -beta2[4]-beta2[5]` pounds less than a male of 13 years old;
+-   $\beta_5 =$ `r beta2[6]`: `r beta2[4]` ($\beta_3$) + `r beta2[6]` ($\beta_5$) $=$ `r beta2[4]+beta2[6]`, so a female of 15 years old is expected to have an income of `r -beta2[4]-beta2[6]` pound less than a male of 15 years old;
 
-4. Compare both models in terms of:
-• Underlying assumptions
+4.  Compare both models in terms of: • Underlying assumptions
 
 In the model without interaction, gender is assumed to have the same effect regardless of ages (gender-effect independent of age_effect). In theory this means that gender would only influence the intercept and not the slope. Since in this model only qualitative variables are included, we take this to mean that the vertical distance between predicted means for males and females are is constant across age categories. The regression functions for all combinations are parallel to each other.
 
@@ -229,8 +195,7 @@ In theorie obs MSE niet? Maar volgens de simulaties wel, omdat een deel van de v
 
 Gewoon F-test met berekende SSE's van Q2 en Q3 vglen?
 
-We will use the F-statistic to determine if the model with interaction fits the data better:
-$H0$ : all interaction coefficients = 0
+We will use the F-statistic to determine if the model with interaction fits the data better: $H0$ : all interaction coefficients = 0
 
 ```{r}
 f <- ((SSE1 - SSE2) / 2) / (SSE2 / (ntot - 6))
@@ -239,13 +204,49 @@ f
 critical_value
 ```
 
-$F^*$ = `r f ` > `r critical_value`, therefore we conclude that the model with interaction does not reduce SSE much and we can reject the null hypothesis. 
+$F^*$ = `r f` \> `r critical_value`, therefore we conclude that the model with interaction does not reduce SSE much and we can reject the null hypothesis.
 
-5. From the model with interaction (3.), derive a 95% prediction interval for the income of
-a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage?
-Why? If not, will the coverage tend to be higher or lower?
+5.  From the model with interaction (3.), derive a 95% prediction interval for the income of a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage? Why? If not, will the coverage tend to be higher or lower?
 
-In principe gaat een lineair model wel uit van homoscedasticiteit, dus dan gaat je coverage niet uitkomen (aangezien de data duidelijk heteroscedastisch zijn)
-Je zou voor de bepalen van je predictie interval wel kunnen rekening houden met de variantie waargenomen voor meisjes van 15 jaar.
+For a 15-year old girl in the interaction model, the estimated income would be calculated as
 
-Voor 15-jarige meisjes gaat je coverage te klein zijn nromaal, aangezien je lineaire model je mse poolt terwijl je variantie wel groter is voor 15yo meisjes. Weet ook niet of nodig is om te vermelden dat inkomensdistributie afgecut is op 0.
+$$\hat{Y}_{15,girl}=\beta_0+\beta_2+\beta_3+\beta_5.$$
+
+```{r}
+predicted_income_15 <- beta2[1] + beta2[3] + beta2[4] + beta2[6]
+```
+
+\text{And would thus result in}  $\hat{Y}_{15,\text{girl}} = \text{`r predicted_income_15`}$
+
+The variance of the predicton can be calculated using:
+
+$$
+s^2(\hat{Y}_{15,girl}) = MSE(1 + X_h'(X'X)^{-1}X_h)
+$$
+```{r}
+XtX_inv <- solve(t(X2) %*% X2)
+predicted_var <- MSE2 * (1 + t(x6) %*% XtX_inv %*% x6)
+```
+
+
+Which would give us a 95% prediction interval:
+
+$$
+PI_{95\%}(15,girl) = [\hat{Y}_{15,girl} \pm t_{0.975, df} * s(\hat{Y}_{15,girl})]
+$$
+Resulting in:
+```{r}
+prediction_se <- sqrt(var_pred)
+df <- ntot - nr_of_betas
+t95 <- qt(0.975, df)
+lower_border <- predicted_income_15 - t95*prediction_se
+higher_border <- predicted_income_15 + t95*prediction_se
+
+c(lower_bound = lower_border, prediction = predicted_income_15,  upper_bound = higher_border)
+```
+
+A linear model assumes linear form is right, errors are independent, homoscedasticty, and normally distributed. For this data, these assumptions are clearly violated, e.g. the data is clearly right-skewed, which is indicated by the large average standard deviation on the money predictor. Since we work with data of childeren and teens, we expect that the lowest value possible for the money is zero, no debt. Because of this it could be seen that within one or two SDs all total money would go below the zero cutt-off, showing that the data is likely right-scewed.
+
+Next to this, the data is most likely Heteroskedastic, as the variances differ massively across ages, showing a dependence of the income variance with the age predictors, showing that the data is not Homoscedastic.
+
+These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger childeren as they have a lower variance. While the prediction interval will be to narrow for older childeren. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.

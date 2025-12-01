@@ -596,7 +596,8 @@ models <- lapply(formulas, lm, data=train_data)
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
-formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = ""), character(1))
+formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
+                         , character(1))
 
 # build the frame
 model_ranking <- data.frame(
@@ -637,8 +638,10 @@ partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
   temp <- train_data
   controls <- setdiff(predictor_list, predictor)
   
-  formula_outcome  <- as.formula(paste(outcome, "~", paste(controls, collapse = " + ")))
-  formula_pred <- as.formula(paste(predictor, "~", paste(controls, collapse = " + ")))
+  formula_outcome  <- as.formula(paste(outcome, "~", 
+                                       paste(controls, collapse = " + ")))
+  formula_pred <- as.formula(paste(predictor, "~",
+                                   paste(controls, collapse = " + ")))
   
   lm_outcome <- lm(formula_outcome, data = temp)
   temp$resid_outcome <- resid(lm_outcome)
@@ -650,7 +653,8 @@ ggplot(temp, aes(x = resid_pred, y = resid_outcome)) +
   geom_smooth(method = "lm", se = FALSE) +
   geom_smooth(method = "loess", se = FALSE) +
   geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(x = paste("Residuals ", predictor, " ~ controls", sep = ""), y = paste("Residuals ", outcome, " ~ controls", sep = ""))
+  labs(x = paste("Residuals ", predictor, " ~ controls", sep = ""),
+       y = paste("Residuals ", outcome, " ~ controls", sep = ""))
 }
 
 plots <- lapply(predictor_list, function(predictor) {
@@ -743,7 +747,8 @@ models <- lapply(formulas, lm, data=train_data)
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
-formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = ""), character(1))
+formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
+                         , character(1))
 
 # build the frame
 model_ranking <- data.frame(
@@ -1119,7 +1124,7 @@ We can interpret the estimated percentage change, `r percentage_change`%, as the
 #### interpretation of PctLess9thGrade
 
 ```{r}
-set.seed(123)
+set.seed(987654321)
 CI_9thgrade <- cond_effect_boot(fit_final,
             x = "PctLess9thGrade", w = "PctPopUnderPov", nboot = 2000)
 ci_lower <- exp(CI_9thgrade$"CI Lower"[CI_9thgrade$Level == "Medium"]) - 1 
@@ -1139,7 +1144,7 @@ As mentioned above, PctLess9thGrade and PctPopUnderPov interact. The effect of P
 
 There is also an interaction term included between PctBSorMore and PctPopUnderPov. The interpretation is similar to that of PctLess9thGrade. The conditional effect on of PctBSorMore on the log expected violent crime rate is given by: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"]`* PctPopUnderPov. Both coefficients are negative, indicating a reinforcing effect: increases in PctPopUnderPov enforces the negative effect of PctBSorMore. Similarly to before we can take the mean of PctPopUnderPov and estimate the conditional effect of PctBSorMore on the log expected value of crime rate per unit increase of PctBSorMore, when keeping poverty at its mean and all other variables constant: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Undoing the log transformation we get `r (exp(b["PctBSorMore"] + b["PctPopUnderPov:PctBSorMore"] * mean_poverty) - 1)* 100`%, which can be interpreted as the estimated percent change in expected crime rate by increasing PctBSorMore by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant. Thus if, under the conditions stated above, a higher percentage of the population has a Bachelors degree or higher, the estimated mean crime rate decreases and this effect is more pronounced for higher levels of PctUnderPov.
 ```{r}
-set.seed(123)
+set.seed(987654321)
 cond_effect_boot(fit_final,
             x = "PctBSorMore", w = "PctPopUnderPov", nboot = 2000)
 ```
@@ -1151,7 +1156,7 @@ cond_effect_boot(fit_final,
 We follow the same logic for racepctblack as for the previous 2. However we now see an interference interaction effect: the conditional effect of racepctblack is given by: `r b["racepctblack"]` + `r b["PctPopUnderPov:racepctblack"]` * PctPopUnderPov. If we look at the main effect of racepctblack (PctPopUnderPov = 0), we see a positive effect, where we see a negative contribution of the interaction term: the slope of the response function against racepctblack decreases for higher levels of PctPopUnderPov. For a higher percentage of people living under the poverty line, the estimated effect of percentage of black people on violent crime rates is lower than when there is a lower percentage of people living under the poverty line. If we look at the conditional effect of racepctblack when PctpovUnderPop is held at its mean we get: `r b["racepctblack"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Exponentiating this expression to return to the original scale we get an estimated percentage change of `r (exp(b["racepctblack"] +  b["PctPopUnderPov:racepctblack"] * mean_poverty)-1) *100`% of the expected crime rates (100k) by increasing the racepctblack by one unit (1%), keeping PctPovUnderPov at its mean and all other variables constant. Increasing levels of PctPovUnderPov would result in a smaller positive effect of racepctblack than lower levels of PctPopUnderPov.
 
 ```{r}
-set.seed(123)
+set.seed(987654321)
 
 cond_effect_boot(fit_final,
             x = "racepctblack", w = "PctPopUnderPov", nboot = 2000)
