@@ -863,15 +863,40 @@ print(confint(fit_final))
 
 ### Multicollinearity Check
 
-Before checking model assumptions, we first assess multicollinearity using the Variance Inflation Factor (VIF) and remove a variable if necessary.
+Before checking model assumptions, we first assess multicollinearity using the Variance Inflation Factor (VIF) and remove a variable if necessary. 
 ```{r multicoll check2}
 library(car)
 # practicum: car::vif(fit)
 vif <- vif(fit_final)
 print(vif)
 ```
+PctLess9thGrade was removed due to high multicollinearity. Removing it improves model stability and interpretability.
 
-We see that our model performs only a little less well, but this way we did account for multicollinearity and our estimates are correct.
+```{r removing multicoll}
+
+# Estimate model with interaction
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list[-2], collapse = " + "), "+",
+                                  "PctPopUnderPov:racepctblack  + PctPopUnderPov:PctBSorMore"))
+
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+
+```
+
+We see that our model performs only a little less well, but this way we did account for multicollinearity and our estimates are correct. After removing PctLess9thGrade and therefore its interaction term, we see that the interaction between PctPopUnderPov:PctBSorMore is not longer significant and therefore also removed from the model. After adjusting for multicollinearity we see an expected small drop in R-squared, but the model still explains a substantial proportion of the variation in log violent crimes. 
+
+```{r removing multicoll}
+
+# Estimate model with interaction
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list[-2], collapse = " + "), "+",
+                                  "PctPopUnderPov:racepctblack"))
+
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+
+```
 
 ```{r compare2}
 # Compare models
