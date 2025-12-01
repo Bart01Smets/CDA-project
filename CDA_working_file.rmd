@@ -776,7 +776,7 @@ Again the partial regression plots show that, with respect to the effects of the
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
 predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 plots <- lapply(predictor_list, function(predictor) {
-    partial_regression_plot(train_data, "ViolentCrimesPerPop", predictor, predictor_list)
+    partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
 }
 )
 
@@ -856,6 +856,7 @@ formula_final <- as.formula(paste("logViolent ~",
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
+fit_final1 <- fit_final
 
 # confint
 print(confint(fit_final))
@@ -897,11 +898,14 @@ fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
 
 ```
+```{r}
+vif(fit_final)
+```
 
 ```{r compare2}
 # Compare models
 cat("Comparison of models:\n")
-cat("Original model adjusted R²: ", round(summary(fit_multi)$adj.r.squared, 4), "\n")
+cat("Original model adjusted R²: ", round(summary(fit_final1)$adj.r.squared, 4), "\n") ## dit moet nog aangepast worden
 cat("interaction term model adjusted R²:  ", round(summary(fit_final)$adj.r.squared, 4), "\n")
 
 ```
