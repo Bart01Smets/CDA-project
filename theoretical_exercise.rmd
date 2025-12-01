@@ -39,7 +39,7 @@ we work with 2142 correspondents, equally divided over the six groups (combinati
 • From table 1, does assume an equal number of girls and boys within each age-group,
 seem reasonable?
 
-Total almost always looks like the average of girl and boy so yes? 
+The average of the total group doesn't deviate a lot from the average of the average for girls and the average for boys. So the number of boys and the number of girls in the study will not be very different. 
 
   1. We could consider evaluating age as a continuous variable.
 • Looking at Figure 1, would such a model provide a good fit? Explain
@@ -208,9 +208,7 @@ with:
 
 After calculation we derive that MSE is equal to `r MSE`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formula is now smaller (more parameters in the model).
 
-It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is (ik zou essentially ipv equal zeggen -> voorzichtiger) equal to zero, because a model with six parameters is fitted to 6 data points. So the group the (bedoel je 'of'?) estimates for the averages of the groups will be exactly equal to the observed averages.
-
-$$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$  (waarom staat die hier nog eens?)
+It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is (ik zou essentially ipv equal zeggen -> voorzichtiger) equal to zero, because a model with six parameters is fitted to 6 data points. So the estimates of the averages of the groups will be exactly equal to the observed averages.
 
 The gender-effect parameters can be interpreted as follows.
 
