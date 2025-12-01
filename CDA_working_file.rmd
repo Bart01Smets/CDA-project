@@ -466,7 +466,7 @@ print(wrap_plots(plots, ncol = 3))
 Before performing linear regression and building models, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model.
 
 ```{r dataset split}
-set.seed(123)
+set.seed(987654321)
 n <- nrow(crimes_table_subset_num)
 training <- sample(1:n, size = floor(0.8 * n))
 train_data <- crimes_table_subset_num[training, ]
@@ -1265,24 +1265,30 @@ ggplot(df_prediction_train_simple, aes(observed, predicted))+
 
 ```{r model validation MSPR and Rsquared, fig.width=8, fig.height=6}
 # MSPR for test data
-mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+#mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+mspr_test <- mean((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
 
 # MSPR for training data
-mspr_train <- mean((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+# mspr_train <- mean((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+mspr_train <- mean((train_data$logViolent - pred_interval_train_log[, "fit"])^2)
 
 cat("MSPR (training set):", round(mspr_train, 2), "\n")
 cat("MSPR (test set):", round(mspr_test, 2), "\n")
 cat("Ratio MSPR/MSE:", round(mspr_test/mspr_train, 4), "\n")
 
 # R-squared on test data
-ss_res_test <- sum((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
-ss_tot_test <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+#ss_res_test <- sum((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+#ss_tot_test <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+ss_res_test <- sum((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
+ss_tot_test <- sum((test_data$logViolent - mean(test_data$logViolent))^2)
 r2_test <- 1 - ss_res_test/ss_tot_test
 cat("R² on test set:", round(r2_test, 4), "\n")
 
 # R-squared on training data
-ss_res_train <- sum((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
-ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
+#ss_res_train <- sum((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+#ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
+ss_res_train <- sum((train_data$logViolent - pred_interval_train_log[, "fit"])^2)
+ss_tot_train <- sum((train_data$logViolent - mean(train_data$logViolent))^2)
 r2_train <- 1 - ss_res_train/ss_tot_train
 cat("R² on training set:", round(r2_train, 4), "\n") 
 ```
