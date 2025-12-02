@@ -24,7 +24,7 @@ library(dplyr)
 
 During this research, we want to investigate how socio-economic disadvantage relates to violent crime rates. More specifically we want to explore the association between poverty and violent crime rates in the USA.
 
-In his seminal work, Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs against each other. It could then be argued that the incentive to commit crime is higher for people who have a lower income, as the benefits are larger for this group. Following this, we would then also expect that in communities with a higher poverty rate, there will also be higher crime rates. Depending on the results of our analysis, these results could be used to inform relevant policies. It would, for example, give another argument for the implementation of redistributive policies: if an effect is found, policymakers should take this reduction in violent crime into account, next to an economic benefit. Our analysis hopes to shed further light on this issue.
+In his seminal work, Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs against each other. It could then be argued that the incentive to commit crime is higher for people who have a lower income, as the benefits are larger for this group. Following this, we would then also expect that communities with a higher poverty rate will be associated with higher crime rates. Depending on the results of our analysis, these results could be used to inform relevant policies. It would, for example, give another argument for the implementation of redistributive policies: if an effect is found, policymakers should take this reduction in violent crime into account, next to an economic benefit. Our analysis hopes to shed further light on this issue.
 
 For the purpose of our research question, the following predictor variables have been selected:
 
@@ -1138,8 +1138,6 @@ ci_upper <- exp(CI_9thgrade$"CI Upper"[CI_9thgrade$Level == "Medium"]) - 1
 As mentioned above, PctLess9thGrade and PctPopUnderPov interact. The effect of PctLess9thGrad is therefore impacted by the level of PctPopUnderPov: `r b["PctLess9thGrade"]` + `r b["PctPopUnderPov:PctLess9thGrade"]` * PctPopUnderPov. This interaction effect is reinforcing, meaning that an increase in PctPopUnderPov would lead to a more negative slope for PctLess9thGrade. Taking the mean of PctPopUnderPov the interaction-adjusted coefficient for Pctless9thegrade is `r b["PctLess9thGrade"] + b["PctPopUnderPov:PctLess9thGrade"] * mean_poverty`. Increasing Pctless9thGrade by one percent (one unit), we estimate that the expected value of violent crimes (per 100k) decreases by `r (exp(b["PctLess9thGrade"] + (b["PctPopUnderPov:PctLess9thGrade"] * mean_poverty)) -1) * 100`% (original scale) when PctPopUnderPov is held at its mean and all other variables are held constant. We can find a 95% confidence interval using cond_effect_boot() from package *stdmod* of [`r ci_lower` , `r ci_upper`]. We can therefore say that with a .95 confidence coefficient, we estimate that the percentage change of expected crime rates is somewhere between `r ci_lower * 100`% and `r ci_upper * 100`%. Note that this is a pointwise confidence interval for when PctPopUnderPov is held at its mean and all other variables are held constant. However we see that the coefficient of the main effect in the model is not significant, but still included because of the interaction term. We also see that the multicollinearity increases, this can increase standard errors and lead to unstable coefficient estimates. It therefore provides a possible explanation to the sign of the estimates that are incosistent with theoretical expectations.
 
 
-
-
 #### interpretation of PctBSorMore
 
 There is also an interaction term included between PctBSorMore and PctPopUnderPov. The interpretation is similar to that of PctLess9thGrade. The conditional effect on of PctBSorMore on the log expected violent crime rate is given by: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"]`* PctPopUnderPov. Both coefficients are negative, indicating a reinforcing effect: increases in PctPopUnderPov enforces the negative effect of PctBSorMore. Similarly to before we can take the mean of PctPopUnderPov and estimate the conditional effect of PctBSorMore on the log expected value of crime rate per unit increase of PctBSorMore, when keeping poverty at its mean and all other variables constant: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Undoing the log transformation we get `r (exp(b["PctBSorMore"] + b["PctPopUnderPov:PctBSorMore"] * mean_poverty) - 1)* 100`%, which can be interpreted as the estimated percent change in expected crime rate by increasing PctBSorMore by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant. Thus if, under the conditions stated above, a higher percentage of the population has a Bachelors degree or higher, the estimated mean crime rate decreases and this effect is more pronounced for higher levels of PctUnderPov.
@@ -1148,8 +1146,6 @@ set.seed(987654321)
 cond_effect_boot(fit_final,
             x = "PctBSorMore", w = "PctPopUnderPov", nboot = 2000)
 ```
-
-
 
 #### interpretation of racepctblack
 
@@ -1406,8 +1402,6 @@ ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
 ```
 
 
-
-
 # Statistical discussion
 
 The used dataset is not random or representative of all US communities. The main missing data source is ViolentCrimesPerPop, where 221 observations are missing because of incomplete rape reporting in Midwestern States. As this variable is calculated as the sum of a few components, including rape, missing values could be not random and come from  state-specific reporting. This selective missingness could bias estimates if these communities systematically differ in crime levels or demographic characteristics. Therefore, in the descriptives section, we tested whether the characteristics of the missing observations differed from those of the non-missing data, and we did not find any clear differences. Thus, we expect that the missing data do not have an important effect on our found results.
@@ -1425,7 +1419,7 @@ De data zijn van 1995. Misschien zijn er ondertussen al zaken maatschappelijk ve
 
 # References
 
-Becker GS (1968) Crime and Punishment: An Economic Approach. J Polit Econ 76: 169–217
+Becker GS (1968) Crime and Punishment: An Economic Approach. Journal of Political Economy 76: 169–217
 
 # References dataset
 
@@ -1443,6 +1437,8 @@ Social Research Ann Arbor, Michigan. (1992)
 
 U.S. Department of Justice, Federal Bureau of Investigation, Crime in the United 
 States (Computer File) (1995)
+
+# Additional references
 
 Redmond, M. A. and A. Baveja: A Data-Driven Software Tool for Enabling Cooperative 
 Information Sharing Among Police Departments. European Journal of Operational Research 

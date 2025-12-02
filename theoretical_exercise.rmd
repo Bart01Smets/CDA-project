@@ -33,7 +33,7 @@ The average of the total group doesn't deviate a lot from the average of the ave
 
 1.  We could consider evaluating age as a continuous variable. • Looking at Figure 1, would such a model provide a good fit? Explain
 
-By treating age as a continuous variable, assumptions about functional form are made. Here, the effect looks non-linear, as the increase in total income between age 13 and 15 is a lot bigger than between 11 and 13. Therefore it seems more reasonable to keep it categorical. Difficult to say with only 3 datapoints though.
+By treating age as a continuous variable, assumptions about functional form are made. Here, the effect looks non-linear, as the increase in total income between age 13 and 15 is a lot bigger than between 11 and 13. Therefore it seems more reasonable to keep it categorical. Ideally, we would need more than three datapoints to investigate this relationship.
 
 2.  Depending on your answer in 1. fit either a model with age and gender as categorical, but without interaction OR the same model without interaction but with age as a continuous predictor • Write out the model • Estimate the coefficients • Estimate the residual variance
 
