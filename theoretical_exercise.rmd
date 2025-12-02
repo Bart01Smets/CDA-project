@@ -183,17 +183,15 @@ The gender-effect parameters can be interpreted as follows.
 -   $\beta_4 =$ `r beta2[5]`: `r beta2[4]` ($\beta_3$) + `r beta2[5]` ($\beta_4$) $=$ `r beta2[4]+beta2[5]`, so a female of 13 years old is expected to have an income of `r -beta2[4]-beta2[5]` pounds less than a male of 13 years old;
 -   $\beta_5 =$ `r beta2[6]`: `r beta2[4]` ($\beta_3$) + `r beta2[6]` ($\beta_5$) $=$ `r beta2[4]+beta2[6]`, so a female of 15 years old is expected to have an income of `r -beta2[4]-beta2[6]` pound less than a male of 15 years old;
 
-4.  Compare both models in terms of: • Underlying assumptions
+4.  Compare both models in terms of:
+
+• Underlying assumptions
 
 In the model without interaction, gender is assumed to have the same effect regardless of ages (gender-effect independent of age_effect). In theory this means that gender would only influence the intercept and not the slope. Since in this model only qualitative variables are included, we take this to mean that the vertical distance between predicted means for males and females are is constant across age categories. The regression functions for all combinations are parallel to each other.
 
 In the second model, where interaction is included, the effect of gender is no longer independent and changes with age. This is a reinforcement-type effect: with increasing age, the gender gap increases as well (the 'slope' becomes steeper).
 
 • Formally test if the model with interaction (3.) fits the data better
-
-In theorie obs MSE niet? Maar volgens de simulaties wel, omdat een deel van de variantie binnen de groepen ook gemodelleerd wordt door het model? SSE zal wel beter zijn. Rkwadraat? Rkwadraat adjusted?...
-
-Gewoon F-test met berekende SSE's van Q2 en Q3 vglen?
 
 We will use the F-statistic to determine if the model with interaction fits the data better: $H0$ : all interaction coefficients = 0
 
@@ -236,7 +234,7 @@ PI_{95\%}(15,girl) = [\hat{Y}_{15,girl} \pm t_{0.975, df} * s(\hat{Y}_{15,girl})
 $$
 Resulting in:
 ```{r}
-prediction_se <- sqrt(var_pred)
+prediction_se <- sqrt(predicted_var)
 df <- ntot - nr_of_betas
 t95 <- qt(0.975, df)
 lower_border <- predicted_income_15 - t95*prediction_se
