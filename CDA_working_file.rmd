@@ -635,7 +635,7 @@ The partial regression plots show that, with respect to the effects of the predi
 predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 
 partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
-  temp <- train_data
+  temp <- data
   controls <- setdiff(predictor_list, predictor)
   
   formula_outcome  <- as.formula(paste(outcome, "~", 
@@ -707,10 +707,50 @@ fit_log <- lm(log(ViolentCrimesPerPop + 1) ~
                 PctImmig + PctPopUnderPov:PctBSorMore,
               data = train_data)
 
-summary(fit_log)
+multi_var_summary <- summary(fit_log)
+multi_var_summary
 plot(fit_log)
 par(mfrow = c(1, 1))
 ```
+
+```{r}
+train_data$logViolent      <- log(train_data$ViolentCrimesPerPop + 1)
+train_data$log_racepctblack <- log(train_data$racepctblack + 1)
+# Convert percent to proportion
+p <- train_data$racepctblack / 100
+
+# Avoid 0 and 1
+eps <- 1e-6
+p <- pmin(pmax(p, eps), 1 - eps)
+
+# Logit transform
+train_data$race_black_logit <- log(p / (1 - p))
+train_data$race_black_asin <- asin(sqrt(train_data$racepctblack))
+
+
+
+# 2. Fit your model using the NEW column
+fit_log <- lm(logViolent ~ 
+                PctPopUnderPov + 
+                PctBSorMore + 
+                race_black_logit + 
+                PctImmig +
+                PctPopUnderPov:PctImmig,
+              data = train_data)
+
+# 3. Extract summary
+multi_var_summary <- summary(fit_log)
+multi_var_summary
+plot(fit_log)
+par(mfrow = c(1, 1))
+
+# 4. Build a clean predictor list WITH ONLY REAL VARIABLES
+predictor_list <- rownames(multi_var_summary$coefficients)[-1]
+
+main_terms <- predictor_list[!grepl(":", predictor_list)]
+
+```
+
 ## Rerun selection after transformation of Y
 We will repeat the model building process with the log-transformed ViolentCrimesPerPop.
 
@@ -777,7 +817,9 @@ multi_var_summary
 ```
 
 ### Partial Regression Plots
-Again the partial regression plots show that, with respect to the effects of the predictor variables, no clear deviation from linearity is visible. There is no transformation of the predictor variables recommended.
+
+When creating the partial regression plots on the model with the log transformed violent crimes, no clear need for tranformations could be observed for all variables except PctRaceBlack. 
+
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
 predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 plots <- lapply(predictor_list, function(predictor) {
@@ -789,12 +831,65 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 
+In the partial regression plot of the racepctblack, it could be seen that there is not a linear effect on the outcome. Therefor, multiple trnasformations on the racepctblack variable were tested, such as a log transformation. Eventually, it was decided that a logit transformation would work better given the percentile nature of the predictor.
+
+```{r making logit tranformation}
+
+pct_to_logit <-  function(percentage, addition = 1e-6) {
+  percentiles_in_range01 <- percentage / 100
+  # add small value to avoid 0 and 1
+  percentiles_in_range01 <- pmin(
+    pmax(percentiles_in_range01, addition),
+    1 - addition)
+  logit <- log(percentiles_in_range01 / 
+                                     (1 - percentiles_in_range01))
+  logit
+}
+
+train_data$race_black_logit <- pct_to_logit(train_data$racepctblack)
+
+```
+
+Fitting the model with this logit transformed racepctblack seemed to stabilize the residual vs fitted plot, as well as make the partial regression plot look linear.
+
+```{r}
+fit_logit <- lm(logViolent ~ 
+                PctPopUnderPov + 
+                PctLess9thGrade +
+                PctBSorMore + 
+                race_black_logit +
+                PctImmig,
+              data = train_data)
+
+
+multi_var_logit_summary <- summary(fit_logit)
+multi_var_logit_summary
+plot(fit_logit)
+par(mfrow = c(1, 1))
+```
+
+```{r partial-regression-logits, fig.width=10, fig.height=8}
+predictor_list <- row.names(multi_var_logit_summary$coefficients[-1,])
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+```
+
+
 ### Interaction Terms Selection
 
 Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance.
 
 ```{r interaction term selection 2}
-selected_vars <- row.names(multi_var_summary$coefficients[-(1:2),])
+selected_vars <- setdiff(
+  row.names(multi_var_logit_summary$coefficients),
+  c("(Intercept)", "PctPopUnderPov")
+)
+
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
  
 formulas <- sapply(interaction_terms, function(i) {
@@ -843,7 +938,7 @@ The model selection procedure shows that several interaction terms may add value
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctImmig + PctPopUnderPov:PctBSorMore"))
+                                  "PctPopUnderPov:race_black_logit + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctImmig + PctPopUnderPov:PctBSorMore"))
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
 ```
@@ -857,7 +952,7 @@ It is noticeable that the interaction terms that show a significant effect in a 
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctBSorMore"))
+                                  "PctPopUnderPov:race_black_logit + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctBSorMore"))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
@@ -866,6 +961,7 @@ fit_final1 <- fit_final
 # confint
 print(confint(fit_final))
 ```
+
 
 ### Multicollinearity Check
 
@@ -883,7 +979,7 @@ PctLess9thGrade was removed due to high multicollinearity. Removing it improves 
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list[-2], collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack  + PctPopUnderPov:PctBSorMore"))
+                                  "PctPopUnderPov:race_black_logit  + PctPopUnderPov:PctBSorMore"))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
@@ -897,7 +993,7 @@ We see that our model performs only a little less well, but this way we did acco
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list[-2], collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack"))
+                                  "PctPopUnderPov:race_black_logit"))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
@@ -1125,10 +1221,10 @@ We can interpret the estimated percentage change, `r percentage_change`%, as the
 
 ```{r}
 set.seed(987654321)
-CI_9thgrade <- cond_effect_boot(fit_final,
-            x = "PctLess9thGrade", w = "PctPopUnderPov", nboot = 2000)
-ci_lower <- exp(CI_9thgrade$"CI Lower"[CI_9thgrade$Level == "Medium"]) - 1 
-ci_upper <- exp(CI_9thgrade$"CI Upper"[CI_9thgrade$Level == "Medium"]) - 1
+#CI_9thgrade <- cond_effect_boot(fit_final,
+#            x = "PctLess9thGrade", w = "PctPopUnderPov", nboot = 2000)
+#ci_lower <- exp(CI_9thgrade$"CI Lower"[CI_9thgrade$Level == "Medium"]) - 1 
+#ci_upper <- exp(CI_9thgrade$"CI Upper"[CI_9thgrade$Level == "Medium"]) - 1
 
 
 
@@ -1155,7 +1251,7 @@ We follow the same logic for racepctblack as for the previous 2. However we now 
 set.seed(987654321)
 
 cond_effect_boot(fit_final,
-            x = "racepctblack", w = "PctPopUnderPov", nboot = 2000)
+            x = "race_black_logit", w = "PctPopUnderPov", nboot = 2000)
 
 
 ```
@@ -1193,6 +1289,7 @@ Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and c
 # Predictions on test set
 # Transforming outcome variable in test dataset
 test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
+test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
 
 # we backtransform the data to the normal scale
 backtransformation <- function(value){
