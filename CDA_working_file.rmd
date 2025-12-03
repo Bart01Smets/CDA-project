@@ -1090,7 +1090,11 @@ De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hieri
 
 ```{r}
 library(olsrr)
-diagplots <- olsrr::ols_plot_diagnostics(fit_final, print_plot = TRUE)
+diagplots <- olsrr::ols_plot_diagnostics(fit_final, print_plot = FALSE)
+```
+
+```{r fig.width=10, fig.height=8}
+car::influenceIndexPlot(fit_final)
 ```
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
