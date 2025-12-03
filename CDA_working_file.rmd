@@ -85,10 +85,10 @@ schedule <- data.frame(
               "Final conclusion and discussion"),
   Final_responsibility = c("Thomas",
                            "Ilja",
-                           "Bart",
+                           "Thomas",
                            "Lieselot",
                            "Ilja",
-                           "Bart",
+                           "Ilja",
                            "Lieselot",
                            "Thomas",
                            "Ilja",
@@ -753,7 +753,7 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 
-In the partial regression plot of the racepctblack, it could be seen that there is not a linear effect on the outcome. Therefor, multiple trnasformations on the racepctblack variable were tested, such as a log transformation. Eventually, it was decided that a logit transformation would work better given the percentile nature of the predictor.
+In the partial regression plot of the racepctblack, it could be seen that there is not a linear effect on the outcome. Therefore, multiple transformations on the racepctblack variable were tested, such as a log transformation. Eventually, it was decided that a logit transformation would work better given the percentile nature of the predictor.
 
 ```{r making logit tranformation}
 
@@ -1036,7 +1036,6 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 
-
 ```{r compare2}
 # Compare models
 cat("Comparison of models:\n")
@@ -1100,26 +1099,18 @@ De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hieri
 
 ```{r}
 library(olsrr)
-# olsrr::ols_plot_cooksd_bar(fit_final)
-# olsrr::ols_plot_dfbetas(fit_final)
-
-olsrr::ols_plot_diagnostics(fit_final)
-
-# car::influenceIndexPlot(fit_final)
-
-#car::dfbeta(s)Plots(fit_final): (un)standardized
-# car::dfbetasPlots(fit_final)
+olsrr::ols_plot_cooksd_bar(fit_final)
+olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
+olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
+```
+```{r dfbetas plots, fig.width=10, fig.height=8}
+car::dfbetasPlots(fit_final)
 ```
 
-```{r fig.width=10, fig.height=8}
-car::influenceIndexPlot(fit_final)
-```
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
 
 ```{r robust-inference}
-library(sandwich)
-library(lmtest)
 library(MASS)
 
 robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
@@ -1128,10 +1119,9 @@ summary(robust, method = "XtX")
 
 ```{r}
 par(mfrow=c(2,2))
-plot(fit_log)
+plot(fit_final)
 par(mfrow=c(2,2))
 plot(robust, which = 1)
-
 qqnorm(resid(robust))
 qqline(resid(robust))
 
@@ -1197,13 +1187,6 @@ cat("High DFFITS (|DFFITS| >", round(dffits_threshold, 4), "):",
     sum(diagnostics$high_dffits), "\n")
 ```
 
-```{r influential observations}
-# find influent obs
-influential <- diagnostics[diagnostics$high_cooks | diagnostics$high_dffits, ]
-influential <- influential[order(-influential$cooks_d), ]
-print(head(influential[, c("obs", "population", "stud_residual", "leverage", "cooks_d", "dffits")], 10))
-```
-
 ```{r influence plot, fig.width=8, fig.height=6}
 # Influence plot
 plot(leverage, stud_res_final, 
@@ -1211,18 +1194,6 @@ plot(leverage, stud_res_final,
      main = "Influence Plot",
      cex = sqrt(cooks_d) * 10)
 ```
-
-```{r dfbetas plots, fig.width=10, fig.height=8}
-# DFBETAS plots
-par(mfrow = c(2, ceiling(ncol(dfbetas_val)/2)))
-for(j in 1:ncol(dfbetas_val)) {
-  plot(dfbetas_val[, j], 
-       ylab = paste("DFBETAS -", colnames(dfbetas_val)[j]),
-       main = colnames(dfbetas_val)[j])
-}
-par(mfrow = c(1, 1))
-```
-
 
 
 ## interpretation final model
@@ -1236,77 +1207,63 @@ print(confint(fit_final))
 ```{r}
 library(stdmod)
 b <- coef(fit_final)
-mean_race <- mean(train_data$racepctblack)
-mean_9thgrade <- mean(train_data$PctLess9thGrade)
+#mean_race <- mean(train_data$racepctblack)
+#mean_9thgrade <- mean(train_data$PctLess9thGrade)
 mean_bsormore <- mean(train_data$PctBSorMore)
 mean_poverty <- mean(train_data$PctPopUnderPov)
 
 coef_mean <- b["PctPopUnderPov"] +
-      b["PctPopUnderPov:racepctblack"]    * mean_race +
-      b["PctPopUnderPov:PctLess9thGrade"] * mean_9thgrade +
+      #b["PctPopUnderPov:racepctblack"]    * mean_race +
+      #b["PctPopUnderPov:PctLess9thGrade"] * mean_9thgrade +
       b["PctPopUnderPov:PctBSorMore"]     * mean_bsormore
 percentage_change <- (exp(coef_mean) - 1) *100
+confidence_intervals <- confint(fit_final)
 ```
 
-#### notes on interpretation
+#### Notes on interpretation
 
 Our final model is a log-linear model, this makes interpretation of the coefficients less intuitive. We will start by giving the coefficients that express the estimated change in the log of the expected violent crime rate per 100k population with an increase of the predictor variable by 1 unit. To ease interpretation we will back transform this coefficient and multiply it by 100 to express the estimated percentage change of the mean violent crime rate / 100k when the predictor variable is increased by 1 unit. The intercept on its own is not interpretable as it would require all predictor variables (and interaction terms) to be zero. This is not in the scope of our model. If it were, the intercept of `r b["(intercept)"]` could be interpreted as the estimated log of expected crime rate when all predictor variables are 0.
 There is no use in interpreting interaction-term coefficients on their own, as they indicate the effect of one predictor on the other, but have no direct effect on its own.
 
 
-#### interpretation of PctPopUnderPov
-
-
-The effect of PctPopUnderPov varies with racepctblack, PctLess9thGrade and PctBsorMore through the interaction terms. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the log of expected violent crimes as `r summary(fit_final)$coefficients[2,1]` + `r summary(fit_final)$coefficients[7,1]` * racepctblack + `r  summary(fit_final)$coefficients[8,1]` * pctless9thgrade + `r summary(fit_final)$coeffecients[9,1]` * cptbsormore. Interpretation is more intuitive if we back transform the logdata. The effect of an increase in PctPopUnderPop with one unit (one percent) on violent crimes per 100k is then calculated by:  exp(`r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:racepctblack"]` * racepctblack + `r b["PctPopUnderPov:PctLess9thGrade"]` * pctless9thgrade + `r b["PctPopUnderPov:PctBSorMore"]` * cptbsormore) -1 when all other variables are held constant. 
-If we take for example the mean of the 3 interacting terms to calculate the effect of PctPoponderpov when the interacting variables are held at their average and we back transform it we can find `r exp(coef_mean) -1`.
-We can interpret the estimated percentage change, `r percentage_change`%, as the estimated increase in expected value of violent crimes (per population of 100k) per percentage increase of pop under pov, when the interacting variables are held at their average and all other variables are held constant. 
-
-
-
-#### interpretation of PctLess9thGrade
+#### Interpretation of PctPopUnderPov
 
 ```{r}
 set.seed(987654321)
-#CI_9thgrade <- cond_effect_boot(fit_final,
-#            x = "PctLess9thGrade", w = "PctPopUnderPov", nboot = 2000)
-#ci_lower <- exp(CI_9thgrade$"CI Lower"[CI_9thgrade$Level == "Medium"]) - 1 
-#ci_upper <- exp(CI_9thgrade$"CI Upper"[CI_9thgrade$Level == "Medium"]) - 1
-
-
-
+ci_pov <- cond_effect_boot(fit_final,
+            x = "PctPopUnderPov", w = "PctBSorMore", nboot = 2000)
+ci_lower <- (exp(ci_pov$"CI Lower"[ci_pov$Level == "Medium"]) - 1) * 100 
+ci_upper <- (exp(ci_pov$"CI Upper"[ci_pov$Level == "Medium"]) - 1) * 100
 ```
 
+The effect of PctPopUnderPov varies with PctBsorMore through the interaction terms. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the log of expected violent crimes as `r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore]` * PctBSorMore.  Interpretation is more intuitive if we back transform the log transformed data. The effect of an increase in PctPopUnderPop with one unit (one percent) on violent crimes per 100k is then calculated by:  exp(`r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore"]` * PctBSorMore) -1 when all other variables are held constant. 
+If we take for example the mean of the PctBSorMore to calculate the effect of PctPoponderpov when the interacting variable is held at its average and we back transform it we can find `r percentage_change`. The confidence interval of this effect is [`r ci_lower`%, `r ci_higher`%]
+With a confidence coefficient of .95 we estimate that the true percentage change in expected value of violent crimes (per population of 100k) per percentage increase of pop under pov is somewhere between `r ci_lower`% and `r ci_higher`%, when the interacting variable is held at its average and all other variables are held constant.  The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of PctPopUnderPov on violent crimes gets larger. Theoretically this could be explained due to the bigger gap in socio-economic standing, which could provoke more violent crimes.
 
-As mentioned above, PctLess9thGrade and PctPopUnderPov interact. The effect of PctLess9thGrad is therefore impacted by the level of PctPopUnderPov: `r b["PctLess9thGrade"]` + `r b["PctPopUnderPov:PctLess9thGrade"]` * PctPopUnderPov. This interaction effect is reinforcing, meaning that an increase in PctPopUnderPov would lead to a more negative slope for PctLess9thGrade. Taking the mean of PctPopUnderPov the interaction-adjusted coefficient for Pctless9thegrade is `r b["PctLess9thGrade"] + b["PctPopUnderPov:PctLess9thGrade"] * mean_poverty`. Increasing Pctless9thGrade by one percent (one unit), we estimate that the expected value of violent crimes (per 100k) decreases by `r (exp(b["PctLess9thGrade"] + (b["PctPopUnderPov:PctLess9thGrade"] * mean_poverty)) -1) * 100`% (original scale) when PctPopUnderPov is held at its mean and all other variables are held constant. We can find a 95% confidence interval using cond_effect_boot() from package *stdmod* of [`r ci_lower` , `r ci_upper`]. We can therefore say that with a .95 confidence coefficient, we estimate that the percentage change of expected crime rates is somewhere between `r ci_lower * 100`% and `r ci_upper * 100`%. Note that this is a pointwise confidence interval for when PctPopUnderPov is held at its mean and all other variables are held constant. However we see that the coefficient of the main effect in the model is not significant, but still included because of the interaction term. We also see that the multicollinearity increases, this can increase standard errors and lead to unstable coefficient estimates. It therefore provides a possible explanation to the sign of the estimates that are incosistent with theoretical expectations.
 
+#### Interpretation of PctBSorMore
 
-#### interpretation of PctBSorMore
-
-There is also an interaction term included between PctBSorMore and PctPopUnderPov. The interpretation is similar to that of PctLess9thGrade. The conditional effect on of PctBSorMore on the log expected violent crime rate is given by: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"]`* PctPopUnderPov. Both coefficients are negative, indicating a reinforcing effect: increases in PctPopUnderPov enforces the negative effect of PctBSorMore. Similarly to before we can take the mean of PctPopUnderPov and estimate the conditional effect of PctBSorMore on the log expected value of crime rate per unit increase of PctBSorMore, when keeping poverty at its mean and all other variables constant: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Undoing the log transformation we get `r (exp(b["PctBSorMore"] + b["PctPopUnderPov:PctBSorMore"] * mean_poverty) - 1)* 100`%, which can be interpreted as the estimated percent change in expected crime rate by increasing PctBSorMore by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant. Thus if, under the conditions stated above, a higher percentage of the population has a Bachelors degree or higher, the estimated mean crime rate decreases and this effect is more pronounced for higher levels of PctUnderPov.
 ```{r}
 set.seed(987654321)
-cond_effect_boot(fit_final,
+ci_pov2 <- cond_effect_boot(fit_final,
             x = "PctBSorMore", w = "PctPopUnderPov", nboot = 2000)
+ci_lower2 <- (exp(ci_pov2$"CI Lower"[ci_pov2$Level == "Medium"]) - 1) * 100 
+ci_upper2 <- (exp(ci_pov2$"CI Upper"[ci_pov2$Level == "Medium"]) - 1) * 100
 ```
 
-#### interpretation of racepctblack
+The interpretation for PctBSorMore is similar to the one above because of their interaction. The conditional effect on of PctBSorMore on the log expected violent crime rate is given by: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"]`* PctPopUnderPov.  Similarly to before we can take the mean of PctPopUnderPov and estimate the conditional effect of PctBSorMore on the log expected value of crime rate per unit increase of PctBSorMore, when keeping poverty at its mean and all other variables constant: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Contrary to above, we now see a interference effect: for higher levels of PctPopUnderPov the negative effect of PctBSorMore becomes less negative (the slope becomes less steep). Undoing the log transformation we get `r (exp(b["PctBSorMore"] + b["PctPopUnderPov:PctBSorMore"] * mean_poverty) - 1)* 100`%, with a confidence interval of [`r ci_lower2`%, `r ci_higher`%] which can be interpret as: with a confidence coefficient of 0.95 we estimated that the true percent change in expected crime rate by increasing PctBSorMore by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant is somewhere between [`r ci_lower2`%, `r ci_higher`%]. Thus, under the conditions stated above, if a higher percentage of the population has a Bachelors degree or higher, the estimated mean crime rate decreases and this effect is less pronounced for higher levels of PctUnderPov.
 
-We follow the same logic for racepctblack as for the previous 2. However we now see an interference interaction effect: the conditional effect of racepctblack is given by: `r b["racepctblack"]` + `r b["PctPopUnderPov:racepctblack"]` * PctPopUnderPov. If we look at the main effect of racepctblack (PctPopUnderPov = 0), we see a positive effect, where we see a negative contribution of the interaction term: the slope of the response function against racepctblack decreases for higher levels of PctPopUnderPov. For a higher percentage of people living under the poverty line, the estimated effect of percentage of black people on violent crime rates is lower than when there is a lower percentage of people living under the poverty line. If we look at the conditional effect of racepctblack when PctpovUnderPop is held at its mean we get: `r b["racepctblack"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Exponentiating this expression to return to the original scale we get an estimated percentage change of `r (exp(b["racepctblack"] +  b["PctPopUnderPov:racepctblack"] * mean_poverty)-1) *100`% of the expected crime rates (100k) by increasing the racepctblack by one unit (1%), keeping PctPovUnderPov at its mean and all other variables constant. Increasing levels of PctPovUnderPov would result in a smaller positive effect of racepctblack than lower levels of PctPopUnderPov.
+#### Interpretation of race_black_logit  -- nog niet aangepast
 
-```{r}
-set.seed(987654321)
-
-cond_effect_boot(fit_final,
-            x = "race_black_logit", w = "PctPopUnderPov", nboot = 2000)
+The interpretation of race_black_logit is more complicated. It has no interaction terms so we can interpret the main effect on its own. A one-unit increase in the log-odds of percentage African American is associated with a `r b["race_black_logit"] * 100`% change in the log of Violent Crimes per 100k.
 
 
-```
-
-
-#### interpretation of PctImmig 
+#### Interpretation of PctImmig -- nog niet aangepast
 
 PctImmig is not involved in any interaction term, therefore we can interpret the main effect `r b["PctImmig"]` on its own. Exponentiating and multiplying by 100 this coefficients we get: `r (exp(b["PctImmig"]) - 1)* 100`. The exponentiated 95% confidence interval is [`r exp(confint(fit_final)[6,1]) - 1` , `r exp(confint(fit_final)[6,2]) -1 `]. With confidence coefficient .95 we estimate that the percentage change in expected crime rates per 100k population per unit increase in PctImmig when keeping all other variables constant will be somewhere between `r (exp(confint(fit_final)[6,1]) - 1) * 100`% and `r (exp(confint(fit_final)[6,2]) -1) * 100`%.
 
+
+#### agePct12t29 -- nog niet gedaan
 
 ## Summary
 Dusja multivariate model stuk beter dan univariate model als je kijkt naar de tabel
@@ -1543,6 +1500,16 @@ ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
     theme_bw(base_size = 8) +
     labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
 ```
+
+
+```{r}
+fit_final <- lm(formula_final, data = test_data)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+```
+
+
 ```{r}
 crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
 crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
