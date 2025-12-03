@@ -243,6 +243,11 @@ A linear model assumes linear form is right, errors are independent, homoscedast
 
 Next to this, the data is most likely Heteroskedastic, as the variances differ massively across ages, showing a dependence of the income variance with the age predictors, showing that the data is not Homoscedastic.
 
+These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger childeren as they have a lower variance. While the prediction interval will be to narrow for older childeren. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.
+
+```{r show-code, ref.label=knitr::all_labels(), echo = TRUE, eval=FALSE}
+
+```
 These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger children as they have a lower variance. While the prediction interval will be to narrow for older children. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.
 
 ### appendix
