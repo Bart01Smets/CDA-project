@@ -183,7 +183,7 @@ The gender-effect parameters can be interpreted as follows.
 
 • Underlying assumptions
 
-In the model without interaction, gender is assumed to have the same effect regardless of ages (gender-effect independent of age_effect). In theory this means that gender would only influence the intercept and not the slope. Since in this model only qualitative variables are included, we take this to mean that the vertical distance between predicted means for males and females is constant across age categories. The regression functions for all combinations are parallel to each other.
+In the model without interaction, gender is assumed to have the same effect regardless of ages (gender-effect independent of age_effect). In theory this means that gender would only influence the intercept and not the slope. Since in this model only qualitative variables are included, we take this to mean that the vertical distance between predicted means for males and females is constant across age categories. The regression functions for all combinations are parallel to each other. Nog het omgekeerde erbij zetten!!!!
 
 In the second model, where interaction is included, the effect of gender is no longer independent and changes with age. This is a reinforcement-type effect: with increasing age, the gender gap increases as well (the 'slope' becomes steeper) and thus the vertical distance between predicted mean for male and female increases with age.
 
