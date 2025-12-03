@@ -1,7 +1,7 @@
 ---
 title: "Theoretical Exercise Analysis of Continuous Data"
-author: "Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van de Putte"
-date: "2025-11-26"
+author: "Thomas Sertijn, Ilja Van Bever, Lieselot Van de Putte"
+date: "2025-12-04"
 output:
   pdf_document: default
   html_document: default
@@ -18,10 +18,6 @@ knitr::opts_chunk$set(
 ```{r settings}
 options(width = 100) 
 ```
-
-# Continuous data Homework
-
-# Thomas Sertijn, Bart Smets, Ilja Van Bever, Lieselot Van De Putte
 
 This theoretical exercise is based on the article on A Material Paradox: Socioeconomic Status, Young People’s Disposable Income and Consumer Culture by West et al. (2006). Everything is to be derived from its table 1, that is also presented in Figure 1. It provides information on income of teenagers in West Scotland. Based on the provided summary data, we will estimate regression coefficients for a multivariable regression model.
 
@@ -175,7 +171,7 @@ The MSE can be calculated using the same formulas as mentioned in exercise 2. $$
 
 After calculation we derive that MSE is equal to `r MSE2`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formula is now smaller (more parameters in the model).
 
-It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is (ik zou essentially ipv equal zeggen -\> voorzichtiger) equal to zero, because a model with six parameters is fitted to 6 data points. So the estimates of the averages of the groups will be exactly equal to the observed averages.
+It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is equal to zero, because a model with six parameters is fitted to 6 data points. So the estimates of the averages of the groups will be exactly equal to the observed averages.
 
 The gender-effect parameters can be interpreted as follows.
 
@@ -183,17 +179,15 @@ The gender-effect parameters can be interpreted as follows.
 -   $\beta_4 =$ `r beta2[5]`: `r beta2[4]` ($\beta_3$) + `r beta2[5]` ($\beta_4$) $=$ `r beta2[4]+beta2[5]`, so a female of 13 years old is expected to have an income of `r -beta2[4]-beta2[5]` pounds less than a male of 13 years old;
 -   $\beta_5 =$ `r beta2[6]`: `r beta2[4]` ($\beta_3$) + `r beta2[6]` ($\beta_5$) $=$ `r beta2[4]+beta2[6]`, so a female of 15 years old is expected to have an income of `r -beta2[4]-beta2[6]` pound less than a male of 15 years old;
 
-4.  Compare both models in terms of: • Underlying assumptions
+4.  Compare both models in terms of:
 
-In the model without interaction, gender is assumed to have the same effect regardless of ages (gender-effect independent of age_effect). In theory this means that gender would only influence the intercept and not the slope. Since in this model only qualitative variables are included, we take this to mean that the vertical distance between predicted means for males and females are is constant across age categories. The regression functions for all combinations are parallel to each other.
+• Underlying assumptions
 
-In the second model, where interaction is included, the effect of gender is no longer independent and changes with age. This is a reinforcement-type effect: with increasing age, the gender gap increases as well (the 'slope' becomes steeper).
+In the model without interaction, gender is assumed to have the same effect regardless of ages (gender-effect independent of age_effect). In theory this means that gender would only influence the intercept and not the slope. Since in this model only qualitative variables are included, we take this to mean that the vertical distance between predicted means for males and females is constant across age categories. The regression functions for all combinations are parallel to each other. This is also valid for the effect of age on gender.
+
+In the second model, where interaction is included, the effect of gender is no longer independent and changes with age. This is a reinforcement-type effect: with increasing age, the gender gap increases as well (the 'slope' becomes steeper) and thus the vertical distance between predicted mean for male and female increases with age.
 
 • Formally test if the model with interaction (3.) fits the data better
-
-In theorie obs MSE niet? Maar volgens de simulaties wel, omdat een deel van de variantie binnen de groepen ook gemodelleerd wordt door het model? SSE zal wel beter zijn. Rkwadraat? Rkwadraat adjusted?...
-
-Gewoon F-test met berekende SSE's van Q2 en Q3 vglen?
 
 We will use the F-statistic to determine if the model with interaction fits the data better: $H0$ : all interaction coefficients = 0
 
@@ -204,7 +198,7 @@ f
 critical_value
 ```
 
-$F^*$ = `r f` \> `r critical_value`, therefore we conclude that the model with interaction does not reduce SSE much and we can reject the null hypothesis.
+$F^*$ = `r round(f, 4)` \< `r round(critical_value, 4)`, therefore we conclude that the model with interaction does not reduce SSE much and we cannot reject the null hypothesis.
 
 5.  From the model with interaction (3.), derive a 95% prediction interval for the income of a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage? Why? If not, will the coverage tend to be higher or lower?
 
@@ -236,7 +230,7 @@ PI_{95\%}(15,girl) = [\hat{Y}_{15,girl} \pm t_{0.975, df} * s(\hat{Y}_{15,girl})
 $$
 Resulting in:
 ```{r}
-prediction_se <- sqrt(var_pred)
+prediction_se <- sqrt(predicted_var)
 df <- ntot - nr_of_betas
 t95 <- qt(0.975, df)
 lower_border <- predicted_income_15 - t95*prediction_se
@@ -245,8 +239,19 @@ higher_border <- predicted_income_15 + t95*prediction_se
 c(lower_bound = lower_border, prediction = predicted_income_15,  upper_bound = higher_border)
 ```
 
-A linear model assumes linear form is right, errors are independent, homoscedasticty, and normally distributed. For this data, these assumptions are clearly violated, e.g. the data is clearly right-skewed, which is indicated by the large average standard deviation on the money predictor. Since we work with data of childeren and teens, we expect that the lowest value possible for the money is zero, no debt. Because of this it could be seen that within one or two SDs all total money would go below the zero cutt-off, showing that the data is likely right-scewed.
+A linear model assumes linear form is right, errors are independent, homoscedasticty, and normally distributed. For this data, these assumptions are clearly violated, e.g. the data is clearly right-skewed, which is indicated by the large average standard deviation on the money predictor. Since we work with data of children and teens, we expect that the lowest value possible for the money is zero, no debt. Because of this it could be seen that within one or two SDs all total money would go below the zero cutt-off, showing that the data is likely right-skewed.
 
 Next to this, the data is most likely Heteroskedastic, as the variances differ massively across ages, showing a dependence of the income variance with the age predictors, showing that the data is not Homoscedastic.
 
 These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger childeren as they have a lower variance. While the prediction interval will be to narrow for older childeren. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.
+
+```{r show-code, ref.label=knitr::all_labels(), echo = TRUE, eval=FALSE}
+
+```
+These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger children as they have a lower variance. While the prediction interval will be to narrow for older children. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.
+
+### appendix
+
+```{r show-code, ref.label=knitr::all_labels(), echo = TRUE, eval=FALSE}
+
+```

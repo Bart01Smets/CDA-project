@@ -138,36 +138,6 @@ var_names <- sapply(strsplit(var_lines, "--"), function(x) str_trim(x[2]))
 # only retain the variable names by cutting everything after the :
 var_names <- str_extract(var_names, "^[^:]+")
 ```
-----------------------------------
-#remove in final product
-----------------------------------
-```{r}
-# variable_names <- list("communityname","state","countyCode", "communityCode", "fold", "population", "householdsize", 
-#                        "racepctblack", "racePctWhite", "racePctAsian", "racePctHisp", "agePct12t21", "agePct12t29", "agePct16t24",
-#                        "agePct65up", "numbUrban", "pctUrban", "medIncome", "pctWWage", "pctWFarmSelf", "pctWInvInc", "pctWSocSec",
-#                        "pctWPubAsst", "pctWRetire", "medFamInc", "perCapInc", "whitePerCap", "blackPerCap", "indianPerCap", "AsianPerCap", 
-#                        "OtherPerCap", "HispPerCap", "NumUnderPov", "PctPopUnderPov", "PctLess9thGrade", "PctNotHSGrad", "PctBSorMore", 
-#                        "PctUnemployed", "PctEmploy", "PctEmplManu", "PctEmplProfServ", "PctOccupManu", "PctOccupMgmtProf", "MalePctDivorce",
-#                        "MalePctNevMarr", "FemalePctDiv", "TotalPctDiv", "PersPerFam", "PctFam2Par", "PctKids2Par", "PctYoungKids2Par", 
-#                        "PctTeen2Par", "PctWorkMomYoungKids", "PctWorkMom", "NumKidsBornNeverMar", "PctKidsBornNeverMar", "NumImmig",
-#                        "PctImmigRecent", "PctImmigRec5", "PctImmigRec8", "PctImmigRec10", "PctRecentImmig", "PctRecImmig5", "PctRecImmig8",
-#                        "PctRecImmig10", "PctSpeakEnglOnly", "PctNotSpeakEnglWell", "PctLargHouseFam", "PctLargHouseOccup", "PersPerOccupHous",
-#                        "PersPerOwnOccHous", "PersPerRentOccHous", "PctPersOwnOccup", "PctPersDenseHous", "PctHousLess3BR", "MedNumBR",
-#                        "HousVacant", "PctHousOccup", "PctHousOwnOcc", "PctVacantBoarded", "PctVacMore6Mos", "MedYrHousBuilt",
-#                        "PctHousNoPhone", "PctWOFullPlumb", "OwnOccLowQuart", "OwnOccMedVal", "OwnOccHiQuart", "OwnOccQrange", "RentLowQ",
-#                        "RentMedian", "RentHighQ", "RentQrange", "MedRent", "MedRentPctHousInc", "MedOwnCostPctInc", "MedOwnCostPctIncNoMtg",
-#                        "NumInShelters", "NumStreet", "PctForeignBorn", "PctBornSameState", "PctSameHouse85", "PctSameCity85",
-#                        "PctSameState85", "LemasSwornFT", "LemasSwFTPerPop", "LemasSwFTFieldOps", "LemasSwFTFieldPerPop", "LemasTotalReq",
-#                        "LemasTotReqPerPop", "PolicReqPerOffic", "PolicPerPop", "RacialMatchCommPol", "PctPolicWhite", "PctPolicBlack",
-#                        "PctPolicHisp", "PctPolicAsian", "PctPolicMinor", "OfficAssgnDrugUnits", "NumKindsDrugsSeiz", "PolicAveOTWorked",
-#                        "LandArea", "PopDens", "PctUsePubTrans", "PolicCars", "PolicOperBudg", "LemasPctPolicOnPatr", "LemasGangUnitDeploy",
-#                        "LemasPctOfficDrugUn", "PolicBudgPerPop", "murders", "murdPerPop", "rapes", "rapesPerPop", "robberies", "robbbPerPop",
-#                        "assaults", "assaultPerPop", "burglaries", "burglPerPop", "larcenies", "larcPerPop", "autoTheft", "autoTheftPerPop", 
-#                        "arsons", "arsonsPerPop", "ViolentCrimesPerPop", "nonViolPerPop")
-```
----------------------------------------
-# end of removable part
----------------------------------------
 
 ```{r}
 colnames(violent_crimes_table) <- var_names 
@@ -544,7 +514,7 @@ plot(fit_simple$fitted.values, stud_res,
 outliers_simple <- which(abs(stud_res) > 2)
 ```
 
-Figures to get a visual illustration of whether outliers are more common in small pop.
+Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
 ```{r outliers vs population1}
 par(mfrow = c(1, 2))
 # Residuals vs population
@@ -628,7 +598,7 @@ The partial regression plots show that, with respect to the effects of the predi
 predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 
 partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
-  temp <- train_data
+  temp <- data
   controls <- setdiff(predictor_list, predictor)
   
   formula_outcome  <- as.formula(paste(outcome, "~", 
@@ -700,10 +670,12 @@ fit_log <- lm(log(ViolentCrimesPerPop + 1) ~
                 PctImmig + PctPopUnderPov:PctBSorMore,
               data = train_data)
 
-summary(fit_log)
+multi_var_summary <- summary(fit_log)
+multi_var_summary
 plot(fit_log)
 par(mfrow = c(1, 1))
 ```
+
 ## Rerun selection after transformation of Y
 We will repeat the model building process with the log-transformed ViolentCrimesPerPop.
 
@@ -715,8 +687,7 @@ train_data$logViolent <- log(train_data$ViolentCrimesPerPop + 1)
 
 We use an all-possible regressions procedure to select predictor variables. We include models with a maximum of 5 predictor variables and only models with 0, 1, or 2 education predictor variables. The best model is chosen based on the Bayesian Information Criterion.
 
-```{r model selection2, message=FALSE}
-
+```{r creating_formulas_without_interaction, message=FALSE}
 max_extra_predictors <- 4
 # Define predictor variables for model selection
 predictors <- c("perCapInc", "PctEmploy", 
@@ -733,6 +704,10 @@ for (i in 1:max_extra_predictors) {
   tmp <- paste0("logViolent~PctPopUnderPov + ", tmp)
   formulas[[i]] <- tmp
 }
+```
+
+
+```{r model selection2, message=FALSE}
 formulas <- unlist(formulas)
 formulas <- sapply(formulas, as.formula)
 models <- lapply(formulas, lm, data=train_data)
@@ -770,7 +745,9 @@ multi_var_summary
 ```
 
 ### Partial Regression Plots
-Again the partial regression plots show that, with respect to the effects of the predictor variables, no clear deviation from linearity is visible. There is no transformation of the predictor variables recommended.
+
+When creating the partial regression plots on the model with the log transformed violent crimes, no clear need for tranformations could be observed for all variables except PctRaceBlack. 
+
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
 predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 plots <- lapply(predictor_list, function(predictor) {
@@ -782,22 +759,81 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 
+In the partial regression plot of the racepctblack, it could be seen that there is not a linear effect on the outcome. Therefor, multiple trnasformations on the racepctblack variable were tested, such as a log transformation. Eventually, it was decided that a logit transformation would work better given the percentile nature of the predictor.
+
+```{r making logit tranformation}
+
+pct_to_logit <-  function(percentage, addition = 1e-6) {
+  percentiles_in_range01 <- percentage / 100
+  # add small value to avoid 0 and 1
+  percentiles_in_range01 <- pmin(
+    pmax(percentiles_in_range01, addition),
+    1 - addition)
+  logit <- log(percentiles_in_range01 / 
+                                     (1 - percentiles_in_range01))
+  logit
+}
+
+train_data$race_black_logit <- pct_to_logit(train_data$racepctblack)
+
+```
+
+Fitting the model with this logit transformed racepctblack seemed to stabilize the residual vs fitted plot, as well as make the partial regression plot look linear.
+
+```{r}
+fit_logit <- lm(logViolent ~ 
+                PctPopUnderPov + 
+                PctLess9thGrade +
+                PctBSorMore + 
+                race_black_logit +
+                PctImmig,
+              data = train_data)
+
+
+multi_var_logit_summary <- summary(fit_logit)
+multi_var_logit_summary
+plot(fit_logit)
+par(mfrow = c(1, 1))
+```
+
+```{r partial-regression-logits, fig.width=10, fig.height=8}
+predictor_list <- row.names(multi_var_logit_summary$coefficients[-1,])
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+```
+
+
 ### Interaction Terms Selection
 
 Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance.
 
 ```{r interaction term selection 2}
-selected_vars <- row.names(multi_var_summary$coefficients[-(1:2),])
+selected_vars <- setdiff(
+  row.names(multi_var_logit_summary$coefficients),
+  c("(Intercept)", "PctPopUnderPov")
+)
+
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
- 
-formulas <- sapply(interaction_terms, function(i) {
-  paste0(best_pred, " + ", i)
+
+# Nieuwe code
+formulas_interaction <- sapply(interaction_terms, function(i) {
+  paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
+                                  i)
 })
+# Oude code
+# formulas <- sapply(interaction_terms, function(i) {
+#   paste0(best_pred, " + ", i)
+# })
 
-formulas <- lapply(formulas, as.formula)
-models <- lapply(formulas, lm, data=train_data)
+formulas_interaction <- lapply(formulas_interaction, as.formula)
+models <- lapply(formulas_interaction, lm, data=train_data)
 
-interaction_models_form <- vapply(formulas, function(f) 
+interaction_models_form <- vapply(formulas_interaction, function(f) 
   paste(deparse(f), collapse = ""), character(1))
 summary_val_extraction <- function(x, item) {
   tmp <- summary(x)$coefficients
@@ -828,82 +864,189 @@ interaction_table
 best_interaction <- row.names(interaction_table[1,])
 ```
 
-## Multivariate Model
-
-The model selection procedure shows that several interaction terms may add value to the model. Therefore, the model including all interaction terms between the covariates and *PctPopUnderPov* is tested.
+This first selection showed that a model with an interaction term of PctPopUnderPov and PctLess9thGrade would be the only significant interaction term.
 
 ```{r final model2}
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctImmig + PctPopUnderPov:PctBSorMore"))
+                                  "PctPopUnderPov:PctLess9thGrade"))
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
-```
-In this model the interaction *PctPopUnderPov:PctImmig* is the only one that is not significant. When this interaction term is deleted from the model, all interaction terms are significant. The final model:
-$$
-log(ViolentCrimesPerPop_i + 1) = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \beta_2 \cdot PctLess9thGrade_i + \beta_3 \cdot PctBSorMore_i + \beta_4 \cdot racepctblack _i + \beta_5 \cdot PctImmig_i + \beta_6 \cdot PctPopUnderPov_i \cdot racepctblack_i + \beta_7 \cdot PctPopUnderPov_i \cdot PctLess9thGrade_i + \beta_8 \cdot PctPopUnderPov_i \cdot PctBSorMore_i + \epsilon_i
-$$
-It is noticeable that the interaction terms that show a significant effect in a model with only one interaction term are not the same as the interaction terms that are significant in a model containing all four interaction terms. This is because the significance of predictor variables and interactions in a model also depends on which other predictors and interactions are included in the model.
-
-```{r final model3}
-# Estimate model with interaction
-formula_final <- as.formula(paste("logViolent ~", 
-                                  paste(predictor_list, collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctBSorMore"))
-
-fit_final <- lm(formula_final, data = train_data)
-summary(fit_final)
-fit_final1 <- fit_final
-
-# confint
-print(confint(fit_final))
 ```
 
 ### Multicollinearity Check
 
 Before checking model assumptions, we first assess multicollinearity using the Variance Inflation Factor (VIF) and remove a variable if necessary. 
-```{r multicoll check2}
+
+```{r}
 library(car)
 # practicum: car::vif(fit)
 vif <- vif(fit_final)
 print(vif)
-```
-PctLess9thGrade was removed due to high multicollinearity. Removing it improves model stability and interpretability.
-
-```{r removing multicoll}
-
-# Estimate model with interaction
-formula_final <- as.formula(paste("logViolent ~", 
-                                  paste(predictor_list[-2], collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack  + PctPopUnderPov:PctBSorMore"))
-
-fit_final <- lm(formula_final, data = train_data)
-summary(fit_final)
-
+cat("BIC: ", BIC(fit_final))
 ```
 
-We see that our model performs only a little less well, but this way we did account for multicollinearity and our estimates are correct. After removing PctLess9thGrade and therefore its interaction term, we see that the interaction between PctPopUnderPov:PctBSorMore is not longer significant and therefore also removed from the model. After adjusting for multicollinearity we see an expected small drop in R-squared, but the model still explains a substantial proportion of the variation in log violent crimes. 
+However, when we look at the colinearity of the model we can see that the less then 9thgrade variables show a high multicolinearity score. One reason for this could be the addition of multiple education variables. For this reason the modelselection was retried with only one education variable present. 
+```{r filtering formulas for education}
 
-```{r formula adjustment}
+filtered_formulas <- Filter(function(f) {
+  variables <- all.vars(f)              
+  number_education_variables <- sum(variables %in% educ)   
+  number_education_variables <= 1                     
+}, formulas)
+#change formulas to contain the logit based race variable
+filtered_formulas <- lapply(filtered_formulas, function(f) {
+  f_str <- deparse(f)                                # formula -> character vector
+  f_str <- paste(f_str, collapse = " ")              # collapse into one string
+  f_str <- gsub("racepctblack", "race_black_logit", f_str)  # replace variable name
+  as.formula(f_str)                                  # back to formula
+})
 
-# Estimate model with interaction
-formula_final <- as.formula(paste("logViolent ~", 
-                                  paste(predictor_list[-2], collapse = " + "), "+",
-                                  "PctPopUnderPov:racepctblack"))
-
-fit_final <- lm(formula_final, data = train_data)
-summary(fit_final)
 
 ```
+
 ```{r}
-vif(fit_final)
+
+models <- lapply(filtered_formulas, lm, data=train_data)
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+formula_vector <- vapply(filtered_formulas, function(f) paste(deparse(f), collapse = "")
+                         , character(1))
+
+# build the frame
+model_ranking <- data.frame(
+  formula = formula_vector,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  BIC = bics
+)
+model_ranking <- model_ranking[order(model_ranking$BIC), ]
+# Print best model
+best <- which.min(model_ranking$BIC)
+best_pred <- model_ranking$formula[best]
+cat("\nBest model:\n")
+cat(best_pred, "\n")
+cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
+
+fit_multi <- lm(best_pred, data = train_data)
+multi_var_summary <- summary(fit_multi)
+multi_var_summary
 ```
+
+```{r}
+predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+selected_vars <- setdiff(
+  row.names(multi_var_summary$coefficients),
+  c("(Intercept)", "PctPopUnderPov")
+)
+
+interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
+
+# Nieuwe code
+formulas_interaction <- sapply(interaction_terms, function(i) {
+  paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
+                                  i)
+})
+# Oude code
+# formulas <- sapply(interaction_terms, function(i) {
+#   paste0(best_pred, " + ", i)
+# })
+
+formulas_interaction <- lapply(formulas_interaction, as.formula)
+models <- lapply(formulas_interaction, lm, data=train_data)
+
+interaction_models_form <- vapply(formulas_interaction, function(f) 
+  paste(deparse(f), collapse = ""), character(1))
+summary_val_extraction <- function(x, item) {
+  tmp <- summary(x)$coefficients
+  tmp[nrow(tmp), item]
+}
+p_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "Pr(>|t|)"))
+t_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "t value"))
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+delta_adj_r_square <- sapply(models, function(m) 
+  summary(m)$adj.r.squared - summary(fit_multi)$adj.r.squared)
+
+interaction_table <- data.frame(
+  p.vals = p_vals_interaction,
+  t.vals = t_vals_interaction,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  delta.adj = delta_adj_r_square,
+  BIC = bics
+)
+interaction_table <- interaction_table[order(interaction_table$p.vals), ]
+interaction_table
+  
+best_interaction <- row.names(interaction_table[1,])
+```
+
+```{r}
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "),  "+",
+                                  best_interaction))
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+plot(fit_final)
+par(mfrow = c(1, 1))
+```
+
+### Multicollinearity Check of model with one education variable:
+
+```{r viskys}
+vif <- vif(fit_final)
+print(vif)
+cat("BIC: ", BIC(fit_final))
+```
+When looking at the VIF values for this new model with the best interaction term with only one education variable, it could be seen that the pct population under poverty variable and its interaction with the age variable had a high VIF values, showing high multicolinearity. For this reason, the second best interaction term was tested in the model. 
+
+```{r}
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "),  "+",
+                                  "PctPopUnderPov:PctBSorMore"))
+fit_final <- lm(formula_final, data = train_data)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+par(mfrow = c(1, 1))
+```
+
+```{r vivs2, ref.label="viskys"}
+vif <- vif(fit_final)
+print(vif)
+cat("BIC: ", BIC(fit_final))
+```
+After checking for colinearity of this model, it could be seen to have a major improvement compared to the model with the PctPopUnderPov:agePct12t29. 
+
+### partial regression plots of model with one education variable
+
+To check if the variables are in the right form, another partial regression test is done. 
+
+```{r fig.width=10, fig.height=8, warnings=FALSE}
+predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+```
+
 
 ```{r compare2}
 # Compare models
 cat("Comparison of models:\n")
-cat("Original model adjusted R²: ", round(summary(fit_final1)$adj.r.squared, 4), "\n") ## dit moet nog aangepast worden
+cat("Original model adjusted R²: ", round(summary(fit_final)$adj.r.squared, 4), "\n") ## dit moet nog aangepast worden
 cat("interaction term model adjusted R²:  ", round(summary(fit_final)$adj.r.squared, 4), "\n")
 
 ```
@@ -963,7 +1106,19 @@ De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hieri
 
 ```{r}
 library(olsrr)
-diagplots <- olsrr::ols_plot_diagnostics(fit_final, print_plot = TRUE)
+# olsrr::ols_plot_cooksd_bar(fit_final)
+# olsrr::ols_plot_dfbetas(fit_final)
+
+olsrr::ols_plot_diagnostics(fit_final)
+
+# car::influenceIndexPlot(fit_final)
+
+#car::dfbeta(s)Plots(fit_final): (un)standardized
+# car::dfbetasPlots(fit_final)
+```
+
+```{r fig.width=10, fig.height=8}
+car::influenceIndexPlot(fit_final)
 ```
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
@@ -1118,10 +1273,10 @@ We can interpret the estimated percentage change, `r percentage_change`%, as the
 
 ```{r}
 set.seed(987654321)
-CI_9thgrade <- cond_effect_boot(fit_final,
-            x = "PctLess9thGrade", w = "PctPopUnderPov", nboot = 2000)
-ci_lower <- exp(CI_9thgrade$"CI Lower"[CI_9thgrade$Level == "Medium"]) - 1 
-ci_upper <- exp(CI_9thgrade$"CI Upper"[CI_9thgrade$Level == "Medium"]) - 1
+#CI_9thgrade <- cond_effect_boot(fit_final,
+#            x = "PctLess9thGrade", w = "PctPopUnderPov", nboot = 2000)
+#ci_lower <- exp(CI_9thgrade$"CI Lower"[CI_9thgrade$Level == "Medium"]) - 1 
+#ci_upper <- exp(CI_9thgrade$"CI Upper"[CI_9thgrade$Level == "Medium"]) - 1
 
 
 
@@ -1148,7 +1303,7 @@ We follow the same logic for racepctblack as for the previous 2. However we now 
 set.seed(987654321)
 
 cond_effect_boot(fit_final,
-            x = "racepctblack", w = "PctPopUnderPov", nboot = 2000)
+            x = "race_black_logit", w = "PctPopUnderPov", nboot = 2000)
 
 
 ```
@@ -1186,6 +1341,7 @@ Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and c
 # Predictions on test set
 # Transforming outcome variable in test dataset
 test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
+test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
 
 # we backtransform the data to the normal scale
 backtransformation <- function(value){
@@ -1393,6 +1549,16 @@ ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
     theme_bw(base_size = 8) +
     labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
 ```
+```{r}
+crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
+crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
+
+fit_final <- lm(formula_final, data = crimes_table_subset)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+```
+
 
 
 # Statistical discussion
@@ -1438,3 +1604,14 @@ Information Sharing Among Police Departments. European Journal of Operational Re
 141 (2002) 660-678.
 
 Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers and Leverage Points. Journal of the American Statistical Association, 85(411), 633–639. https://doi.org/10.1080/01621459.1990.10474920
+
+# Source - https://stackoverflow.com/a
+# Posted by DonJ, modified by community. See post 'Timeline' for change history
+# Retrieved 2025-12-03, License - CC BY-SA 3.0
+
+```{r show-code, ref.label=all_labels(), echo = TRUE, eval=FALSE}
+
+```
+
+
+
