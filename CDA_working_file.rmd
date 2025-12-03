@@ -683,44 +683,6 @@ plot(fit_log)
 par(mfrow = c(1, 1))
 ```
 
-```{r}
-train_data$logViolent      <- log(train_data$ViolentCrimesPerPop + 1)
-train_data$log_racepctblack <- log(train_data$racepctblack + 1)
-# Convert percent to proportion
-p <- train_data$racepctblack / 100
-
-# Avoid 0 and 1
-eps <- 1e-6
-p <- pmin(pmax(p, eps), 1 - eps)
-
-# Logit transform
-train_data$race_black_logit <- log(p / (1 - p))
-train_data$race_black_asin <- asin(sqrt(train_data$racepctblack))
-
-
-
-# 2. Fit your model using the NEW column
-fit_log <- lm(logViolent ~ 
-                PctPopUnderPov + 
-                PctBSorMore + 
-                race_black_logit + 
-                PctImmig +
-                PctPopUnderPov:PctImmig,
-              data = train_data)
-
-# 3. Extract summary
-multi_var_summary <- summary(fit_log)
-multi_var_summary
-plot(fit_log)
-par(mfrow = c(1, 1))
-
-# 4. Build a clean predictor list WITH ONLY REAL VARIABLES
-predictor_list <- rownames(multi_var_summary$coefficients)[-1]
-
-main_terms <- predictor_list[!grepl(":", predictor_list)]
-
-```
-
 ## Rerun selection after transformation of Y
 We will repeat the model building process with the log-transformed ViolentCrimesPerPop.
 
@@ -1151,7 +1113,15 @@ De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hieri
 
 ```{r}
 library(olsrr)
-diagplots <- olsrr::ols_plot_diagnostics(fit_final, print_plot = FALSE)
+# olsrr::ols_plot_cooksd_bar(fit_final)
+# olsrr::ols_plot_dfbetas(fit_final)
+
+olsrr::ols_plot_diagnostics(fit_final)
+
+# car::influenceIndexPlot(fit_final)
+
+#car::dfbeta(s)Plots(fit_final): (un)standardized
+# car::dfbetasPlots(fit_final)
 ```
 
 ```{r fig.width=10, fig.height=8}
@@ -1586,6 +1556,16 @@ ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
     theme_bw(base_size = 8) +
     labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
 ```
+```{r}
+crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
+crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
+
+fit_final <- lm(formula_final, data = crimes_table_subset)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+```
+
 
 
 # Statistical discussion
