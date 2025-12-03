@@ -551,7 +551,7 @@ plot(fit_simple$fitted.values, stud_res,
 outliers_simple <- which(abs(stud_res) > 2)
 ```
 
-Figures to get a visual illustration of whether outliers are more common in small pop.
+Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
 ```{r outliers vs population1}
 par(mfrow = c(1, 2))
 # Residuals vs population
@@ -930,6 +930,15 @@ interaction_table
 best_interaction <- row.names(interaction_table[1,])
 ```
 
+```{r final model2}
+# Estimate model with interaction
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "), "+",
+                                  "PctPopUnderPov:race_black_logit"))
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+```
+
 ## Multivariate Model
 
 The model selection procedure shows that several interaction terms may add value to the model. Therefore, the model including all interaction terms between the covariates and *PctPopUnderPov* is tested.
@@ -952,7 +961,7 @@ It is noticeable that the interaction terms that show a significant effect in a 
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
-                                  "PctPopUnderPov:race_black_logit + PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctBSorMore"))
+                                  "PctPopUnderPov:PctLess9thGrade + PctPopUnderPov:PctBSorMore"))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
@@ -979,14 +988,14 @@ PctLess9thGrade was removed due to high multicollinearity. Removing it improves 
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list[-2], collapse = " + "), "+",
-                                  "PctPopUnderPov:race_black_logit  + PctPopUnderPov:PctBSorMore"))
+                                  "PctPopUnderPov:PctBSorMore"))
 
 fit_final <- lm(formula_final, data = train_data)
 summary(fit_final)
 
 ```
 
-We see that our model performs only a little less well, but this way we did account for multicollinearity and our estimates are correct. After removing PctLess9thGrade and therefore its interaction term, we see that the interaction between PctPopUnderPov:PctBSorMore is not longer significant and therefore also removed from the model. After adjusting for multicollinearity we see an expected small drop in R-squared, but the model still explains a substantial proportion of the variation in log violent crimes. 
+We see that our model performs only a little less well, but this way we did account for multicollinearity and our estimates are correct. After removing PctLess9thGrade and therefore its interaction term, we see that the interaction between PctPopUnderPov:PctBSorMore is not longer significant and therefore also removed from the model. After adjusting for multicollinearity we see an expected small drop in R-squared, but the model still explains a substantial proportion of the variation in log violent crimes.
 
 ```{r formula adjustment}
 
