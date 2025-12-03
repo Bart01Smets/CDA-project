@@ -91,10 +91,10 @@ schedule <- data.frame(
               "Final conclusion and discussion"),
   Final_responsibility = c("Thomas",
                            "Ilja",
-                           "Bart",
+                           "Thomas",
                            "Lieselot",
                            "Ilja",
-                           "Bart",
+                           "Ilja",
                            "Lieselot",
                            "Thomas",
                            "Ilja",
@@ -1042,7 +1042,6 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 
-
 ```{r compare2}
 # Compare models
 cat("Comparison of models:\n")
@@ -1106,26 +1105,18 @@ De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hieri
 
 ```{r}
 library(olsrr)
-# olsrr::ols_plot_cooksd_bar(fit_final)
-# olsrr::ols_plot_dfbetas(fit_final)
-
-olsrr::ols_plot_diagnostics(fit_final)
-
-# car::influenceIndexPlot(fit_final)
-
-#car::dfbeta(s)Plots(fit_final): (un)standardized
-# car::dfbetasPlots(fit_final)
+olsrr::ols_plot_cooksd_bar(fit_final)
+olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
+olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
+```
+```{r dfbetas plots, fig.width=10, fig.height=8}
+car::dfbetasPlots(fit_final)
 ```
 
-```{r fig.width=10, fig.height=8}
-car::influenceIndexPlot(fit_final)
-```
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
 
 ```{r robust-inference}
-library(sandwich)
-library(lmtest)
 library(MASS)
 
 robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
@@ -1134,10 +1125,9 @@ summary(robust, method = "XtX")
 
 ```{r}
 par(mfrow=c(2,2))
-plot(fit_log)
+plot(fit_final)
 par(mfrow=c(2,2))
 plot(robust, which = 1)
-
 qqnorm(resid(robust))
 qqline(resid(robust))
 
@@ -1203,13 +1193,6 @@ cat("High DFFITS (|DFFITS| >", round(dffits_threshold, 4), "):",
     sum(diagnostics$high_dffits), "\n")
 ```
 
-```{r influential observations}
-# find influent obs
-influential <- diagnostics[diagnostics$high_cooks | diagnostics$high_dffits, ]
-influential <- influential[order(-influential$cooks_d), ]
-print(head(influential[, c("obs", "population", "stud_residual", "leverage", "cooks_d", "dffits")], 10))
-```
-
 ```{r influence plot, fig.width=8, fig.height=6}
 # Influence plot
 plot(leverage, stud_res_final, 
@@ -1217,18 +1200,6 @@ plot(leverage, stud_res_final,
      main = "Influence Plot",
      cex = sqrt(cooks_d) * 10)
 ```
-
-```{r dfbetas plots, fig.width=10, fig.height=8}
-# DFBETAS plots
-par(mfrow = c(2, ceiling(ncol(dfbetas_val)/2)))
-for(j in 1:ncol(dfbetas_val)) {
-  plot(dfbetas_val[, j], 
-       ylab = paste("DFBETAS -", colnames(dfbetas_val)[j]),
-       main = colnames(dfbetas_val)[j])
-}
-par(mfrow = c(1, 1))
-```
-
 
 
 ## interpretation final model
@@ -1535,6 +1506,16 @@ ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
     theme_bw(base_size = 8) +
     labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
 ```
+
+
+```{r}
+fit_final <- lm(formula_final, data = test_data)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+```
+
+
 ```{r}
 crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
 crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
