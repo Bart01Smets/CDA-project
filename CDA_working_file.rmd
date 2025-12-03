@@ -19,64 +19,57 @@ library(knitr)
 library (glue)
 library(dplyr)
 ```
-
 ## Research question
 
-During this research, we want to investigate how socio-economic disadvantage relates to violent crime rates. More specifically we want to explore the association between poverty and violent crime rates in the USA.
-
-In his seminal work, Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs against each other. It could then be argued that the incentive to commit crime is higher for people who have a lower income, as the benefits are larger for this group. Following this, we would then also expect that communities with a higher poverty rate will be associated with higher crime rates. Depending on the results of our analysis, these results could be used to inform relevant policies. It would, for example, give another argument for the implementation of redistributive policies: if an effect is found, policymakers should take this reduction in violent crime into account, next to an economic benefit. Our analysis hopes to shed further light on this issue.
+For this research, we want to investigate how  socio-economic disadvantage relates to violent crime rates. More specifically we want to explore the association between poverty and violent crime rates in the USA. 
+In his seminal work, Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs against each other. It could then be argued that the incentive to commit crime is higher for people who have a lower income, as they ‘need’ the benefits more. Following this, we would then also expect that in communities with a higher poverty rate, there will also be higher crime rates. 
+Depending on the results of our analysis, it could be used to inform the relevant policies. It would, for example, give another argument to redistributive policies: if an effect is found, this policy would also result in a reduction in violent crime, next to an economic benefit. Our analysis hopes to shed further light on this issue.
 
 For the purpose of our research question, the following predictor variables have been selected:
 
--   **PctPopUnderPov**: percentage of people under the poverty level (main predictor).
--   **perCapInc**: per capita income. While similar to pctunderpoverty, this takes the whole income distribution into account and not just the lower end. If this average is lower, then we expect more crime to happen.
--   **PctEmploy**: percentage of people 16 and over who are employed. We could argue that if more people are employed less people have an incentive to commit crime.
--   **PctLess9thGrade**: percentage of people 25 and over with less than a 9th grade education. Education leads to a higher socio-economic standing, which would suggest that people have less reason to commit crime. We choose this variable for now, but as an alternative we could later use one of the following two variables if we would find them better suited as predictors: **PctNotHSGrad** (percentage of people 25 or over, that have not graduated highschool) or **PctBSorMore** (percentage of people 25 or over, with at least a bachelor's degree).
--   **NumImmig**: total number of people known to be foreign born. Immigrants commiting more crimes is a commonly used right-wing argument against migration, and relevant as immigrants are often from a 'lower' socio-economic background.
--   **racepctblac**: percentage of population that is african american. It is a common right wing argument as well that black people commit crime, because they are from a 'lower' socio-economic background.
--   **agePct12t29**: percentage of population that is 12-29 in age. We include this because young people have had less time to build up their socio-economic status, as well as their brain being less developed, and might thus commit more crime.
+- **PctPopUnderPov**: percentage of people under the poverty level (main predictor)
+- **perCapInc**: per capita income. While similar to PctPopUnderPov, this takes the whole income distribution into account and not just the lower end. If this average is lower, then we expect more crime to happen.
+- **PctEmploy**: We could argue that if more people are employed less people have an incentive to commit crime.
+- **PctLess9thGrade**, **PctNotHSGrad**, or **PctBSorMore**: percentage of people 25 and over with less than a 9th grade education. Education leads to a higher socio-economic standing, which would suggest that people have less reason to commit crime. 
+- **NummImmig**, **RacePctBlac**, and **AgePct12t29** are included because they are often linked to differences in socio-economic conditions, which may influence crime rates.
+
+**Research questions:**
+
+To get this from a theoretical framework into empirical questions, we focus on two main research questions.
+
+1. **Univariate analysis**: What is the association between poverty rates (*PctPopUnderPov*) and violent crime rates (*ViolentCrimesPerPop*) in U.S. communities? This analysis gives us an initial understanding of whether our hypothesis holds, how strong the relationship is, without taking confounding factors into account.
+
+2. **Multivariable analysis**: How does the association between poverty and violent crime rates change when we do account for other socio-economic and demographic factors? Specifically, we examine whether the poverty-crime relationship is confounded by or interacts with variables defined before. This analysis allows us to better isolate the independent effect of poverty.
+
+The univariate model will establish whether there is evidence for Becker's economic theory in the raw data, while the multivariable model provides a better understanding of how poverty operates within a complex socio-economic context. The latter is particularly important for policy recommendations, as it reveals whether poverty reduction alone would reduce crime rates, or whether interventions must also address educational disparities, employment opportunities, or other contextual factors.
+
+
 
 ## Design of the study
-
+The dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting,  which resulted in missing total violent crime values for those states. We will investigate whether this missingness is random and if necessary use imputations.
 
 ## Descriptive analysis
+To get a first impression of the data, a univariate descriptive analysis will be performed for the response variable and candidate predictor variables (all continuous). The most common univariate statistics are calculated: the sample size, mean, standard deviation, minimum, first quartile, median, the third quartile and the maximum. We also describe the missing values and discuss whether this missingness is random or not and how it affects our conclusions.
 
-To get a first impression of the data, a descriptive analysis will be performed for the candidate predictor variables (all continuous). The datasets are checked for missing values. The most common univariate statistics are calculated: the mean, the standard deviation, the minimum, the first quartile, the median, the third quartile and the maximum.
+The distributions of the variables are visualized by boxplots, QQ plots and histograms. Outliers are identified using Tukey’s 1.5 x IQR rule. We also investigate the population size, as it can influence the reliability of the data points: small communities may have a higher probability to have more extreme values of the predictor and response variables by the fact that the denominator in the response variable (total number of violent crimes per 100K population) is smaller. In the regression phase this will be used to investigate the outlier values. To find what the relationship is between the main predictor variable and the potential extra predictor variables, scatter plots with smoothers are made for the bivariate relationships and correlations are checked. Given that the data comes from two cohorts, we will investigate and account for its effects.
 
-The distributions of the variables are visualized by boxplots, QQ plots and histograms. Outliers are identified using Tukey’s 1.5 x IQR rule. For the univariate descriptive statistics also the population size of the communities is considered. The population size can influence the reliability of the data points: small communities can have a higher probability to have more extreme values of the predictor and response variables by the fact that the denominator in the response variable (total number of violent crimes per 100K population) is smaller. In the regression phase this will be used to investigate the outlier values.
-
-To find what the relationship is between the main predictor variable and the potential extra predictor variables, scatter plots with smoothers are made for the bivariate relationships and correlations are checked.
-
-## Linear regression
-
-Before performing linear regression and building models, the dataset is split into a training set (80% of the data) and a test set (20% of the data).
-
-To investigate the association between the main predictor variable and the response variable, a linear regression is fitted and the output is evaluated. The various statistics are calculated and discussed: estimate regression coefficients, the F-statistics (/t-statistics), the R squared, the MSE, the p-value, the confidence interval and standard error of the slope. We first present the general formula here, before we fill in the specific variables.
+## Data split, linear regression and assumption checks
+Before performing linear regression and building models, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model. Using the training set, we then investigate the association between the main predictor variable and the response variable, a simple  linear regression is first fitted and the output is subsequently evaluated. The following statistics are calculated and discussed: regression coefficients, the F-statistics (/t-statistics), the R squared, the MSE, the p-value, and standard error of the slope. We also construct confidence intervals, and evaluate outliers. Subsequently, these outliers are further evaluated, e.g. are outliers linked to communities with a small population size. Ultimately, our regression equation is given as follows:
 
 $$
-Y_i = \beta_0 + \beta_1X_i + \epsilon_i 
+V iolentCrimesP erP op_i = \beta_0 + \beta_1PctpopUnderPov_i + \epsilon_i 
 $$
+We then perform several checks to see whether assumptions, such as linearity, independence of errors, homoscedasticity (constant variance of errors), and normality of errors, hold. Concretely, we do so by plotting residuals vs. fitted values for the linearity and independence of errors, squared residuals vs. fitted values for homoscedasticity checks and using QQ-plots of residuals to check for normality.
 
-$$
-ViolentCrimesPerPop_i = \beta_0 + \beta_1pctpopUnderPov_i + \epsilon_i 
-$$
-
-Confidence intervals are constructed. Based on this, outliers can be identified. Subsequently, the outliers are further evaluated, e.g. are outliers linked to communities with a small population size.
-
-## Assumption checks
-
-For linear regression, multiple assumptions, such as linearity, independence of errors, homoscedasticity (constant variance of errors), and normality of errors, are made. During this research these assumptions have to be checked by: Plotting residuals vs. fitted values for the linearity and independence of errors, squared residuals vs. fitted values for homoscedasticity checks, normality checks by qq-plot of the residuals. To also take leverage into account, the studentized residuals will be plotted.
-
-# Protocol - Multivariate part
-
-## Model building
-Forward stepwise regression
-Evaluation of adjusted R-squared, AIC, SBC
-Partial regression plots? In which functional form we let a variable enter the model?
+## Protocol - Multivariate regression
+Socioeconomic disadvantage can be estimated from multiple variables in the study. Due to the large number of options and nature of our research question, it was decided that finding an optimal model using a limited number of predictors is beneficial to answer the question in mind. For this, we intend to use an All-possible regressions procedure on the 80% of the data labeled for training in order to select the most meaningful variables. We only include models with a maximum of 5 predictor variables, and only models with 0, 1 or 2 education predictor variables will be evaluated. In order to decide the best model, we intend to choose the best model under BIC. This measure penalizes for adding more variables to the model in a large sample. To test if the chosen variables are in the right format in the model, we can use partial regression plots to visualize the effect of the specific variables on the rest of the model. If needed transformations may be used. To choose which interaction terms to include, we add all interaction terms of the predictor variables with our main predictor variable to the selected multivariate model and evaluate their significance. We retain the interaction term(s) that most improve the model, including at least one.  
 
 ## Model fit and outliers
-PRESS, studentized residual plots (transformations needed?), bijv. QQ-plots to predicted value of y/log(y), 
-Also DFFITS, Cook's Distance, DFBETAS -> welke outliers hebben een grote invloed? Deleted residuals?
+The assumptions regarding linearity, homoscedasticity, normality on residuals and independence on the model residuals will be checked, in the same way as described for the univariate model.
+After specifying the multivariate regression model, several diagnostic measures will be used to assess model fit and identify influential outlying data points. First, we compute the studentized residuals to find outliers in the outcome variable. To determine how strongly each observation impacts model estimates, we determine the leverage, the Cook’s distance, DFBETAS and DFFITS. Outliers will be examined in context and only removed if clearly justified. If removal is not justified, influence might be dampened by employing Robust Regression. We will check for multicollinearity between variables by calculating the Variance Inflaction Factor (VIF) and if necessary adapt our analysis.
+
+## Model Validation
+Using the validation set, it is possible to validate our model. For this purpose, we make use of  the Mean Squared Prediction Error (MSPR). If the model is able to make good predictions, this MSPR would be close to the original Mean Squared Error (MSE) of the model.
 
 ## Interpretation of the parameters
 
@@ -683,44 +676,6 @@ plot(fit_log)
 par(mfrow = c(1, 1))
 ```
 
-```{r}
-train_data$logViolent      <- log(train_data$ViolentCrimesPerPop + 1)
-train_data$log_racepctblack <- log(train_data$racepctblack + 1)
-# Convert percent to proportion
-p <- train_data$racepctblack / 100
-
-# Avoid 0 and 1
-eps <- 1e-6
-p <- pmin(pmax(p, eps), 1 - eps)
-
-# Logit transform
-train_data$race_black_logit <- log(p / (1 - p))
-train_data$race_black_asin <- asin(sqrt(train_data$racepctblack))
-
-
-
-# 2. Fit your model using the NEW column
-fit_log <- lm(logViolent ~ 
-                PctPopUnderPov + 
-                PctBSorMore + 
-                race_black_logit + 
-                PctImmig +
-                PctPopUnderPov:PctImmig,
-              data = train_data)
-
-# 3. Extract summary
-multi_var_summary <- summary(fit_log)
-multi_var_summary
-plot(fit_log)
-par(mfrow = c(1, 1))
-
-# 4. Build a clean predictor list WITH ONLY REAL VARIABLES
-predictor_list <- rownames(multi_var_summary$coefficients)[-1]
-
-main_terms <- predictor_list[!grepl(":", predictor_list)]
-
-```
-
 ## Rerun selection after transformation of Y
 We will repeat the model building process with the log-transformed ViolentCrimesPerPop.
 
@@ -1151,7 +1106,15 @@ De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hieri
 
 ```{r}
 library(olsrr)
-diagplots <- olsrr::ols_plot_diagnostics(fit_final, print_plot = FALSE)
+# olsrr::ols_plot_cooksd_bar(fit_final)
+# olsrr::ols_plot_dfbetas(fit_final)
+
+olsrr::ols_plot_diagnostics(fit_final)
+
+# car::influenceIndexPlot(fit_final)
+
+#car::dfbeta(s)Plots(fit_final): (un)standardized
+# car::dfbetasPlots(fit_final)
 ```
 
 ```{r fig.width=10, fig.height=8}
@@ -1572,6 +1535,16 @@ ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
     theme_bw(base_size = 8) +
     labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
 ```
+```{r}
+crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
+crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
+
+fit_final <- lm(formula_final, data = crimes_table_subset)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+```
+
 
 
 # Statistical discussion
