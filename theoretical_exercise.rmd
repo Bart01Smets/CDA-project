@@ -202,7 +202,7 @@ f
 critical_value
 ```
 
-$F^*$ = `r f` \> `r critical_value`, therefore we conclude that the model with interaction does not reduce SSE much and we can reject the null hypothesis.
+$F^*$ = `r f` \< `r critical_value`, therefore we conclude that the model with interaction does not reduce SSE much and we cannot reject the null hypothesis.
 
 5.  From the model with interaction (3.), derive a 95% prediction interval for the income of a 15 year old girl. Is this prediction interval likely to have the nominal 95% coverage? Why? If not, will the coverage tend to be higher or lower?
 
