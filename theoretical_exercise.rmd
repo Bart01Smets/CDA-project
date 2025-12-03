@@ -171,7 +171,7 @@ The MSE can be calculated using the same formulas as mentioned in exercise 2. $$
 
 After calculation we derive that MSE is equal to `r MSE2`. So the MSE is larger now than the MSE in exercise 2, because the denominator in the formula is now smaller (more parameters in the model).
 
-It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is (ik zou essentially ipv equal zeggen -\> voorzichtiger) equal to zero, because a model with six parameters is fitted to 6 data points. So the estimates of the averages of the groups will be exactly equal to the observed averages.
+It can be observed that $SSE_{model}$ is negligible. Actually $SSE_{model}$ is equal to zero, because a model with six parameters is fitted to 6 data points. So the estimates of the averages of the groups will be exactly equal to the observed averages.
 
 The gender-effect parameters can be interpreted as follows.
 
