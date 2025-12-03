@@ -939,6 +939,15 @@ best_interaction <- row.names(interaction_table[1,])
 ```{r final model2}
 # Estimate model with interaction
 formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list[-2], collapse = " + "), "+",
+                                  "PctPopUnderPov:PctImmig"))
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+```
+
+```{r final model2}
+# Estimate model with interaction
+formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
                                   "PctPopUnderPov:PctLess9thGrade"))
 fit_final <- lm(formula_final, data = train_data)
@@ -986,9 +995,9 @@ library(car)
 # practicum: car::vif(fit)
 vif <- vif(fit_final)
 print(vif)
+cat("BIC: ", BIC(fit_final))
 ```
 PctLess9thGrade was removed due to high multicollinearity. Removing it improves model stability and interpretability.
-
 ```{r removing multicoll}
 
 # Estimate model with interaction
