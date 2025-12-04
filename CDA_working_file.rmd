@@ -937,15 +937,10 @@ selected_vars <- setdiff(
 
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
 
-# Nieuwe code
 formulas_interaction <- sapply(interaction_terms, function(i) {
   paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
                                   i)
 })
-# Oude code
-# formulas <- sapply(interaction_terms, function(i) {
-#   paste0(best_pred, " + ", i)
-# })
 
 formulas_interaction <- lapply(formulas_interaction, as.formula)
 models <- lapply(formulas_interaction, lm, data=train_data)
@@ -1313,7 +1308,24 @@ kable(summary_results, caption = "Comparison of Simple and Final Multivariate Mo
 ## model validation
 
 ### refitting the model on the test data
-
+```{r model validation refitting}
+fit_final_test <- lm(formula_final, data = test_data)
+summary(fit_final_test)
+df1 <- data.frame(
+  fit_on_training_data = coef(fit_final),
+  fit_on_test_data = coef(fit_final_test),
+  p_value_training = summary(fit_final)$coefficients[, 4],
+  p_value_test = summary(fit_final_test)$coefficients[, 4]
+)
+df1
+df2 <- data.frame(
+  R_squared = c(summary(fit_final)$r.squared, summary(fit_final_test)$r.squared),
+  Adjusted_R_squared = c(summary(fit_final)$adj.r.squared, summary(fit_final_test)$r.squared),
+  BIC_model = c(BIC(fit_final), BIC(fit_final_test))
+)
+rownames(df2) <- c("fit on training data","fit on test data")
+df2
+```
 
 ### prediction of the test data
 
@@ -1427,7 +1439,7 @@ ggplot(df_prediction_train_simple, aes(observed, predicted))+
 
 ```{r model validation MSPR and Rsquared, fig.width=8, fig.height=6}
 # MSPR for test data
-#mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+# mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
 mspr_test <- mean((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
 
 # MSPR for training data
@@ -1484,7 +1496,7 @@ cat("R² on training set:", round(r2_train, 4), "\n")
 mspr_test_simple <- mean((test_data$ViolentCrimesPerPop - pred_interval_test_simple[, "fit"])^2)
 
 # MSPR for training data
-mspr_train_simple <- mean((train_data$ViolentCrimesPerPop - pred_interval_train_simple[, "fit"])^2)
+mse_simple <- total((train_data$ViolentCrimesPerPop - pred_interval_train_simple[, "fit"])^2)/
 
 cat("MSPR (training set):", round(mspr_train_simple, 2), "\n")
 cat("MSPR (test set):", round(mspr_test_simple, 2), "\n")
