@@ -1540,38 +1540,6 @@ ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCri
 r2_train_simple <- 1 - ss_res_train_simple/ss_tot_train
 cat("R² on training set:", round(r2_train_simple, 4), "\n") 
 ```
-
-
-Resultaten zijn niet zo goed, dus dit nog niet herwerkt.
-```{r model validation and population size}
-logpop_values <- seq(4.1, 6, 0.1)
-
-mspr_fun <- function(logpop, data, fit_final){
-  # filtering
-  data_filtered <- data[data$logpopulation < logpop + 0.1 & data$logpopulation > logpop - 0.1, ]
-  # Predictions on test set
-  pred <- exp(predict(fit_final, newdata = data_filtered))
-  mspr <- mean((data_filtered$ViolentCrimesPerPop - pred)^2)
-}
-
-mspr_values_test <- sapply(logpop_values, FUN=mspr_fun, data=test_data, fit_final=fit_final)
-mspr_values_train <- sapply(logpop_values, FUN=mspr_fun, data=train_data, fit_final=fit_final)
-
-df_plot_logpop_mspr <- data.frame(logpop = logpop_values, mspr_values_test, mspr_values_train)
-
-ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_test)) +
-    geom_point(alpha = 0.6, size = 1.7) +
-    geom_smooth(method = "loess", color = "red", se = FALSE)+
-    theme_bw(base_size = 8) +
-    labs(title = "Mean squared prediction error for test data vs logpop", x = "logpop", y = "mspr")
-ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
-    geom_point(alpha = 0.6, size = 1.7) +
-    geom_smooth(method = "loess", color = "red", se = FALSE)+
-    theme_bw(base_size = 8) +
-    labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
-```
-
-
 ```{r}
 fit_final <- lm(formula_final, data = test_data)
 final_sums <- summary(fit_final)
