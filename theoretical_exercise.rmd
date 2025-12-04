@@ -208,25 +208,25 @@ $$\hat{Y}_{15,girl}=\beta_0+\beta_2+\beta_3+\beta_5.$$
 predicted_income_15 <- beta2[1] + beta2[3] + beta2[4] + beta2[6]
 ```
 
-\text{And would thus result in}  $\hat{Y}_{15,\text{girl}} = \text{`r predicted_income_15`}$
+\text{And would thus result in} $\hat{Y}_{15,\text{girl}} = \text{`r predicted_income_15`}$
 
 The variance of the predicton can be calculated using:
 
 $$
 s^2(\hat{Y}_{15,girl}) = MSE(1 + X_h'(X'X)^{-1}X_h)
 $$
+
 ```{r}
 XtX_inv <- solve(t(X2) %*% X2)
 predicted_var <- MSE2 * (1 + t(x6) %*% XtX_inv %*% x6)
 ```
 
-
 Which would give us a 95% prediction interval:
 
 $$
 PI_{95\%}(15,girl) = [\hat{Y}_{15,girl} \pm t_{0.975, df} * s(\hat{Y}_{15,girl})]
-$$
-Resulting in:
+$$ Resulting in:
+
 ```{r}
 prediction_se <- sqrt(predicted_var)
 df <- ntot - nr_of_betas
