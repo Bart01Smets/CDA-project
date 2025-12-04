@@ -241,9 +241,9 @@ c(lower_bound = lower_border, prediction = predicted_income_15,  upper_bound = h
 
 A linear model assumes linear form is right, errors are independent, homoscedasticty, and normally distributed. For this data, these assumptions are clearly violated, e.g. the data is clearly right-skewed, which is indicated by the large average standard deviation on the money predictor. Since we work with data of children and teens, we expect that the lowest value possible for the money is zero, no debt. Because of this it could be seen that within one or two SDs all total money would go below the zero cutt-off, showing that the data is likely right-skewed.
 
-Next to this, the data is most likely Heteroskedastic, as the variances differ massively across ages, showing a dependence of the income variance with the age predictors, showing that the data is not Homoscedastic.
+Next to this, the data is most likely heteroscedastic, as the variances differ massively across ages, showing a dependence of the income variance with the age predictors, showing that the data is not homoscedastic.
 
-These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger childeren as they have a lower variance. While the prediction interval will be to narrow for older childeren. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.
+These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger children as they have a lower variance. While the prediction interval will be to narrow for older children. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.
 
 These violations will result in the prediction interval not having a nominal 95% coverage. Here, we would expect the prediction interval to be to wide for younger children as they have a lower variance. While the prediction interval will be to narrow for older children. So for the case of a 15 years-old girl, the coverage of the prediction interval will be lower.
 

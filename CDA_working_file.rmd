@@ -1522,9 +1522,9 @@ cat("R² on training set:", round(r2_train, 4), "\n")
 mspr_test_simple <- mean((test_data$ViolentCrimesPerPop - pred_interval_test_simple[, "fit"])^2)
 
 # MSPR for training data
-mse_simple <- total((train_data$ViolentCrimesPerPop - pred_interval_train_simple[, "fit"])^2)/
+mse_simple <- sum((train_data$ViolentCrimesPerPop - pred_interval_train_simple[, "fit"])^2)/(n-6)
 
-cat("MSPR (training set):", round(mspr_train_simple, 2), "\n")
+cat("MSPR (training set):", round(mse_simple, 2), "\n")
 cat("MSPR (test set):", round(mspr_test_simple, 2), "\n")
 cat("Ratio MSPR/MSE:", round(mspr_test_simple/mspr_train_simple, 4), "\n")
 
