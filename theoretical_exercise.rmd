@@ -108,7 +108,7 @@ The expected value of the \<moet hier nog 'mean' staan?\> income of a female is 
 
 • What would change above if sample consisted of brother-sister pairs?
 
-The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family). This means that SE's are too small as you only have 1071 indep families, not 2142. Siblings give overlapping info. You'd thus underestimate uncertainty as confidence intervals are too small.
+The assumption of independence would be violated as observations are correlated (brothers and sisters come from the same family and thus give overlapping information). This means that standard errors are too small as there are only 1071 families, not 2142. You'd thus underestimate uncertainty as confidence intervals are too small.
 
 • (Continue as if all outcomes are independent)
 
