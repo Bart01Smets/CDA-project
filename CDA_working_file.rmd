@@ -51,7 +51,7 @@ The distributions of the variables are visualized by boxplots, QQ plots and hist
 Before performing linear regression and building models, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model. Using the training set, we then investigate the association between the main predictor variable and the response variable, a simple  linear regression is first fitted and the output is subsequently evaluated. The following statistics are calculated and discussed: regression coefficients, the F-statistics (/t-statistics), the R squared, the MSE, the p-value, and standard error of the slope. We also construct confidence intervals, and evaluate outliers. Subsequently, these outliers are further evaluated, e.g. are outliers linked to communities with a small population size. Ultimately, our regression equation is given as follows:
 
 $$
-V iolentCrimesP erP op_i = \beta_0 + \beta_1PctpopUnderPov_i + \epsilon_i 
+ViolentCrimesP erP op_i = \beta_0 + \beta_1PctpopUnderPov_i + \epsilon_i 
 $$
 We then perform several checks to see whether assumptions, such as linearity, independence of errors, homoscedasticity (constant variance of errors), and normality of errors, hold. Concretely, we do so by plotting residuals vs. fitted values for the linearity and independence of errors, squared residuals vs. fitted values for homoscedasticity checks and using QQ-plots of residuals to check for normality.
 
@@ -182,7 +182,7 @@ crimes_table_subset %>%
   )
 ```
 
-The only variable for which NA values are found is the outcome variable *ViolentCrimesPerPop*. Imputations can not help a lot to handle this. As already mentioned in the section on the study design, many of these NA values are due to the fact that rape counts, a component of violent crime, were not included in the statistics for several states. The rows where the outcome variable has an NA value are removed, as these rows are not useful for the regression. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
+For 221 of the 1994 observations NA values are found for the outcome variable *ViolentCrimesPerPop*. Imputations can not help a lot to handle this. As already mentioned in the section on the study design, many of these NA values are due to the fact that rape counts, a component of violent crime, were not included in the statistics for several states. The rows where the outcome variable has an NA value are removed, as these rows are not useful for the regression. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
 
 ```{r identifying NA values}
 na_subset <- crimes_table_subset %>%
@@ -205,7 +205,6 @@ After removing NA values from the database univariate descriptives are calculate
 ```{r summary statistics}
 #str(crimes_table_subset)
 #summary(crimes_table_subset)
-
 crimes_table_subset %>%
   pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
   group_by(variable) %>%
@@ -239,10 +238,13 @@ na_subset %>%
 To gain insight into the univariate distributions, boxplots and histograms are generated.
 
 ```{r boxplots, fig.width=8, fig.height=12}
+numeric_cols_na <- sapply(na_subset, is.numeric)
+crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
+crimes_table_subset$logpopulation <- log10(crimes_table_subset$population)
 numeric_cols <- sapply(crimes_table_subset, is.numeric)
 crimes_table_subset_num <- crimes_table_subset[, ..numeric_cols]
 par(mfrow = c(4,2))
-for(columnname in names(crimes_table_subset_num)){
+for(columnname in names(crimes_table_subset_num_na)){
   column <- crimes_table_subset_num[[columnname]]
   boxplot(column,
           main = columnname
@@ -254,8 +256,6 @@ for(columnname in names(crimes_table_subset_num)){
 }
 ```
 ```{r boxplots na comparison, fig.width=8, fig.height=12, eval=FALSE, include=FALSE}
-numeric_cols_na <- sapply(na_subset, is.numeric)
-crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
 par(mfrow = c(4,2))
 for(columnname in names(crimes_table_subset_num_na)){
   column <- crimes_table_subset_num[[columnname]]
@@ -319,7 +319,7 @@ It is noticeable that the variable *racepctblack* is the one most strongly corre
 It is noticable the the variables *PctImmig* and *PctPopUnderPov* have correlation coefficients that are really low. *PctImmig* would therefore not be a suitable parameter in a univariate model. Nevertheless, it will be included in the model building process. Especially in models with interaction effects, *PctImmig* may still be a useful predictor
 
 ```{r correlations}
-cor_matrix <- cor(crimes_table_subset_num[,-'population'])
+cor_matrix <- cor(crimes_table_subset_num[,-c('population', 'logpopulation')])
 cor_values <- as.data.frame(as.table(cor_matrix))
 
 library(ggcorrplot)
@@ -355,7 +355,7 @@ dict_labels <- setNames(sapply(x_vars, function(x_var) get_label(crimes_table_su
 
 library(ggplot2)
 library(patchwork)
-df <- crimes_table_subset_num[,-c("population")]
+df <- crimes_table_subset_num[,-c("population", "logpopulation")]
 y_var <- "ViolentCrimesPerPop"
 x_vars <- setdiff(colnames(df), y_var)
 plots <- lapply(x_vars, function(x_var) {
@@ -370,7 +370,7 @@ plots <- lapply(x_vars, function(x_var) {
 # Print 9 plots per pg
 print(wrap_plots(plots, ncol = 3))
 
-df <- crimes_table_subset_num[,-c("population", "ViolentCrimesPerPop")]
+df <- crimes_table_subset_num[,-c("population", "ViolentCrimesPerPop", "logpopulation")]
 y_var <- "PctPopUnderPov"
 x_vars <- setdiff(colnames(df), y_var)
 plots <- lapply(x_vars, function(x_var) {
@@ -386,8 +386,6 @@ plots <- lapply(x_vars, function(x_var) {
 # Print 9 plots per pg
 print(wrap_plots(plots, ncol = 3))
 ```
-
-
 The scatter plots reveal one outlier for the *ViolentCrimesPerPop* variable. This outlier is the community Chestercity. For now the datapoint is kept for further analysis. In the diagnostics section, we will further investigate which data points can be considered outliers and what their influence is on the model.
 
 ```{r outlier}
@@ -398,8 +396,6 @@ crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasin
 In the protocol it's stated that small communities may have a higher probability to have more extreme values of the predictor and response variables. To investigate this scatter plots are created with log(*population*) as x variable. It is clear that communities with a very small population show a very large spread for all variables.
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
-crimes_table_subset_num$logpopulation <- lapply(crimes_table_subset_num$population, log10)
-crimes_table_subset_num$logpopulation <- log10(crimes_table_subset_num$population)
 df <- crimes_table_subset_num
 x_var <- "logpopulation"
 y_vars <- setdiff(colnames(df), x_var)
@@ -426,8 +422,8 @@ Before performing linear regression and building models, the dataset is randomly
 set.seed(987654321)
 n <- nrow(crimes_table_subset_num)
 training <- sample(1:n, size = floor(0.8 * n))
-train_data <- crimes_table_subset_num[training, ]
-test_data <- crimes_table_subset_num[-training, ]
+train_data <- crimes_table_subset[training, ]
+test_data <- crimes_table_subset[-training, ]
 n_training <- nrow(train_data)
 
 cat("Training set size:", n_training, "\n")
@@ -632,7 +628,7 @@ par(mfrow = c(2, 2))
 #Residuals vs Fitted
 plot(fit_multi$fitted.values, fit_multi$residuals,
      xlab = "Fitted values", ylab = "Residuals",
-     main = "Residuals vs Fitted (Final Model)")
+     main = "Residuals vs Fitted")
 abline(h = 0, col = "red", lty = 2)
 lines(lowess(fit_multi$fitted.values, fit_multi$residuals), col = "blue")
 
@@ -643,7 +639,7 @@ plot(fit_multi$fitted.values, fit_multi$residuals^2,
 lines(lowess(fit_multi$fitted.values, fit_multi$residuals^2), col = "blue")
 
 # QQ-plot
-qqnorm(fit_multi$residuals, main = "Normal Q-Q Plot (Final Model)")
+qqnorm(fit_multi$residuals, main = "Normal Q-Q Plot")
 qqline(fit_multi$residuals, col = "red")
 
 # Studentized residuals
@@ -675,6 +671,7 @@ We will repeat the model building process with the log-transformed ViolentCrimes
 
 ```{r adding column with log transform}
 train_data$logViolent <- log(train_data$ViolentCrimesPerPop + 1)
+test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
 ```
 
 ## Model selection
@@ -769,7 +766,7 @@ pct_to_logit <-  function(percentage, addition = 1e-6) {
 }
 
 train_data$race_black_logit <- pct_to_logit(train_data$racepctblack)
-
+test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
 ```
 
 Fitting the model with this logit transformed racepctblack seemed to stabilize the residual vs fitted plot, as well as make the partial regression plot look linear.
@@ -1106,7 +1103,29 @@ olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
 ```{r dfbetas plots, fig.width=10, fig.height=8}
 car::dfbetasPlots(fit_final)
 ```
+```{r dfbetas plots, fig.width=10, fig.height=8}
+# IMPORTANT remark: the labelled observations are the points with 1,5 times the threshold (the reason is the visualisation)
+# DFBETAS values (placing them in a data frame ensures easy compatibility with ggplot2)
+dfbetas_vals <- data.frame(dfbetas(fit_final))
 
+# Plot
+colnames_dfbetas <- colnames(dfbetas_vals)
+plots <- lapply(colnames_dfbetas[-1], function(predictor) {
+ggplot(dfbetas_vals) +
+  geom_point(aes(x = 1:nrow(dfbetas_vals), y = dfbetas_vals[[predictor]])) +
+  geom_segment(aes(x = 1:nrow(dfbetas_vals), xend = 1:nrow(dfbetas_vals), y = 0, yend = dfbetas_vals[[predictor]]),
+               color = 'cornflowerblue') +
+  geom_hline(yintercept = c(2, -2) / sqrt(nrow(dfbetas_vals)), color = 'salmon') +
+  labs(x = 'Observation index', y = 'DFBETAS',
+       title = paste0('DFBETAS values for coefficient of ', predictor),
+       subtitle = 'Thresholds are at \u00B1(2\u00F7\u221An)') +
+  geom_text(aes(x = 1:nrow(dfbetas_vals), y = ifelse(dfbetas_vals[[predictor]] > 0, dfbetas_vals[[predictor]] + .05, dfbetas_vals[[predictor]] - .05),
+                label = ifelse(abs(dfbetas_vals[[predictor]]) > 1.5*(2/sqrt(nrow(dfbetas_vals))),
+                               paste0(round(dfbetas_vals[[predictor]], digits = 2), ' (', 1:nrow(dfbetas_vals), ')'), '')))
+})
+# Print 9 plots per pg
+print(plots)
+```
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
 
