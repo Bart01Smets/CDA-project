@@ -1094,6 +1094,26 @@ olsrr::ols_plot_cooksd_bar(fit_final)
 olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
 olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
 ```
+Datapoints in these plots are either outliers, and/or have high leverage in the model. If datapoints returned to be both outliers and have a high leverage, they can be seen as highly influencial in the model and most problematic, to check wether these are  observations errors, rare cases, or valid but extreme cases. They were extracted and manually checked. 
+
+
+```{r}
+train_data[88,]
+```
+```{r}
+train_data[229,]
+```
+```{r}
+train_data[1240,]
+```
+```{r}
+train_data[961,]
+```
+```{r}
+train_data[15,]
+```
+
+
 ```{r dfbetas plots, fig.width=10, fig.height=8}
 car::dfbetasPlots(fit_final)
 ```
@@ -1198,6 +1218,17 @@ cat("High Cook's distance (D >", round(4/n_train, 4), "):",
     sum(diagnostics$high_cooks), "\n")
 cat("High DFFITS (|DFFITS| >", round(dffits_threshold, 4), "):", 
     sum(diagnostics$high_dffits), "\n")
+```
+```{r}
+# Extract all flagged observations
+problematic <- diagnostics[
+  diagnostics$outlier_residual |
+  diagnostics$high_leverage |
+  diagnostics$high_cooks |
+  diagnostics$high_dffits, ]
+
+print(problematic)
+
 ```
 
 ```{r influence plot, fig.width=8, fig.height=6}
