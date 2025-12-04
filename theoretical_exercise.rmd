@@ -36,6 +36,8 @@ By treating age as a continuous variable, assumptions about functional form are 
 We will model the income of an individual $i$ of group $j$ by the following formula. $$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \varepsilon_{ij}$$ Design matrix X:
 
 ```{r matrices 2}
+# Question 2:
+
 # Solution with matrices
 # Data input
 ntot <- 2142
@@ -115,6 +117,8 @@ The assumption of independence would be violated as observations are correlated 
 We will model the income of an individual $i$ of group $j$ by the following formula. $$Y_{ij} = \beta_0 + \beta_1 \cdot \text{Age13}_{ij} + \beta_2 \cdot \text{Age15}_{ij} + \beta_3 \cdot \text{Female}_{ij} + \beta_4 \cdot \text{Age13}_{ij} \cdot \text{Female}_{ij} + \beta_5 \cdot \text{Age15}_{ij} \cdot \text{Female}_{ij}+ \varepsilon_{ij}$$
 
 ```{r matrices 3}
+# Question 3:
+
 # Solution with matrices
 
 # Data input
@@ -190,6 +194,8 @@ In the second model, where interaction is included, the effect of gender is no l
 We will use the F-statistic to determine if the model with interaction fits the data better: $H0$ : all interaction coefficients = 0
 
 ```{r}
+# Question 4:
+
 f <- ((SSE1 - SSE2) / 2) / (SSE2 / (ntot - 6))
 critical_value <- qf(0.95, df1 = 2, df2 = 2136)
 f
@@ -205,6 +211,8 @@ For a 15-year old girl in the interaction model, the estimated income would be c
 $$\hat{Y}_{15,girl}=\beta_0+\beta_2+\beta_3+\beta_5.$$
 
 ```{r}
+# Question 5:
+
 predicted_income_15 <- beta2[1] + beta2[3] + beta2[4] + beta2[6]
 ```
 
