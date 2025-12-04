@@ -22,8 +22,7 @@ library(dplyr)
 ## Research question
 
 For this research, we want to investigate how  socio-economic disadvantage relates to violent crime rates. More specifically we want to explore the association between poverty and violent crime rates in the USA. 
-In his seminal work, Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs against each other. It could then be argued that the incentive to commit crime is higher for people who have a lower income, as they ‘need’ the benefits more. Following this, we would then also expect that in communities with a higher poverty rate, there will also be higher crime rates. 
-Depending on the results of our analysis, it could be used to inform the relevant policies. It would, for example, give another argument to redistributive policies: if an effect is found, this policy would also result in a reduction in violent crime, next to an economic benefit. Our analysis hopes to shed further light on this issue.
+In his seminal work, Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs of committing crime against each other. It could then be argued that the incentive to commit crime is higher for people who have a lower income, as they have more to gain and less to lose by committing crimes. Following this, we would then also expect that communities with higher poverty rates will also be associated with higher crime rates. Depending on the results of our analysis, our result could be used to inform relevant policies. It would, for instance, give another argument to redistributive policies: if an effect is found, this policy might also result in a reduction in violent crime, next to an economic benefit. Our analysis hopes to shed further light on this issue.
 
 For the purpose of our research question we selected the following predictor variables:
 
