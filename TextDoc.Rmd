@@ -1,0 +1,1484 @@
+---
+title: "Analysis of Continuous Data project"
+author: "Thomas Sertijn, Ilja Van Bever, Lieselot Van de Putte"
+date: "2025-11-09"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE,
+                      echo = TRUE, include = FALSE)
+```
+
+
+
+```{r echo=FALSE}
+library(knitr)
+library (glue)
+library(dplyr)
+library(data.table)
+library(dplyr)
+library(stringr)
+library(rvest)
+library(ggplot2)
+library(gtsummary)
+library(sjlabelled)
+library(tidyr)
+library(ggcorrplot)
+library(patchwork)
+library(MASS)
+```
+# Research question
+
+For this research, we want to investigate how  socio-economic disadvantage relates to violent crime rates. More specifically we want to explore the association between poverty and violent crime rates in the USA. 
+In his seminal work, Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs of committing crime against each other. It could then be argued that the incentive to commit crime is higher for people who have a lower income, as they have more to gain and less to lose by committing crimes. Following this, we would then also expect that communities with higher poverty rates will also be associated with higher crime rates. Depending on the results of our analysis, our analysis could be used to inform relevant policies. It would, for instance, give another argument to redistributive policies: if an effect is found, this policy might also result in a reduction in violent crime, next to an economic benefit. Our analysis hopes to shed further light on this issue.
+
+For the purpose of our research question we selected the following predictor variables:
+
+- **PctPopUnderPov**: percentage of people under the poverty level (main predictor)
+- **perCapInc**: per capita income. While similar to PctPopUnderPov, this takes the whole income distribution into account and not just the lower end. If this average is lower, then we expect more crime to happen.
+- **PctEmploy**: We could argue that if more people are employed less people have an incentive to commit crime.
+- **PctLess9thGrade**, **PctNotHSGrad**, or **PctBSorMore**: percentage of people 25 and over with less than a 9th grade education. Education leads to a higher socio-economic standing, which would suggest that people have less reason to commit crime. 
+- **NummImmig**, **RacePctBlac**, and **AgePct12t29** are included because they are often linked to differences in socio-economic conditions, which may influence crime rates.
+
+Next, we outline how our analyses help to answer the outlined research questions.
+
+1. What is the association between poverty rates (*PctPopUnderPov*) and violent crime rates (*ViolentCrimesPerPop*) in U.S. communities? We first present an univariate analysis to gain an initial understanding of whether our hypothesis holds, how strong the relationship is, but do not take any confounding factors into account yet.
+
+2. How does the found association change when we include other socio-economic factors in our analysis? To assess this, we use a multivariate regression to analyze if the relationship is confounded by other socio-economic variables (1), whether there are relevant interaction effects at play (2) and to see if the inclusion of these other socio-economic variables improves the performance of our model substantially (3). This is important, as it helps us establish whether poverty reduction alone would reduce crime rates or if interventions should also be aimed at other socio-economic variables.
+
+
+
+```{r load data}
+
+violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/211/communities+and+crime+unnormalized.zip")
+```
+
+```{r remotely get variable names}
+
+url <- "https://archive.ics.uci.edu/dataset/211/communities+and+crime+unnormalized"
+
+# Read the HTML page
+page <- read_html(url)
+
+# Extract all text from the page
+text <- page %>% html_text()
+
+# Split into lines
+lines <- str_split(text, "\n")[[1]]
+
+start <- grep("Additional Variable Information", lines, ignore.case = TRUE)
+end   <- grep("Summary Statistics:", lines, ignore.case = TRUE)
+
+# only retain the lines starting with --
+var_lines <- lines[str_starts(str_trim(lines), "--")]
+# remove the --
+var_names <- sapply(strsplit(var_lines, "--"), function(x) str_trim(x[2]))
+# only retain the variable names by cutting everything after the :
+var_names <- str_extract(var_names, "^[^:]+")
+```
+
+```{r putting colnames}
+colnames(violent_crimes_table) <- var_names 
+```
+
+```{r selecting subset}
+crimes_table_subset <- violent_crimes_table %>% 
+  dplyr::select(communityname,state,countyCode, communityCode, fold, population, 
+         PctPopUnderPov, perCapInc, PctEmploy, PctLess9thGrade, PctNotHSGrad, PctBSorMore,
+         NumImmig, racepctblack, agePct12t29, ViolentCrimesPerPop
+         )
+```
+
+# Design
+
+The dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting, which resulted in missing total violent crime values for those states. We will investigate whether this missingness has probably a large effect on the model and if necessary use imputations.
+
+# Data preparation
+
+After loading in the data and selecting the subset, *NumImmig* is converted to a percentage by dividing it by the population size and multiplying by 100% since the outcome variable *ViolentCrimesPerPop* (total number of violent crimes per 100K population) is expressed relative to the population size. We call this converted variable *PctImmig*. It's important to mention that this is not an exact transformation, because all demographic data is from 1990, but per-capita crime rates use 1995 population counts. 
+```{r converting numimmig}
+crimes_table_subset$ViolentCrimesPerPop <- as.numeric(crimes_table_subset$ViolentCrimesPerPop)
+crimes_table_subset$PctImmig <- crimes_table_subset$NumImmig/crimes_table_subset$population*100
+crimes_table_subset = crimes_table_subset[,-c('NumImmig', 'fold')]
+```
+
+```{r setting labels}
+sjlabelled::set_label(crimes_table_subset) <- c("communityname", "state", "countyCode", "communityCode", "population", "people under the poverty level (%)", "per capita income ($)", "percentage of people 16 and over who are employed (%)", "percentage of people 25 and over with less than a 9th grade education (%)", "percentage of people 25
+or over, that have not graduated highschool (%)", "percentage of people 25 or over, with
+at least a bachelor’s degree (%)", "percentage of population that is african american (%)", "percentage of population that is 12-29 in age (%)", "total number of violent crimes per 100K population", "percentage of immigrants (%)")
+```
+
+
+It is examined how many NA values are present in the database.
+```{r counting NA values}
+crimes_table_subset %>%
+  pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  summarise(
+    NAs = sum(is.na(value))
+  )
+```
+
+By examining the missing data, there were 221 (of the 1994) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. Imputations in this case would not be very helpful as the model would then partially be trained on artificial outcomes. As already mentioned in the section on the study design, these NA values are possibly due to the fact that rape counts, a component of violent crime, were not included in the statistics for several states. The rows where the outcome variable has an NA value are removed, as these rows are not useful for the regression. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
+
+```{r identifying NA values}
+na_subset <- crimes_table_subset %>%
+  filter(is.na(ViolentCrimesPerPop)
+  )
+na_subset <- na_subset[,-'ViolentCrimesPerPop']
+na_subset
+```
+
+
+```{r na county community}
+crimes_table_subset = na.omit(crimes_table_subset)
+colSums(crimes_table_subset == "?", na.rm = TRUE)
+```
+
+# Univariate descriptives
+
+After removing NA values from the database univariate descriptives are calculated, for both the missing values and the non-missing values. 
+
+```{r summary statistics}
+#str(crimes_table_subset)
+#summary(crimes_table_subset)
+crimes_table_subset %>%
+  pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  summarise(
+    min = min(value, na.rm = TRUE),
+    q25 = quantile(value, 0.25, na.rm = TRUE),
+    mean = mean(value, na.rm = TRUE),
+    sd = sd(value, na.rm = TRUE),
+    q75 = quantile(value, 0.75, na.rm = TRUE),
+    max = max(value, na.rm = TRUE),
+    n = n(),
+    NAs = sum(is.na(value))
+  )
+```
+
+
+```{r summary statistics nas}
+na_subset %>%
+  pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
+  group_by(variable) %>%
+  summarise(
+    min = min(value, na.rm = TRUE),
+    q25 = quantile(value, 0.25, na.rm = TRUE),
+    mean = mean(value, na.rm = TRUE),
+    sd = sd(value, na.rm = TRUE),
+    q75 = quantile(value, 0.75, na.rm = TRUE),
+    max = max(value, na.rm = TRUE),
+    n = n(),
+    NAs = sum(is.na(value))
+  )
+```
+
+To gain insight into the univariate distributions, boxplots and histograms are generated. These histograms are then compared to the histograms of the distributions for the variables with missing data for violent crimes to evaluate if there are important deviations. Neither the summary statistics nor the histograms indicate that the missing data have characteristics that differ substantially from the non-missing data.
+
+```{r boxplots, fig.width=8, fig.height=12}
+numeric_cols_na <- sapply(na_subset, is.numeric)
+crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
+crimes_table_subset$logpopulation <- log10(crimes_table_subset$population)
+numeric_cols <- sapply(crimes_table_subset, is.numeric)
+crimes_table_subset_num <- crimes_table_subset[, ..numeric_cols]
+par(mfrow = c(4,2))
+for(columnname in names(crimes_table_subset_num_na)){
+  column <- crimes_table_subset_num[[columnname]]
+  boxplot(column,
+          main = columnname
+          )
+  hist(column,   
+       main = columnname,
+       xlab = get_label(column)
+          )
+}
+```
+
+
+```{r histograms na comparison, fig.width=10, fig.height=10}
+numeric_cols_na <- sapply(na_subset, is.numeric)
+crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
+par(mfrow = c(4,6))
+for(columnname in names(crimes_table_subset_num_na)){
+  column <- crimes_table_subset_num[[columnname]]
+  column_na <- crimes_table_subset_num_na[[columnname]]
+  hist(column,   
+       main = columnname,
+       xlab = get_label(column)
+          )
+  hist(column_na,   
+       main = paste(columnname, "(missing data)"),
+       xlab = get_label(column)
+          )
+}
+```
+
+# Multivariate descriptives
+
+After investigating the univariate descriptives, multivariate descriptives are looked at.
+The constructed correlation matrix shows the extent to which the variables in the dataset are correlated with each other.
+It's important to mention that these correlations are indicators of an association, not of a causation.
+The following predictors are highly correlated with each other. Therefore, it might be best not to include them together in a model later.
+
+- *PctNotHSGrad* and *PctLess9thGrade* ($r = 0.93$)
+- *perCapInc* and *PctBSorMore* ($r = 0.77$)
+- *PctNotHSGrad* and *PctBSorMore* ($r = -0.75$)
+
+However the choice for predictors for the model will be dealt with thoroughly during the model building.
+
+It is noticeable that the variable *racepctblack* is the one most strongly correlated with the outcome variable ($r = 0.63$), even more than *PctPopUnderPov*, the head predictor that was chosen for this research.
+
+```{r correlations, fig.height= 4, fig.width= 5}
+cor_matrix <- cor(crimes_table_subset_num[,-c('population', 'logpopulation')])
+cor_values <- as.data.frame(as.table(cor_matrix))
+
+
+ggcorrplot(cor_matrix, lab = TRUE, type = "lower", 
+           lab_size = 3, colors = c("red", "white", "blue"))
+
+```
+The following scatter plots were generated:
+
+- for each variable, a scatter plot showing the relationship with the outcome variable *ViolentCrimesPerPop*;
+- for each variable, a scatter plot showing the relationship with the main predictor variable *PctPopUnderPov*.
+
+The scatter plots showed that most variables display a roughly linear relationship with *ViolentCrimesPerPop*, although that trend is often distorted in the extreme regions of the x-asis. It's also visible that some variables exhibit a linear relationship with *PctPopUnderPov*.
+This suggests that these variables are probably not suitable as additional predictors when *PctPopUnderPov* is already included in the model as this may introduce multicollinearity.
+
+```{r scatter plots, fig.width=8, fig.height=10}
+x_vars <- colnames(crimes_table_subset_num)
+dict_labels <- setNames(sapply(x_vars, function(x_var) get_label(crimes_table_subset_num[[x_var]])), x_vars)
+
+
+df <- crimes_table_subset_num[,-c("population", "logpopulation")]
+y_var <- "ViolentCrimesPerPop"
+x_vars <- setdiff(colnames(df), y_var)
+plots <- lapply(x_vars, function(x_var) {
+    ggplot(df, aes_string(x_var,y_var)) +
+    geom_point(alpha = 0.6, size = 0.7) +
+    geom_smooth(method = "lm", color = "blue", se = FALSE)+
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(x = str_wrap(paste(x_var, " (", dict_labels[x_var], ")", sep = ""), width = 45))
+}
+)
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+
+df <- crimes_table_subset_num[,-c("population", "ViolentCrimesPerPop", "logpopulation")]
+y_var <- "PctPopUnderPov"
+x_vars <- setdiff(colnames(df), y_var)
+plots <- lapply(x_vars, function(x_var) {
+    ggplot(df, aes_string(x_var,y_var))+
+    geom_point(alpha = 0.6, size = 0.7) +
+    geom_smooth(method = "lm", color = "blue", se = FALSE)+
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(x = str_wrap(paste(x_var, " (", dict_labels[x_var], ")", sep = ""), width = 45))
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+```
+The scatter plots also reveal one outlier for the *ViolentCrimesPerPop* variable. However, outliers and their influence will be further investigated in the diagnostic section.
+
+```{r outlier}
+crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=TRUE), , drop = FALSE]
+```
+
+
+I was also investigated wheter or not small communities have a higher probability to have more extreme values of the response and predictor variables, scatter plots were created with log(*population*) as x variable (see appendix). The resulting scatterplots show that communities with a very small population indeed show a very large spread for all variables.
+
+```{r scatter plots population, fig.width=8, fig.height=12}
+df <- crimes_table_subset_num
+x_var <- "logpopulation"
+y_vars <- setdiff(colnames(df), x_var)
+plots <- lapply(y_vars, function(y_var) {
+    ggplot(df, aes_string(x_var,y_var))+
+    geom_point(alpha = 0.6, size = 0.7) +
+    geom_smooth(method = "lm", color = "blue", se = FALSE)+
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(x = "log(population)", y = str_wrap(y_var, width = 45))
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+
+```
+
+# Model Building
+
+Before performing linear regression and building models, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model.
+
+```{r dataset split}
+set.seed(987654321)
+n <- nrow(crimes_table_subset_num)
+training <- sample(1:n, size = floor(0.8 * n))
+train_data <- crimes_table_subset[training, ]
+test_data <- crimes_table_subset[-training, ]
+n_training <- nrow(train_data)
+
+cat("Training set size:", n_training, "\n")
+cat("Test set size:", nrow(test_data), "\n")
+```
+
+## Univariate linear regression
+
+The simple univariate regression equation we estimate with the training set is given as follows:
+
+$$
+ViolentCrimesPerPop_i = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \epsilon_i
+$$
+
+```{r Univariate regression}
+fit_simple <- lm(ViolentCrimesPerPop ~ PctPopUnderPov, data = train_data)
+summary(fit_simple)
+```
+
+We show the relevant statistics to be discussed in this section:
+```{r Extract relevant statistics}
+
+cat("Regression equation: ViolentCrimesPerPop =", 
+    round(coef(fit_simple)[1], 2), "+", 
+    round(coef(fit_simple)[2], 2), "* PctPopUnderPov\n\n")
+
+# R-squared and BIC-value
+cat("R-squared:", round(summary(fit_simple)$r.squared, 4), "\n")
+cat("Adjusted R-squared:", round(summary(fit_simple)$adj.r.squared, 4), "\n")
+cat("BIC:", BIC(fit_simple), "\n")
+
+# MSE
+sse_simple <- sum(fit_simple$residuals^2) 
+mse_simple <- sse_simple/(n_training - 2) 
+cat("SSE:", round(sse_simple, 2), "\n")
+# Calculation of BIC-waarde in R: -2 * as.numeric(logLik(fit)) + attr(logLik(fit), "df") * log(n)
+# Not the one from the course slides n*log(sse_simple) - n*log(n) + p*log(n), but ok?
+cat("MSE:", round(mse_simple, 2), "\n")
+
+# Confidence intervals for coefficients
+cat("\n95% Confidence Intervals:\n")
+print(confint(fit_simple))
+
+# ANOVA
+anova(fit_simple)
+```
+
+*PctPopUnderPov* = mean increase in violent crimes per 100K population if poverty rate increases by one percentage point
+
+### Assumption checks
+
+We check assumptions on linearity, independence of errors, homoscedasticity, and normality of errors. It is clear these assumptions are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. In the next step, we extend the model by adding relevant predictors and reassess the assumptions.
+
+```{r simple-lm-diagnostics, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
+
+#Residuals vs Fitted 
+plot(fit_simple$fitted.values, fit_simple$residuals,
+     xlab = "Fitted values", ylab = "Residuals",
+     main = "Residuals vs Fitted")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit_simple$fitted.values, fit_simple$residuals), col = "blue")
+
+# Squared residuals vs Fitted
+plot(fit_simple$fitted.values, fit_simple$residuals^2,
+     xlab = "Fitted values", ylab = "Squared Residuals",
+     main = "Squared Residuals vs Fitted")
+lines(lowess(fit_simple$fitted.values, fit_simple$residuals^2), col = "blue")
+
+# QQ-plot of residuals (normality)
+qqnorm(fit_simple$residuals, main = "Normal Q-Q Plot of Residuals")
+qqline(fit_simple$residuals, col = "red")
+ 
+# Studentized residuals
+stud_res <- rstudent(fit_simple)
+plot(fit_simple$fitted.values, stud_res,
+     xlab = "Fitted values", ylab = "Studentized Residuals",
+     main = "Studentized Residuals vs Fitted")
+outliers_simple <- which(abs(stud_res) > 2)
+```
+
+Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
+```{r outliers vs population1}
+par(mfrow = c(1, 2))
+# Residuals vs population
+plot(train_data$logpopulation, fit_simple$residuals,
+     xlab = "log(population)", ylab = "Residuals")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(train_data$logpopulation, fit_simple$residuals), col = "blue")
+
+plot(train_data$logpopulation, stud_res,
+     xlab = "log(population)", ylab = "Studentized Residuals")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(train_data$logpopulation, stud_res), col = "blue")
+par(mfrow = c(1, 1))
+```
+
+## Model selection
+
+We use an all-possible regressions procedure to select predictor variables. We include models with a maximum of 5 predictor variables and only models with 0, 1, or 2 education predictor variables and without interactions. The best model is chosen based on the Bayesian Information Criterion.
+
+```{r model selection, message=FALSE}
+
+max_extra_predictors <- 4
+# Define predictor variables for model selection
+predictors <- c("perCapInc", "PctEmploy", 
+                "PctLess9thGrade", "PctNotHSGrad", "PctBSorMore",
+                "racepctblack", "agePct12t29", "PctImmig")
+
+# Educ variables
+educ <- c("PctLess9thGrade", "PctNotHSGrad", "PctBSorMore")
+
+formulas <- list()
+for (i in 1:max_extra_predictors) {
+  tmp <- combn(predictors, i)
+  tmp <- apply(tmp, 2, paste, collapse=" + ")
+  tmp <- paste0("ViolentCrimesPerPop~PctPopUnderPov + ", tmp)
+  formulas[[i]] <- tmp
+}
+formulas <- unlist(formulas)
+formulas <- sapply(formulas, as.formula)
+models <- lapply(formulas, lm, data=train_data)
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
+                         , character(1))
+
+# build the frame
+model_ranking <- data.frame(
+  formula = formula_vector,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  BIC = bics
+)
+model_ranking <- model_ranking[order(model_ranking$BIC), ]
+```
+
+The best model according to the procedure is:
+$$
+ViolentCrimesPerPop_i = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \beta_2 \cdot PctLess9thGrade_i + \beta_3 \cdot PctNotHSGrad_i + \beta_4 \cdot PctImmig_i + \epsilon_i
+$$
+
+```{r show best model}
+# Print best model
+best <- which.min(model_ranking$BIC)
+best_pred <- model_ranking$formula[best]
+cat("\nBest model:\n")
+cat(best_pred, "\n")
+cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
+
+fit_multi <- lm(best_pred, data = train_data)
+multi_var_summary <- summary(fit_multi)
+multi_var_summary
+```
+
+### Assumption checks selected model
+
+We see that the assumptions of normality and equal error variances of the error terms are again violated in the original multivariate model. 
+```{r final model-diagnostics, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
+
+#Residuals vs Fitted
+plot(fit_multi$fitted.values, fit_multi$residuals,
+     xlab = "Fitted values", ylab = "Residuals",
+     main = "Residuals vs Fitted")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit_multi$fitted.values, fit_multi$residuals), col = "blue")
+
+# Squared residuals vs Fitted
+plot(fit_multi$fitted.values, fit_multi$residuals^2,
+     xlab = "Fitted values", ylab = "Squared Residuals",
+     main = "Squared Residuals vs Fitted")
+lines(lowess(fit_multi$fitted.values, fit_multi$residuals^2), col = "blue")
+
+# QQ-plot
+qqnorm(fit_multi$residuals, main = "Normal Q-Q Plot")
+qqline(fit_multi$residuals, col = "red")
+
+# Studentized residuals
+stud_res_multi <- rstudent(fit_multi)
+plot(fit_multi$fitted.values, stud_res_multi,
+     xlab = "Fitted values", ylab = "Studentized Residuals",
+     main = "Studentized Residuals vs Fitted")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit_multi$fitted.values, stud_res_multi), col = "blue")
+
+par(mfrow = c(1, 1))
+```
+A possible solution is to apply a log transformation of Y. The result shows approximate constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. The reduction in R-squared suggests that the model-fit was inflated due to heteroscedasticity.  We still see slightly heavy tails. 
+
+```{r}
+fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
+                PctPopUnderPov + PctBSorMore + racepctblack + 
+                PctImmig + PctPopUnderPov:PctBSorMore,
+              data = train_data)
+
+multi_var_summary <- summary(fit_log)
+multi_var_summary
+plot(fit_log)
+par(mfrow = c(1, 1))
+```
+
+## Rerun selection after transformation of Y
+We will repeat the model building process with the log-transformed ViolentCrimesPerPop.
+
+```{r adding column with log transform}
+train_data$logViolent <- log(train_data$ViolentCrimesPerPop + 1)
+test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
+```
+
+## Model selection
+
+We use an all-possible regressions procedure to select predictor variables. We include models with a maximum of 5 predictor variables and only models with 0, 1, or 2 education predictor variables. The best model is chosen based on the Bayesian Information Criterion.
+
+```{r creating_formulas_without_interaction, message=FALSE}
+max_extra_predictors <- 4
+# Define predictor variables for model selection
+predictors <- c("perCapInc", "PctEmploy", 
+                "PctLess9thGrade", "PctNotHSGrad", "PctBSorMore",
+                "racepctblack", "agePct12t29", "PctImmig")
+
+# Educ variables
+educ <- c("PctLess9thGrade", "PctNotHSGrad", "PctBSorMore")
+
+formulas <- list()
+for (i in 1:max_extra_predictors) {
+  tmp <- combn(predictors, i)
+  tmp <- apply(tmp, 2, paste, collapse=" + ")
+  tmp <- paste0("logViolent~PctPopUnderPov + ", tmp)
+  formulas[[i]] <- tmp
+}
+```
+
+
+```{r model selection2, message=FALSE}
+formulas <- unlist(formulas)
+formulas <- sapply(formulas, as.formula)
+models <- lapply(formulas, lm, data=train_data)
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
+                         , character(1))
+
+# build the frame
+model_ranking <- data.frame(
+  formula = formula_vector,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  BIC = bics
+)
+model_ranking <- model_ranking[order(model_ranking$BIC), ]
+```
+
+We then run the multivariate regression equation
+
+```{r show best model 2}
+# Print best model
+best <- which.min(model_ranking$BIC)
+best_pred <- model_ranking$formula[best]
+cat("\nBest model:\n")
+cat(best_pred, "\n")
+cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
+
+fit_multi <- lm(best_pred, data = train_data)
+multi_var_summary <- summary(fit_multi)
+multi_var_summary
+```
+
+### Partial Regression Plots
+
+When creating the partial regression plots on the model with the log transformed violent crimes, no clear need for tranformations could be observed for all variables except PctRaceBlack. 
+
+```{r partial-regression-plots2, fig.width=10, fig.height=8}
+predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+```
+
+In the partial regression plot of the racepctblack, it could be seen that there is not a linear effect on the outcome. Therefore, multiple transformations on the racepctblack variable were tested, such as a log transformation. Eventually, it was decided that a logit transformation would work better given the percentile nature of the predictor.
+
+```{r making logit tranformation}
+
+pct_to_logit <-  function(percentage, addition = 1e-6) {
+  percentiles_in_range01 <- percentage / 100
+  # add small value to avoid 0 and 1
+  percentiles_in_range01 <- pmin(
+    pmax(percentiles_in_range01, addition),
+    1 - addition)
+  logit <- log(percentiles_in_range01 / 
+                                     (1 - percentiles_in_range01))
+  logit
+}
+
+train_data$race_black_logit <- pct_to_logit(train_data$racepctblack)
+test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
+```
+
+Fitting the model with this logit transformed racepctblack seemed to stabilize the residual vs fitted plot, as well as make the partial regression plot look linear.
+
+```{r}
+fit_logit <- lm(logViolent ~ 
+                PctPopUnderPov + 
+                PctLess9thGrade +
+                PctBSorMore + 
+                race_black_logit +
+                PctImmig,
+              data = train_data)
+
+
+multi_var_logit_summary <- summary(fit_logit)
+multi_var_logit_summary
+plot(fit_logit)
+par(mfrow = c(1, 1))
+```
+
+```{r partial-regression-logits, fig.width=10, fig.height=8}
+predictor_list <- row.names(multi_var_logit_summary$coefficients[-1,])
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+```
+
+
+### Interaction Terms Selection
+
+Following the protocol, we add all interaction terms of the predictor variables with our main predictor variable *PctPopUnderPov* and evaluate their significance.
+
+```{r interaction term selection 2}
+selected_vars <- setdiff(
+  row.names(multi_var_logit_summary$coefficients),
+  c("(Intercept)", "PctPopUnderPov")
+)
+
+interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
+
+# Nieuwe code
+formulas_interaction <- sapply(interaction_terms, function(i) {
+  paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
+                                  i)
+})
+# Oude code
+# formulas <- sapply(interaction_terms, function(i) {
+#   paste0(best_pred, " + ", i)
+# })
+
+formulas_interaction <- lapply(formulas_interaction, as.formula)
+models <- lapply(formulas_interaction, lm, data=train_data)
+
+interaction_models_form <- vapply(formulas_interaction, function(f) 
+  paste(deparse(f), collapse = ""), character(1))
+summary_val_extraction <- function(x, item) {
+  tmp <- summary(x)$coefficients
+  tmp[nrow(tmp), item]
+}
+p_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "Pr(>|t|)"))
+t_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "t value"))
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+delta_adj_r_square <- sapply(models, function(m) 
+  summary(m)$adj.r.squared - summary(fit_multi)$adj.r.squared)
+
+interaction_table <- data.frame(
+  p.vals = p_vals_interaction,
+  t.vals = t_vals_interaction,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  delta.adj = delta_adj_r_square,
+  BIC = bics
+)
+interaction_table <- interaction_table[order(interaction_table$p.vals), ]
+interaction_table
+  
+best_interaction <- row.names(interaction_table[1,])
+```
+
+This first selection showed that a model with an interaction term of PctPopUnderPov and PctLess9thGrade would be the only significant interaction term.
+
+```{r final model2}
+# Estimate model with interaction
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "), "+",
+                                  "PctPopUnderPov:PctLess9thGrade"))
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+```
+
+### Multicollinearity Check
+
+Before checking model assumptions, we first assess multicollinearity using the Variance Inflation Factor (VIF) and remove a variable if necessary. 
+
+```{r}
+library(car)
+# practicum: car::vif(fit)
+vif <- vif(fit_final)
+print(vif)
+cat("BIC: ", BIC(fit_final))
+```
+
+However, when we look at the colinearity of the model we can see that the less then 9thgrade variables show a high multicolinearity score. One reason for this could be the addition of multiple education variables. For this reason the modelselection was retried with only one education variable present. 
+```{r filtering formulas for education}
+
+filtered_formulas <- Filter(function(f) {
+  variables <- all.vars(f)              
+  number_education_variables <- sum(variables %in% educ)   
+  number_education_variables <= 1                     
+}, formulas)
+#change formulas to contain the logit based race variable
+filtered_formulas <- lapply(filtered_formulas, function(f) {
+  f_str <- deparse(f)                                # formula -> character vector
+  f_str <- paste(f_str, collapse = " ")              # collapse into one string
+  f_str <- gsub("racepctblack", "race_black_logit", f_str)  # replace variable name
+  as.formula(f_str)                                  # back to formula
+})
+
+
+```
+
+```{r}
+
+models <- lapply(filtered_formulas, lm, data=train_data)
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+formula_vector <- vapply(filtered_formulas, function(f) paste(deparse(f), collapse = "")
+                         , character(1))
+
+# build the frame
+model_ranking <- data.frame(
+  formula = formula_vector,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  BIC = bics
+)
+model_ranking <- model_ranking[order(model_ranking$BIC), ]
+# Print best model
+best <- which.min(model_ranking$BIC)
+best_pred <- model_ranking$formula[best]
+cat("\nBest model:\n")
+cat(best_pred, "\n")
+cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
+
+fit_multi <- lm(best_pred, data = train_data)
+multi_var_summary <- summary(fit_multi)
+multi_var_summary
+```
+
+```{r}
+predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+selected_vars <- setdiff(
+  row.names(multi_var_summary$coefficients),
+  c("(Intercept)", "PctPopUnderPov")
+)
+
+interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
+
+# Nieuwe code
+formulas_interaction <- sapply(interaction_terms, function(i) {
+  paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
+                                  i)
+})
+# Oude code
+# formulas <- sapply(interaction_terms, function(i) {
+#   paste0(best_pred, " + ", i)
+# })
+
+formulas_interaction <- lapply(formulas_interaction, as.formula)
+models <- lapply(formulas_interaction, lm, data=train_data)
+
+interaction_models_form <- vapply(formulas_interaction, function(f) 
+  paste(deparse(f), collapse = ""), character(1))
+summary_val_extraction <- function(x, item) {
+  tmp <- summary(x)$coefficients
+  tmp[nrow(tmp), item]
+}
+p_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "Pr(>|t|)"))
+t_vals_interaction <- sapply(models, function(m) 
+  summary_val_extraction(m, "t value"))
+
+bics <- sapply(models, BIC)
+r_square <- sapply(models, function(m) summary(m)$r.squared)
+adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
+delta_adj_r_square <- sapply(models, function(m) 
+  summary(m)$adj.r.squared - summary(fit_multi)$adj.r.squared)
+
+interaction_table <- data.frame(
+  p.vals = p_vals_interaction,
+  t.vals = t_vals_interaction,
+  r.square = r_square,
+  adj.r.square = adj_r_square,
+  delta.adj = delta_adj_r_square,
+  BIC = bics
+)
+interaction_table <- interaction_table[order(interaction_table$p.vals), ]
+interaction_table
+  
+best_interaction <- row.names(interaction_table[1,])
+```
+
+```{r}
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "),  "+",
+                                  best_interaction))
+fit_final <- lm(formula_final, data = train_data)
+summary(fit_final)
+plot(fit_final)
+par(mfrow = c(1, 1))
+```
+
+### Multicollinearity Check of model with one education variable:
+
+```{r viskys}
+vif <- vif(fit_final)
+print(vif)
+cat("BIC: ", BIC(fit_final))
+```
+When looking at the VIF values for this new model with the best interaction term with only one education variable, it could be seen that the pct population under poverty variable and its interaction with the age variable had a high VIF values, showing high multicolinearity. For this reason, the second best interaction term was tested in the model. 
+
+```{r}
+formula_final <- as.formula(paste("logViolent ~", 
+                                  paste(predictor_list, collapse = " + "),  "+",
+                                  "PctPopUnderPov:PctBSorMore"))
+fit_final <- lm(formula_final, data = train_data)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+par(mfrow = c(1, 1))
+```
+
+```{r vivs2, ref.label="viskys"}
+vif <- vif(fit_final)
+print(vif)
+cat("BIC: ", BIC(fit_final))
+```
+After checking for colinearity of this model, it could be seen to have a major improvement compared to the model with the PctPopUnderPov:agePct12t29. 
+
+### partial regression plots of model with one education variable
+
+To check if the variables are in the right form, another partial regression test is done. 
+
+```{r fig.width=10, fig.height=8, warnings=FALSE}
+predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+plots <- lapply(predictor_list, function(predictor) {
+    partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
+}
+)
+
+# Print 9 plots per pg
+print(wrap_plots(plots, ncol = 3))
+```
+
+```{r compare2}
+# Compare models
+cat("Comparison of models:\n")
+cat("Original model adjusted R²: ", round(summary(fit_final)$adj.r.squared, 4), "\n") ## dit moet nog aangepast worden
+cat("interaction term model adjusted R²:  ", round(summary(fit_final)$adj.r.squared, 4), "\n")
+
+```
+
+### Assumption checks final model
+
+```{r final-model-diagnostics, fig.width=10, fig.height=8}
+par(mfrow = c(2, 2))
+
+#Residuals vs Fitted
+plot(fit_final$fitted.values, fit_final$residuals,
+     xlab = "Fitted values", ylab = "Residuals",
+     main = "Residuals vs Fitted (Final Model)")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit_final$fitted.values, fit_final$residuals), col = "blue")
+
+# Squared residuals vs Fitted
+plot(fit_final$fitted.values, fit_final$residuals^2,
+     xlab = "Fitted values", ylab = "Squared Residuals",
+     main = "Squared Residuals vs Fitted")
+lines(lowess(fit_final$fitted.values, fit_final$residuals^2), col = "blue")
+
+# QQ-plot
+qqnorm(fit_final$residuals, main = "Normal Q-Q Plot (Final Model)")
+qqline(fit_final$residuals, col = "red")
+
+# Studentized residuals
+stud_res_final <- rstudent(fit_final)
+plot(fit_final$fitted.values, stud_res_final,
+     xlab = "Fitted values", ylab = "Studentized Residuals",
+     main = "Studentized Residuals vs Fitted")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(fit_final$fitted.values, stud_res_final), col = "blue")
+
+```
+
+
+```{r outliers vs population2}
+par(mfrow = c(1, 2))
+# Residuals vs population
+plot(train_data$logpopulation, fit_final$residuals,
+     xlab = "log(population)", ylab = "Residuals")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(train_data$logpopulation, fit_final$residuals), col = "blue")
+
+plot(train_data$logpopulation, stud_res_final,
+     xlab = "log(population)", ylab = "Studentized Residuals")
+abline(h = 0, col = "red", lty = 2)
+lines(lowess(train_data$logpopulation, stud_res_final), col = "blue")
+
+par(mfrow = c(1, 1))
+```
+
+## Model diagnostics
+
+De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hierin kan je goed zien dat er toch redelijk wat influential outliers zijn, dus dat robust wel is.
+
+```{r}
+library(olsrr)
+olsrr::ols_plot_cooksd_bar(fit_final)
+olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
+olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
+```
+```{r dfbetas plots, fig.width=10, fig.height=8}
+car::dfbetasPlots(fit_final)
+```
+```{r dfbetas2 plots, fig.width=10, fig.height=8}
+# IMPORTANT remark: the labelled observations are the points with 1,5 times the threshold (the reason is the visualisation)
+# DFBETAS values (placing them in a data frame ensures easy compatibility with ggplot2)
+dfbetas_vals <- data.frame(dfbetas(fit_final))
+
+# Plot
+colnames_dfbetas <- colnames(dfbetas_vals)
+plots <- lapply(colnames_dfbetas[-1], function(predictor) {
+ggplot(dfbetas_vals) +
+  geom_point(aes(x = 1:nrow(dfbetas_vals), y = dfbetas_vals[[predictor]])) +
+  geom_segment(aes(x = 1:nrow(dfbetas_vals), xend = 1:nrow(dfbetas_vals), y = 0, yend = dfbetas_vals[[predictor]]),
+               color = 'cornflowerblue') +
+  geom_hline(yintercept = c(2, -2) / sqrt(nrow(dfbetas_vals)), color = 'salmon') +
+  labs(x = 'Observation index', y = 'DFBETAS',
+       title = paste0('DFBETAS values for coefficient of ', predictor),
+       subtitle = 'Thresholds are at \u00B1(2\u00F7\u221An)') +
+  geom_text(aes(x = 1:nrow(dfbetas_vals), y = ifelse(dfbetas_vals[[predictor]] > 0, dfbetas_vals[[predictor]] + .05, dfbetas_vals[[predictor]] - .05),
+                label = ifelse(abs(dfbetas_vals[[predictor]]) > 1.5*(2/sqrt(nrow(dfbetas_vals))),
+                               paste0(round(dfbetas_vals[[predictor]], digits = 2), ' (', 1:nrow(dfbetas_vals), ')'), '')))
+})
+# Print 9 plots per pg
+print(plots)
+```
+
+Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
+
+```{r robust-inference}
+
+
+robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
+summary(robust, method = "XtX")
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit_final)
+par(mfrow=c(2,2))
+plot(robust, which = 1)
+qqnorm(resid(robust))
+qqline(resid(robust))
+
+```
+
+A comparison of the coefficients reveal no substantial differences, indicating that the influential points are not the result of gross errors. <hier moeten nog extra checks van influence on inferences bij>.
+The identified leverage-points can be called 'good leverages' as they exhibit high leverage but their residuals are still small, this even improves the precision of the regression coefficients. (zie referentie) It'
+
+```{r influence inference}
+# Compare OLS vs Robust coefficients
+comparison <- data.frame(
+  OLS = coef(fit_final),
+  Robust = coef(robust),
+  Difference = coef(fit_final) - coef(robust)
+)
+
+print(round(comparison, 4))
+```
+
+
+### Outlier and Influence Diagnostics 
+
+We use several diagnostic measures to identify influential observations
+
+```{r influence diagnostics}
+# Calculate diagnostics
+stud_res_final <- rstudent(fit_final)
+leverage <- hatvalues(fit_final)
+p <- length(coef(fit_final))
+n_train <- nrow(train_data)
+leverage_threshold <- 2 * p / n_train
+cooks_d <- cooks.distance(fit_final)
+dffits_val <- dffits(fit_final)
+dffits_threshold <- 2 * sqrt(p / n_train)
+dfbetas_val <- dfbetas(fit_final)
+dfbetas_threshold <- 2 / sqrt(n_train)
+
+# dataframe
+diagnostics <- data.frame(
+  obs = 1:n_train,
+  population = train_data$population,
+  # zowel studentized deleted residuals als studentized residuals insteken?
+  # DFBETAS ook insteken (per beta kan je dat bepalen) (chapter 10 Diagnostics slide 40)
+  stud_residual = stud_res_final,
+  leverage = leverage,
+  cooks_d = cooks_d,
+  dffits = dffits_val
+)
+
+# Flag observations
+diagnostics$outlier_residual <- abs(diagnostics$stud_residual) > 2
+diagnostics$high_leverage <- diagnostics$leverage > leverage_threshold
+diagnostics$high_cooks <- diagnostics$cooks_d > 4 / n_train
+diagnostics$high_dffits <- abs(diagnostics$dffits) > dffits_threshold
+
+# summ
+cat("Outliers by studentized residuals (|r*| > 2):", sum(diagnostics$outlier_residual), "\n")
+cat("High leverage observations (h >", round(leverage_threshold, 4), "):", 
+    sum(diagnostics$high_leverage), "\n")
+cat("High Cook's distance (D >", round(4/n_train, 4), "):", 
+    sum(diagnostics$high_cooks), "\n")
+cat("High DFFITS (|DFFITS| >", round(dffits_threshold, 4), "):", 
+    sum(diagnostics$high_dffits), "\n")
+```
+
+```{r influence plot, fig.width=8, fig.height=6}
+# Influence plot
+plot(leverage, stud_res_final, 
+     xlab = "Leverage", ylab = "Studentized Residuals",
+     main = "Influence Plot",
+     cex = sqrt(cooks_d) * 10)
+```
+
+
+## interpretation final model
+
+Our final model is:`r formula_final`.
+```{r}
+summary(fit_final)
+print(confint(fit_final))
+```
+
+```{r}
+library(stdmod)
+b <- coef(fit_final)
+
+mean_bsormore <- mean(train_data$PctBSorMore)
+mean_poverty <- mean(train_data$PctPopUnderPov)
+
+coef_mean <- b["PctPopUnderPov"] +
+      b["PctPopUnderPov:PctBSorMore"]     * mean_bsormore
+
+confidence_intervals <- confint(fit_final)
+```
+
+#### Notes on interpretation ---> NIET BACKTRANSFORMEN
+
+The intercept on its own is not interpretable as it would require all predictor variables (and interaction terms) to be zero. This is not in the scope of our model. If it were, the intercept of `r b["(intercept)"]` could be interpreted as the estimated log of expected (violent crime rate per 100k + 1) when all predictor variables are 0.
+There is no use in interpreting interaction-term coefficients on their own, as they indicate the effect of one predictor on the other, but have no direct effect on its own.
+
+
+#### Interpretation of PctPopUnderPov
+
+```{r}
+set.seed(987654321)
+ci_pov <- cond_effect_boot(fit_final,
+            x = "PctPopUnderPov", w = "PctBSorMore", nboot = 2000)
+ci_lower <- ci_pov$"CI Lower"[ci_pov$Level == "Medium"]
+ci_upper <- ci_pov$"CI Upper"[ci_pov$Level == "Medium"]
+```
+
+The effect of PctPopUnderPov varies with PctBsorMore through the interaction terms. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the mean of the logarithm (violent crime rate per 100k + 1) as `r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore"]` * PctBSorMore. If we take for example the mean of the PctBSorMore to calculate the effect of PctPoponderpov when the interacting variable is held at its average and all variables are held constant, we can find `r coef_mean`. The confidence interval of this effect is [`r ci_lower`, `r ci_upper`]
+With a confidence coefficient of .95 we estimate that the true effect of PctPopUnderPov (with its interaction) on the expected value of the logarithm of (violent crimes (per population of 100k) + 1) per unit increase in PctPopUnderPov (1 percent) is somewhere between `r ci_lower`% and `r ci_upper`%, when the interacting variable is held at its average and all other variables are held constant.  The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of PctPopUnderPov on the logarithm of (violent crimes + 1) gets larger. Theoretically this could be explained due to the bigger gap in socio-economic standing, which could provoke more violent crimes.
+
+
+#### Interpretation of PctBSorMore
+
+```{r}
+set.seed(987654321)
+ci_pov2 <- cond_effect_boot(fit_final,
+            x = "PctBSorMore", w = "PctPopUnderPov", nboot = 2000)
+ci_lower2 <- ci_pov2$"CI Lower"[ci_pov2$Level == "Medium"]
+ci_upper2 <- ci_pov2$"CI Upper"[ci_pov2$Level == "Medium"]
+```
+
+The interpretation for PctBSorMore is similar to the one above because of their interaction. The conditional effect on of PctBSorMore on the log violent crime rate is given by: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"]`* PctPopUnderPov.  Similarly to before we can take the mean of PctPopUnderPov and estimate the conditional effect of PctBSorMore on the log expected value of crime rate per unit increase of PctBSorMore, when keeping poverty at its mean and all other variables constant: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Contrary to above, we now see a interference effect: for higher levels of PctPopUnderPov the negative effect of PctBSorMore becomes less negative (the slope becomes less steep). With a confidence interval of [`r ci_lower2`, `r ci_upper2`] which can be interpreted as: with a confidence coefficient of 0.95 we estimated that the true effect on the logarithm of (expected crime rate + 1) by increasing PctBSorMore by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant is somewhere between [`r ci_lower2`, `r ci_upper2`]. Thus, under the conditions stated above, if a higher percentage of the population has a Bachelors degree or higher, the estimated logarithm of the (mean crime rate + 1) decreases and this effect is less pronounced for higher levels of PctPopUnderPov.
+
+#### Interpretation of race_black_logit  
+
+The interpretation of race_black_logit is more complicated as on top of the log transformed response variable, we now also have a logit transformed predictor variable. It has no interaction terms so we can interpret the main effect on its own. A one-unit increase in the log-odds of percentage African American is associated with a `r b["race_black_logit"]` change in the logarithm of the (expected value of Violent Crimes per 100k + 1) when keeping all other variables constant; where a one-unit increase in the log-odds has to be interpreted as a multiplication of the odds of being African American by e ($\approx$ 2.72).  95% confidence interval is [`r confidence_intervals[4,1]`, `r confidence_intervals[4,2]`] respectively. With a confidence coefficient of 0.95 we estimated that the true parameter of race_black_logit is somewhere between `r confidence_intervals[4,1]` and `r confidence_intervals[4,2]`. This is a positive association: for increasing levels of the log-odds of percentage African Americans, there is an increase in the logarithm of the expected value of (violent crime rates per 100k + 1). 
+
+
+#### Interpretation of PctImmig -- nog niet af
+
+The effect of PctImmig on log Violent crime rates is: `r b["PctImmig"]`. With confidence coefficient .95 we estimate that the percentage change in expected crime rates per 100k population per unit increase in PctImmig when keeping all other variables constant will be somewhere between `r confidence_intervals[6,1]` and `r confidence_intervals[6,2]`. This increase in violent crimes associated with the increase in percentage of foreign borns agrees with the ....<????>
+
+
+#### agePct12t29 -- nog niet af
+
+For the percentage of people between the age of 12 and 29, we find a negative association with the logartihm of (violent crime rates per 100k + 1). This is expressed by a coefficient of `r b["agePct12t29"]` with 95% confidence interval [`r confidence_intervals[5,1]`, `r confidence_intervals[5,2]`]. with 95% confidence we estimate that the true parameter of agePct12t29  is somewhere between `r confidence_intervals[5,1]` and `r confidence_intervals[5,2]`. This negative association is not in line with our prior assumption.
+
+#### Family confidence interval
+
+
+
+## Summary
+Dusja multivariate model stuk beter dan univariate model als je kijkt naar de tabel
+
+```{r summary}
+# summary
+
+mse_final <- mean(fit_final$residuals^2)
+summary_results <- data.frame(
+  Model = c("Simple (PctPopUnderPov only)", "Final Multivariate"),
+  R_squared = c(round(summary(fit_simple)$r.squared, 4),
+                      round(summary(fit_final)$r.squared, 4)),
+  Adj_R_squared = c(round(summary(fit_simple)$adj.r.squared, 4),
+                          round(summary(fit_final)$adj.r.squared, 4)),
+  MSE = c(round(mse_simple, 2), round(mse_final, 2)),
+  BIC = c(round(BIC(fit_simple), 2), round(BIC(fit_final), 2))
+)
+
+kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
+```
+
+## model validation
+
+### refitting the model on the test data
+
+
+### prediction of the test data
+
+Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the Mean Squared Error (MSPR) when the model is used to predict data in the training set.
+
+
+```{r model validation backtransformation}
+# Predictions on test set
+# Transforming outcome variable in test dataset
+#test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
+#test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
+
+# we backtransform the data to the normal scale
+backtransformation <- function(value){
+  exp(value) - 1
+}
+pred_interval_test_log <- predict(fit_final, newdata = test_data, interval = "prediction", level = 0.95)
+pred_interval_train_log <- predict(fit_final, newdata = train_data, interval = "prediction", level = 0.95)
+pred_interval_test <- apply(pred_interval_test_log, 1:2, backtransformation)
+pred_interval_train <- apply(pred_interval_train_log, 1:2, backtransformation)
+pred_interval_test_simple <- predict(fit_simple, newdata = test_data, interval = "prediction", level = 0.95)
+pred_interval_train_simple <- predict(fit_simple, newdata = train_data, interval = "prediction", level = 0.95)
+
+#mspr_training_log <- sum((train_data$logViolent - pred_interval_train_log[, "fit"])^2)/(n_training - 9)
+```
+
+As expected, 95% of the data points fall within the 95% prediction intervals. However, after backtransformation of the outcome variables it can be noticed that the prediction intervals are far too wide, making the predictions difficult to use.
+```{r model validation prediction interval}
+inside <- test_data$ViolentCrimesPerPop >= pred_interval_test[, "lwr"] & test_data$ViolentCrimesPerPop <= pred_interval_test[, "upr"]
+cat("Fraction of datapoints in prediction interval:", mean(inside), "\n")
+
+hist(pred_interval_test[, "upr"] - pred_interval_test[, "lwr"],
+     main = "Width prediction interval",
+     xlab = "Width prediction interval",
+     xlim = c(0, 15000),
+     breaks = 50)
+```
+```{r model plots}
+# prediction intervals test data
+df_prediction_test <- data.frame(observed = test_data$ViolentCrimesPerPop, predicted = pred_interval_test[, "fit"])
+
+ggplot(df_prediction_test, aes(observed, predicted))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  geom_abline(intercept = 0, slope = 1, color = "red")+
+  theme_bw() +
+  labs(x = "number of violent crimes per 100K population (observed)",
+       y = "number of violent crimes per 100K population (predicted)",
+       title = "Test dataset")
+
+# prediction intervals training data
+df_prediction_train <- data.frame(observed = train_data$ViolentCrimesPerPop, predicted = pred_interval_train[, "fit"])
+
+ggplot(df_prediction_train, aes(observed, predicted))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  geom_abline(intercept = 0, slope = 1, color = "red")+
+  theme_bw() +
+  labs(x = "number of violent crimes per 100K population (observed)",
+       y = "number of violent crimes per 100K population (predicted)",
+       title = "Train dataset")
+
+# prediction intervals test data logscale
+df_prediction_test_logscale <- data.frame(observed = test_data$logViolent, predicted = pred_interval_test_log[, "fit"])
+
+ggplot(df_prediction_test_logscale, aes(observed, predicted))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  geom_abline(intercept = 0, slope = 1, color = "red")+
+  theme_bw() +
+  labs(x = "number of violent crimes per 100K population (observed)",
+       y = "number of violent crimes per 100K population (predicted)",
+       title = "Test dataset (log scale)")
+
+# prediction intervals training data logscale
+df_prediction_train_logscale <- data.frame(observed = train_data$logViolent, predicted = pred_interval_train_log[, "fit"])
+
+ggplot(df_prediction_train_logscale, aes(observed, predicted))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  geom_abline(intercept = 0, slope = 1, color = "red")+
+  theme_bw() +
+  labs(x = "number of violent crimes per 100K population (observed)",
+       y = "number of violent crimes per 100K population (predicted)",
+       title = "Train dataset (log scale)")
+
+# prediction intervals test data simple
+df_prediction_test_simple <- data.frame(observed = test_data$ViolentCrimesPerPop, predicted = pred_interval_test_simple[, "fit"])
+
+ggplot(df_prediction_test_simple, aes(observed, predicted))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  geom_abline(intercept = 0, slope = 1, color = "red")+
+  theme_bw() +
+  labs(x = "number of violent crimes per 100K population (observed)",
+       y = "number of violent crimes per 100K population (predicted)",
+       title = "Test dataset (univariate)")
+
+# prediction intervals training data simple
+df_prediction_train_simple <- data.frame(observed = train_data$ViolentCrimesPerPop, predicted = pred_interval_train_simple[, "fit"])
+
+ggplot(df_prediction_train_simple, aes(observed, predicted))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  geom_abline(intercept = 0, slope = 1, color = "red")+
+  theme_bw() +
+  labs(x = "number of violent crimes per 100K population (observed)",
+       y = "number of violent crimes per 100K population (predicted)",
+       title = "Train dataset (univariate)")
+```
+
+```{r model validation MSPR and Rsquared, fig.width=8, fig.height=6}
+# MSPR for test data
+#mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+mspr_test <- mean((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
+
+# MSPR for training data
+# mspr_train <- mean((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+mspr_train <- mean((train_data$logViolent - pred_interval_train_log[, "fit"])^2)
+
+cat("MSPR (training set):", round(mspr_train, 2), "\n")
+cat("MSPR (test set):", round(mspr_test, 2), "\n")
+cat("Ratio MSPR/MSE:", round(mspr_test/mspr_train, 4), "\n")
+
+# R-squared on test data
+#ss_res_test <- sum((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+#ss_tot_test <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+ss_res_test <- sum((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
+ss_tot_test <- sum((test_data$logViolent - mean(test_data$logViolent))^2)
+r2_test <- 1 - ss_res_test/ss_tot_test
+cat("R² on test set:", round(r2_test, 4), "\n")
+
+# R-squared on training data
+#ss_res_train <- sum((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+#ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
+ss_res_train <- sum((train_data$logViolent - pred_interval_train_log[, "fit"])^2)
+ss_tot_train <- sum((train_data$logViolent - mean(train_data$logViolent))^2)
+r2_train <- 1 - ss_res_train/ss_tot_train
+cat("R² on training set:", round(r2_train, 4), "\n") 
+```
+```{r model validation MSPR and Rsquared backtransformed, fig.width=8, fig.height=6}
+# MSPR for test data
+mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+
+# MSPR for training data
+mspr_train <- mean((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+
+cat("MSPR (training set):", round(mspr_train, 2), "\n")
+cat("MSPR (test set):", round(mspr_test, 2), "\n")
+cat("Ratio MSPR/MSE:", round(mspr_test/mspr_train, 4), "\n")
+
+#R-squared on test data
+ss_res_test <- sum((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
+ss_tot_test <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+r2_test <- 1 - ss_res_test/ss_tot_test
+cat("R² on test set:", round(r2_test, 4), "\n")
+
+# R-squared on training data
+ss_res_train <- sum((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
+ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
+r2_train <- 1 - ss_res_train/ss_tot_train
+cat("R² on training set:", round(r2_train, 4), "\n") 
+
+```
+
+```{r model validation MSPR and Rsquared simple, fig.width=8, fig.height=6}
+# MSPR for test data
+mspr_test_simple <- mean((test_data$ViolentCrimesPerPop - pred_interval_test_simple[, "fit"])^2)
+
+# MSPR for training data
+mspr_train_simple <- mean((train_data$ViolentCrimesPerPop - pred_interval_train_simple[, "fit"])^2)
+
+cat("MSPR (training set):", round(mspr_train_simple, 2), "\n")
+cat("MSPR (test set):", round(mspr_test_simple, 2), "\n")
+cat("Ratio MSPR/MSE:", round(mspr_test_simple/mspr_train_simple, 4), "\n")
+
+# R-squared on test data
+ss_res_test_simple <- sum((test_data$ViolentCrimesPerPop - pred_interval_test_simple[, "fit"])^2)
+ss_tot_test <- sum((test_data$ViolentCrimesPerPop - mean(test_data$ViolentCrimesPerPop))^2)
+r2_test_simple <- 1 - ss_res_test_simple/ss_tot_test
+cat("R² on test set:", round(r2_test_simple, 4), "\n")
+
+# R-squared on training data
+ss_res_train_simple <- sum((train_data$ViolentCrimesPerPop - pred_interval_train_simple[, "fit"])^2)
+ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCrimesPerPop))^2)
+r2_train_simple <- 1 - ss_res_train_simple/ss_tot_train
+cat("R² on training set:", round(r2_train_simple, 4), "\n") 
+```
+
+
+Resultaten zijn niet zo goed, dus dit nog niet herwerkt.
+```{r model validation and population size}
+logpop_values <- seq(4.1, 6, 0.1)
+
+mspr_fun <- function(logpop, data, fit_final){
+  # filtering
+  data_filtered <- data[data$logpopulation < logpop + 0.1 & data$logpopulation > logpop - 0.1, ]
+  # Predictions on test set
+  pred <- exp(predict(fit_final, newdata = data_filtered))
+  mspr <- mean((data_filtered$ViolentCrimesPerPop - pred)^2)
+}
+
+mspr_values_test <- sapply(logpop_values, FUN=mspr_fun, data=test_data, fit_final=fit_final)
+mspr_values_train <- sapply(logpop_values, FUN=mspr_fun, data=train_data, fit_final=fit_final)
+
+df_plot_logpop_mspr <- data.frame(logpop = logpop_values, mspr_values_test, mspr_values_train)
+
+ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_test)) +
+    geom_point(alpha = 0.6, size = 1.7) +
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(title = "Mean squared prediction error for test data vs logpop", x = "logpop", y = "mspr")
+ggplot(df_plot_logpop_mspr, aes_string(logpop_values,mspr_values_train)) +
+    geom_point(alpha = 0.6, size = 1.7) +
+    geom_smooth(method = "loess", color = "red", se = FALSE)+
+    theme_bw(base_size = 8) +
+    labs(title = "Mean squared prediction error for training data vs logpop", x = "logpop", y = "mspr")
+```
+
+
+```{r}
+fit_final <- lm(formula_final, data = test_data)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+```
+
+
+```{r}
+crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
+crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
+
+fit_final <- lm(formula_final, data = crimes_table_subset)
+final_sums <- summary(fit_final)
+final_sums
+plot(fit_final)
+```
+
+
+
+# Statistical discussion
+
+There are several characteristics of the dataset that require discussion. First, we focus on how the missing data in our dataset affects our found results. The main source of missing data in our analysis, is the ViolentCrimesPerPop variable, where 221 observations are missing because of incomplete rape reporting in Midwestern States. This missingness could lead to biased estimates if these communities differ in crime-related or demographic characteristics. Therefore, we tested to check if the characteristics of the communities with missing data were different from those of the non-missing data, and found no important differences. We thus assume that this missingness does not have an important effect on our found results. However, if these communities are different in ways not captured by our measured variables, there could still be bias present.
+
+Second, the data from the LEMAS survey consists of all communities with police departments with more than 100 officers, but only a random sample of smaller ones. Because of this, large (and thus more urban) communities are overrepresented, while small communities are underrepresented in the dataset. Thus, the relationships we find in the analysis are more likely to hold in the context of larger cities, and may be less likely to translate to rural communities.
+
+Additionally, based on our dataset, we expected that smaller communities have greater variance in both predictor and outcome variables, which we see confirmed in our scatter plots. The reason for this is that per capita crime rates in small populations are more volatile, as one crime in a community of 1,000 translates to 100 per 100,000 population. Because of this, small changes in actual crime numbers lead to large fluctuations in converted rates. We dealt with this heteroskedasticity by applying a log transformation. Nevertheless, variability for these smaller communities should thus be interpreted with caution.
+
+Another caveat is that the FBI’s data is from 1995, while the Census' populations data containing demographic variables are from 1990. This way, data from 1990 is used to predict crime rates from 1995. If the demographic variables of communities changed drastically during this period, the predictor variables would not represent these communities well in 1995, when the actual crimes happened. For instance, if we assume that the poverty rate would increase substantially between 1990 and 1995, the 1990 poverty rate used in our analysis might then underestimate the actual relationship. However, we expect that, because of the short timespan and as we expect most of the socio-economic variables we used to change only slowly, this to have a limited impact on our results.
+
+Then, it should be noted that the data are from 1990-1995. Since then, the social and economic environment have changed, implying that our estimated relationships would not hold today as crime rates, reporting practices,... have evolved. Thus, these results should be carefully intepreted in today's context as the mechanisms driving these relationships are different in comparison to when the data collection happened.  
+
+At last, it is mentioned in the description of the original dataset that many relevant factors are not included. Specifically, it is mentioned that per capita crime rates are calculated using resident populations, so communities with large numbers of visitors are expected to have higher crime rates, even if the actual risk is not different across communities. This, together with other unmeasured factors, implies that our results should be interpreted as correlations and not as causations.
+
+We conclude that our regression analysis results are thus valid for a subset of U.S. communities in the 1990's and that the results should be cautiously interpreted in this context.
+
+
+#Final discussion/conclusion LINEAR MODEL
+
+In this report, we investigate how violent crime rates and socio-economic disadvantage, and more specifically the poverty rate, are associated in U.S. communities. We do so by using a merged dataset with detailed data on both crimes and demographic variables from 1990 and 1995. Specifically, our analysis consists of two parts. First, we perform a univariate linear regression to investigate the direct relationship between poverty and violent crime rates. Here, we find a significant positive relationship. However, we want to assess whether other socio-economic variables on top of poverty can substantially improve our model (1), whether these predictors can account for confounding (2), and whether there are interaction effects at play (3). 
+
+Thererefore, we make use of a multivariate model including a range of other (socio-economic) predictor variables. We find that this final model indeed does substantially improve our model in comparison to the univariate model. Notably, we also include an interaction term in this final model between percentage of residents with bachelor's degrees or higher and the poverty rate. The positive coefficient on this interaction term indicates that the impact of poverty on crime rates depends on the percentage of residents holding a bachelor's degree or more, implying that the effect of poverty on violent crime becomes more positive as education increases. We assume that this is because a high poverty rate in combination with a high educational attainment rate could imply there to be the a large level of inequality present in the community. This inequality then may be associated with higher violent crime rates. There is a huge literature on this topic, which would be impossible to completely summarize here. However, the interested reader is referred for this purpose to Kelly (2000), Fajnzylber et al. (2002) and Kang (2016), confirming this to be a plausible explanation.
+
+Several limitations should be highlighted though. The dataset we use overrepresents larger communities, contains missing data and uses outdated demographic predictors. It is also doubtful whether the results would still hold in today's context because of demographic changes. Interpreting the results in this context, our results imply that policies aiming to reduce poverty could reduce violent crime rates, especially in combination with policies that reduce (educational) inequalities. However, it remains important that these results should be interpreted as correlational and not as causal, as many confounding factors that our analysis cannot for, could still be at play.
+
+
+# References
+
+Becker GS (1968) Crime and Punishment: An Economic Approach. Journal of Political Economy 76: 169–217
+
+Fajnzylber, P., Lederman, D., & Loayza, N. (2002). Inequality and violent crime. The journal of Law and Economics, 45(1), 1-39.
+
+Kang, S. (2016). Inequality and crime revisited: effects of local inequality and economic segregation on crime. Journal of Population Economics, 29(2), 593-626.
+
+Kelly, M. (2000). Inequality and crime. Review of economics and Statistics, 82(4), 530-539.
+
+
+
+# References dataset
+
+U. S. Department of Commerce, Bureau of the Census, Census Of Population And Housing 
+1990 United States: Summary Tape File 1a & 3a (Computer Files),
+
+U.S. Department Of Commerce, Bureau Of The Census Producer, Washington, DC and 
+Inter-university Consortium for Political and Social Research Ann Arbor, Michigan. 
+(1992)
+
+U.S. Department of Justice, Bureau of Justice Statistics, Law Enforcement Management 
+And Administrative Statistics (Computer File) U.S. Department Of Commerce, Bureau Of 
+The Census Producer, Washington, DC and Inter-university Consortium for Political and 
+Social Research Ann Arbor, Michigan. (1992)
+
+U.S. Department of Justice, Federal Bureau of Investigation, Crime in the United 
+States (Computer File) (1995)
+
+# Additional references
+
+Redmond, M. A. and A. Baveja: A Data-Driven Software Tool for Enabling Cooperative 
+Information Sharing Among Police Departments. European Journal of Operational Research 
+141 (2002) 660-678.
+
+Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers and Leverage Points. Journal of the American Statistical Association, 85(411), 633–639. https://doi.org/10.1080/01621459.1990.10474920
+
+# Source - https://stackoverflow.com/a
+# Posted by DonJ, modified by community. See post 'Timeline' for change history
+# Retrieved 2025-12-03, License - CC BY-SA 3.0
+
+```{r show-code, ref.label=all_labels(), echo = TRUE, eval=FALSE}
+
+```
