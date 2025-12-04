@@ -225,7 +225,9 @@ Which would give us a 95% prediction interval:
 
 $$
 PI_{95\%}(15,girl) = [\hat{Y}_{15,girl} \pm t_{0.975, df} * s(\hat{Y}_{15,girl})]
-$$ Resulting in:
+$$ 
+
+Resulting in:
 
 ```{r}
 prediction_se <- sqrt(predicted_var)
