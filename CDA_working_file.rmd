@@ -1089,6 +1089,10 @@ par(mfrow = c(1, 1))
 De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hierin kan je goed zien dat er toch redelijk wat influential outliers zijn, dus dat robust wel is.
 
 ```{r}
+p <- length(coef(fit_final))
+n_train <- nrow(train_data)
+n_test <- nrow(test_data)
+
 library(olsrr)
 olsrr::ols_plot_cooksd_bar(fit_final)
 olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
@@ -1137,8 +1141,30 @@ ggplot(dfbetas_vals) +
                 label = ifelse(abs(dfbetas_vals[[predictor]]) > 1.5*(2/sqrt(nrow(dfbetas_vals))),
                                paste0(round(dfbetas_vals[[predictor]], digits = 2), ' (', 1:nrow(dfbetas_vals), ')'), '')))
 })
-# Print 9 plots per pg
+# Print plots
 print(plots)
+```
+```{r dffits plots, fig.width=10, fig.height=8}
+# Deze functies werken ook
+#ols_plot_dfbetas(fit_final)
+#ols_plot_dffits(fit_final)
+
+# IMPORTANT remark: the labelled observations are the points with 2 times the threshold (the reason is the visualisation)
+dffits_vals <- data.frame(dffits(fit_final))
+
+# Plot
+plot <- ggplot(dffits_vals) +
+  geom_point(aes(x = 1:nrow(dffits_vals), y = dffits_vals[[1]])) +
+  geom_segment(aes(x = 1:nrow(dffits_vals), xend = 1:nrow(dffits_vals), y = 0, yend = dffits_vals[[1]]),
+               color = 'cornflowerblue') +
+  geom_hline(yintercept = c(2, -2) / sqrt(nrow(dffits_vals)), color = 'salmon') +
+  labs(x = 'Observation index', y = 'DFFITS', title = 'DFFITS',
+       subtitle = 'Thresholds are at \u00B1 2\u221A(p/n)') +
+  geom_text(aes(x = 1:nrow(dffits_vals), y = ifelse(dffits_vals[[1]] > 0, dffits_vals[[1]] + .05, dffits_vals[[1]] - .05),
+                label = ifelse(abs(dffits_vals[[1]]) > 2*2*sqrt(p/nrow(dffits_vals)),
+                               paste0(round(dffits_vals[[1]], digits = 2), ' (', 1:nrow(dffits_vals), ')'), '')))
+# Print plot
+print(plot)
 ```
 
 Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
@@ -1183,8 +1209,6 @@ We use several diagnostic measures to identify influential observations
 # Calculate diagnostics
 stud_res_final <- rstudent(fit_final)
 leverage <- hatvalues(fit_final)
-p <- length(coef(fit_final))
-n_train <- nrow(train_data)
 leverage_threshold <- 2 * p / n_train
 cooks_d <- cooks.distance(fit_final)
 dffits_val <- dffits(fit_final)
@@ -1261,7 +1285,7 @@ coef_mean <- b["PctPopUnderPov"] +
 confidence_intervals <- confint(fit_final)
 ```
 
-#### Notes on interpretation ---> NIET BACKTRANSFORMEN
+#### Notes on interpretation
 
 The intercept on its own is not interpretable as it would require all predictor variables (and interaction terms) to be zero. This is not in the scope of our model. If it were, the intercept of `r b["(intercept)"]` could be interpreted as the estimated log of expected (violent crime rate per 100k + 1) when all predictor variables are 0.
 There is no use in interpreting interaction-term coefficients on their own, as they indicate the effect of one predictor on the other, but have no direct effect on its own.
@@ -1317,7 +1341,7 @@ Dusja multivariate model stuk beter dan univariate model als je kijkt naar de ta
 ```{r summary}
 # summary
 
-mse_final <- mean(fit_final$residuals^2)
+mse_final <- sum(fit_final$residuals^2)/(N-training - p)
 summary_results <- data.frame(
   Model = c("Simple (PctPopUnderPov only)", "Final Multivariate"),
   R_squared = c(round(summary(fit_simple)$r.squared, 4),
@@ -1465,11 +1489,9 @@ ggplot(df_prediction_train_simple, aes(observed, predicted))+
 
 ```{r model validation MSPR and Rsquared, fig.width=8, fig.height=6}
 # MSPR for test data
-# mspr_test <- mean((test_data$ViolentCrimesPerPop - pred_interval_test[, "fit"])^2)
 mspr_test <- mean((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
 
 # MSPR for training data
-# mspr_train <- mean((train_data$ViolentCrimesPerPop - pred_interval_train[, "fit"])^2)
 mspr_train <- mean((train_data$logViolent - pred_interval_train_log[, "fit"])^2)
 
 cat("MSPR (training set):", round(mspr_train, 2), "\n")
