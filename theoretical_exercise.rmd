@@ -42,9 +42,7 @@ ntot <- 2142
 n <- ntot/6 #(357)
 
 age <- c(11, 11, 13, 13, 15, 15)
-#age <- rep(c(11,13,15), each = 2)
 gender <- c("Male", "Female", "Male", "Female", "Male", "Female")
-#gender <- rep(c("Male", "Female"), times = 3)
 mean_vector <- c(4.56, 4.38, 8.78, 8.30, 15.94, 15.13)
 sds_vector <- c(4.10, 4.16, 6.97, 6.57, 16.21, 12.90)
 
@@ -82,7 +80,7 @@ print(beta1)
 
 These are the estimated slope coefficients.
 
-To estimate the residual variance, the SSE (sum of squared errors of the residuals) will be calculated. The SSE is not restricted to the SSE due to the modelling of the means of the groups (since the model without interaction terms will not give exact predictions of the group means). Also inside the groups there is a natural deviation from the mean. The SSE can be calculated as the sum of
+To estimate the residual variance, the SSE (sum of squared errors of the residuals) will be calculated. The total SSE is not restricted to the SSE due to the modelling of the means of the groups (since the model without interaction terms will not give exact predictions of the group means). Also inside the groups there is a natural deviation from the mean. The SSE can be calculated as the sum of
 
 -   $n_j \cdot SSE_{model}$: the sum of squared residuals that is due to the fact that a linear model with 4 parameters is fitted to 6 data points. $SS_{model}$ is multiplicated with $n_j$ (the number of observations in each group), because $SSE_{model}$ is the sum for only six datapoints;
 -   $SSE_{groups}$: the sum of squared residuals that is due to the fact that there is a variance in the groups.
