@@ -1303,21 +1303,28 @@ summary_results <- data.frame(
                       round(summary(fit_final)$r.squared, 4)),
   Adj_R_squared = c(round(summary(fit_simple)$adj.r.squared, 4),
                           round(summary(fit_final)$adj.r.squared, 4)),
-  MSE = c(round(mse_simple, 2), round(mse_final, 2))
+  MSE = c(round(mse_simple, 2), round(mse_final, 2)),
+  BIC = c(round(BIC(fit_simple), 2), round(BIC(fit_final), 2))
 )
 
 kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
 ```
 
 ## model validation
+
+### refitting the model on the test data
+
+
+### prediction of the test data
+
 Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the Mean Squared Error (MSPR) when the model is used to predict data in the training set.
 
 
 ```{r model validation backtransformation}
 # Predictions on test set
 # Transforming outcome variable in test dataset
-test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
-test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
+#test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
+#test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
 
 # we backtransform the data to the normal scale
 backtransformation <- function(value){
@@ -1333,7 +1340,7 @@ pred_interval_train_simple <- predict(fit_simple, newdata = train_data, interval
 #mspr_training_log <- sum((train_data$logViolent - pred_interval_train_log[, "fit"])^2)/(n_training - 9)
 ```
 
-As expected, 95% of the data points fall within the 95% prediction intervals. However, the prediction intervals are far too wide, making the predictions difficult to use.
+As expected, 95% of the data points fall within the 95% prediction intervals. However, after backtransformation of the outcome variables it can be noticed that the prediction intervals are far too wide, making the predictions difficult to use.
 ```{r model validation prediction interval}
 inside <- test_data$ViolentCrimesPerPop >= pred_interval_test[, "lwr"] & test_data$ViolentCrimesPerPop <= pred_interval_test[, "upr"]
 cat("Fraction of datapoints in prediction interval:", mean(inside), "\n")
