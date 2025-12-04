@@ -1570,9 +1570,27 @@ At last, it is mentioned in the description of the original dataset that many re
 
 We conclude that our regression analysis results are thus valid for a subset of U.S. communities in the 1990's and that the results should be cautiously interpreted in this context.
 
+
+#Final discussion/conclusion LINEAR MODEL
+
+In this report, we investigate how violent crime rates and socio-economic disadvantage, and more specifically the poverty rate, are associated in U.S. communities. We do so by using a merged dataset with detailed data on both crimes and demographic variables from 1990 and 1995. Specifically, our analysis consists of two parts. First, we perform a univariate linear regression to investigate the direct relationship between poverty and violent crime rates. Here, we find a significant positive relationship. However, we want to assess whther other socio-economic variables on top of poverty can substantially improve our model (1), whether these predictors can account for confounding (2), and whether there are interaction effects at play (3). 
+
+Thererefore, we make use of a multivariate model including a range of other (socio-economic) predictor variables. We find that this final model indeed does substantially improve our model in comparison to the univariate model. Notably, we also include an interaction term in this final model between the population that has a higher educational degree and the poverty rate. The coefficient on this interaction term indicates that the impact of poverty on crime rates depends on the percentage of residents holding a bachelor's degree or more. This implies that the effect of poverty on violent crime becomes more positive as education increases. We assume that this is because a high poverty rate in combination with a high rate in educational attainment implies there to be the a large level of inequality present in the community. This inequality then may be associated with higher violent crime rates. There is a huge literature on this topic, which would be impossible to completely summarize here. However, the interested reader is referred for this purpose to Kelly (2000), Fajnzylber et al. (2002) and Kang (2016), confirming this to be a plausible explanation.
+
+Several limitations should be highlighted though. The dataset we use overrepresents larger communities, contains missing data and uses outdated demographic predictors. It is also doubtful whether the results would still hold in today's context because of demographic changes. Interpreting the results in this context, our results imply that policies aiming to reduce poverty could reduce violent crime rates, especially in combination with policies that reduce (educational) inequalities. However, it remains important that these results should be interpreted as correlational and not as causal, as many confounding factors that our analysis cannot for, could still be at play.
+
+
 # References
 
 Becker GS (1968) Crime and Punishment: An Economic Approach. Journal of Political Economy 76: 169–217
+
+Fajnzylber, P., Lederman, D., & Loayza, N. (2002). Inequality and violent crime. The journal of Law and Economics, 45(1), 1-39.
+
+Kang, S. (2016). Inequality and crime revisited: effects of local inequality and economic segregation on crime. Journal of Population Economics, 29(2), 593-626.
+
+Kelly, M. (2000). Inequality and crime. Review of economics and Statistics, 82(4), 530-539.
+
+
 
 # References dataset
 
