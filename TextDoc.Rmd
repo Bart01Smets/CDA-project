@@ -112,7 +112,6 @@ at least a bachelor’s degree (%)", "percentage of population that is african a
 ```
 
 
-It is examined how many NA values are present in the database.
 ```{r counting NA values}
 crimes_table_subset %>%
   pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
@@ -292,7 +291,7 @@ crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasin
 ```
 
 
-I was also investigated wheter or not small communities have a higher probability to have more extreme values of the response and predictor variables, scatter plots were created with log(*population*) as x variable (see appendix). The resulting scatterplots show that communities with a very small population indeed show a very large spread for all variables.
+I was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables, scatter plots were created with log(*population*) as x variable (see appendix). The resulting scatter plots show that communities with a very small population indeed show a very large spread for all variables.
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
 df <- crimes_table_subset_num
@@ -343,7 +342,7 @@ summary(fit_simple)
 ```
 
 We show the relevant statistics to be discussed in this section:
-```{r Extract relevant statistics}
+```{r Extract relevant statistics, echo=FALSE, include=TRUE}
 
 cat("Regression equation: ViolentCrimesPerPop =", 
     round(coef(fit_simple)[1], 2), "+", 
@@ -369,12 +368,12 @@ print(confint(fit_simple))
 # ANOVA
 anova(fit_simple)
 ```
-
-*PctPopUnderPov* = mean increase in violent crimes per 100K population if poverty rate increases by one percentage point
+#### Interpretation of univariate linear regressions
+The coefficient of `r round(coef(fit_simple)[2], 2)` represents the mean increase in violent crimes per 100K population if poverty rate increases by one percentage point. The R-squared value of `r round(summary(fit_simple)$r.squared, 4)` represents the proportionate reduction of total variation in violent crime rates by the poverty percentage, in this univariate model this R-squared is rather small and can be taken to mean that poverty by itself is insufficient to explain the variation in violent crime rates.
 
 ### Assumption checks
 
-We check assumptions on linearity, independence of errors, homoscedasticity, and normality of errors. It is clear these assumptions are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. In the next step, we extend the model by adding relevant predictors and reassess the assumptions.
+We use different plots of the residuals to check assumptions on linearity, independence of errors, homoscedasticity, and normality of errors. It is clear these assumptions are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. In the next step, we extend the model by adding relevant predictors and reassess the assumptions.
 
 ```{r simple-lm-diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
@@ -483,7 +482,7 @@ multi_var_summary
 
 ### Assumption checks selected model
 
-We see that the assumptions of normality and equal error variances of the error terms are again violated in the original multivariate model. 
+We see that for this model the assumptions of normality and equal error variances of the error terms are again violated. 
 ```{r final model-diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
 
@@ -514,6 +513,7 @@ lines(lowess(fit_multi$fitted.values, stud_res_multi), col = "blue")
 
 par(mfrow = c(1, 1))
 ```
+
 A possible solution is to apply a log transformation of Y. The result shows approximate constant variances and residuals reasonably close to normal, applying the log transformation therefore offers a substantial improvement of our model. The reduction in R-squared suggests that the model-fit was inflated due to heteroscedasticity.  We still see slightly heavy tails. 
 
 ```{r}
@@ -529,7 +529,8 @@ par(mfrow = c(1, 1))
 ```
 
 ## Rerun selection after transformation of Y
-We will repeat the model building process with the log-transformed ViolentCrimesPerPop.
+
+We will repeat the model building process with the log-transformed ViolentCrimesPerPop. This log-transformation takes the form of log(*ViolentCrimesPerPop* + 1) to avoid taking the logarithm of zero.
 
 ```{r adding column with log transform}
 train_data$logViolent <- log(train_data$ViolentCrimesPerPop + 1)
@@ -538,7 +539,7 @@ test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
 
 ## Model selection
 
-We use an all-possible regressions procedure to select predictor variables. We include models with a maximum of 5 predictor variables and only models with 0, 1, or 2 education predictor variables. The best model is chosen based on the Bayesian Information Criterion.
+The same method for model selection is used, where the best model is again chosen based on the Bayesian Information Criterion.
 
 ```{r creating_formulas_without_interaction, message=FALSE}
 max_extra_predictors <- 4
@@ -612,7 +613,7 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 
-In the partial regression plot of the racepctblack, it could be seen that there is not a linear effect on the outcome. Therefore, multiple transformations on the racepctblack variable were tested, such as a log transformation. Eventually, it was decided that a logit transformation would work better given the percentile nature of the predictor.
+In the partial regression plot of the racepctblack, it could be seen that there is not a linear effect on the outcome. Therefore, multiple transformations on the racepctblack variable were tested, such as a log transformation and a square root transformation . Eventually, it was decided that a logit transformation would work better given the percentile nature of the predictor.
 
 ```{r making logit tranformation}
 
@@ -717,7 +718,7 @@ interaction_table
 best_interaction <- row.names(interaction_table[1,])
 ```
 
-This first selection showed that a model with an interaction term of PctPopUnderPov and PctLess9thGrade would be the only significant interaction term.
+The first selection showed that a model with an interaction term of PctPopUnderPov and PctLess9thGrade would be the only significant interaction term.
 
 ```{r final model2}
 # Estimate model with interaction
@@ -740,7 +741,7 @@ print(vif)
 cat("BIC: ", BIC(fit_final))
 ```
 
-However, when we look at the colinearity of the model we can see that the less then 9thgrade variables show a high multicolinearity score. One reason for this could be the addition of multiple education variables. For this reason the modelselection was retried with only one education variable present. 
+However, when we look at the collinearity of the model we can see that the less then 9thgrade variables show a high multicolinearity score. One reason for this could be the addition of multiple education variables. For this reason the model selection was retried with only one education variable present. 
 ```{r filtering formulas for education}
 
 filtered_formulas <- Filter(function(f) {
@@ -904,6 +905,8 @@ cat("interaction term model adjusted R²:  ", round(summary(fit_final)$adj.r.squ
 ```
 
 ### Assumption checks final model
+
+A final assumption check using the residuals was executed. These assumptions now look to hold. 
 
 ```{r final-model-diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
@@ -1098,7 +1101,7 @@ coef_mean <- b["PctPopUnderPov"] +
 confidence_intervals <- confint(fit_final)
 ```
 
-#### Notes on interpretation ---> NIET BACKTRANSFORMEN
+#### Notes on interpretation 
 
 The intercept on its own is not interpretable as it would require all predictor variables (and interaction terms) to be zero. This is not in the scope of our model. If it were, the intercept of `r b["(intercept)"]` could be interpreted as the estimated log of expected (violent crime rate per 100k + 1) when all predictor variables are 0.
 There is no use in interpreting interaction-term coefficients on their own, as they indicate the effect of one predictor on the other, but have no direct effect on its own.
@@ -1114,8 +1117,8 @@ ci_lower <- ci_pov$"CI Lower"[ci_pov$Level == "Medium"]
 ci_upper <- ci_pov$"CI Upper"[ci_pov$Level == "Medium"]
 ```
 
-The effect of PctPopUnderPov varies with PctBsorMore through the interaction terms. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the mean of the logarithm (violent crime rate per 100k + 1) as `r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore"]` * PctBSorMore. If we take for example the mean of the PctBSorMore to calculate the effect of PctPoponderpov when the interacting variable is held at its average and all variables are held constant, we can find `r coef_mean`. The confidence interval of this effect is [`r ci_lower`, `r ci_upper`]
-With a confidence coefficient of .95 we estimate that the true effect of PctPopUnderPov (with its interaction) on the expected value of the logarithm of (violent crimes (per population of 100k) + 1) per unit increase in PctPopUnderPov (1 percent) is somewhere between `r ci_lower`% and `r ci_upper`%, when the interacting variable is held at its average and all other variables are held constant.  The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of PctPopUnderPov on the logarithm of (violent crimes + 1) gets larger. Theoretically this could be explained due to the bigger gap in socio-economic standing, which could provoke more violent crimes.
+The effect of PctPopUnderPov varies with PctBsorMore through their interaction. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the mean of the logarithm of (violent crime rate per 100k + 1) as `r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore"]` * PctBSorMore. If we take for example the mean of the PctBSorMore to calculate the effect of PctPoponderpov when the interacting variable is held at its average and all variables are held constant, we can find `r coef_mean`. The confidence interval of this effect is [`r ci_lower`, `r ci_upper`]
+With a confidence coefficient of .95 we estimate that the true conditional effect of PctPopUnderPov (with its interaction) on the expected value of the logarithm of (violent crimes per population of 100k + 1) per unit increase in PctPopUnderPov (1 percent point) is somewhere between `r ci_lower`% and `r ci_upper`%, when the interacting variable is held at its average and all other variables are held constant.  The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of PctPopUnderPov on the logarithm of (violent crimes + 1) gets larger. Theoretically this could be explained due to the bigger gap in socio-economic standing, which could provoke more violent crimes.
 
 
 #### Interpretation of PctBSorMore
