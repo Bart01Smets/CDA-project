@@ -157,8 +157,7 @@ library(sjlabelled)
 library(tidyr)
 ```
 
-Since the outcome variable *ViolentCrimesPerPop* (total number of violent crimes per 100K population) is expressed relative to the population size, the variable *NumImmig* is converted (by dividing it by the population size and multiplying by 100%). It's important to mention that this is not an exact transformation, because all demographic
-data is from 1990, but per-capita crime rates use 1995 population counts. 
+Since the outcome variable *ViolentCrimesPerPop* (total number of violent crimes per 100K population) is expressed relative to the population size, the variable *NumImmig* is converted (by dividing it by the population size and multiplying by 100%). It's important to mention that this is not an exact transformation, because all demographic data is from 1990, but per-capita crime rates use 1995 population counts. 
 ```{r}
 crimes_table_subset$ViolentCrimesPerPop <- as.numeric(crimes_table_subset$ViolentCrimesPerPop)
 crimes_table_subset$PctImmig <- crimes_table_subset$NumImmig/crimes_table_subset$population*100
@@ -418,8 +417,7 @@ print(wrap_plots(plots, ncol = 3))
 Before performing linear regression and building models, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model.
 
 ```{r dataset split}
-#set.seed(987654321)
-set.seed(987654322)
+set.seed(987654321)
 n <- nrow(crimes_table_subset_num)
 training <- sample(1:n, size = floor(0.8 * n))
 train_data <- crimes_table_subset[training, ]
@@ -1295,7 +1293,6 @@ There is no use in interpreting interaction-term coefficients on their own, as t
 #### Interpretation of PctPopUnderPov
 
 ```{r}
-set.seed(987654321)
 ci_pov <- cond_effect_boot(fit_final,
             x = "PctPopUnderPov", w = "PctBSorMore", nboot = 2000)
 ci_lower <- ci_pov$"CI Lower"[ci_pov$Level == "Medium"]
@@ -1309,7 +1306,6 @@ With a confidence coefficient of .95 we estimate that the true effect of PctPopU
 #### Interpretation of PctBSorMore
 
 ```{r}
-set.seed(987654321)
 ci_pov2 <- cond_effect_boot(fit_final,
             x = "PctBSorMore", w = "PctPopUnderPov", nboot = 2000)
 ci_lower2 <- ci_pov2$"CI Lower"[ci_pov2$Level == "Medium"]
@@ -1348,9 +1344,7 @@ summary_results <- data.frame(
   R_squared = c(round(summary(fit_simple)$r.squared, 4),
                       round(summary(fit_final)$r.squared, 4)),
   Adj_R_squared = c(round(summary(fit_simple)$adj.r.squared, 4),
-                          round(summary(fit_final)$adj.r.squared, 4)),
-  MSE = c(round(mse_simple, 2), round(mse_final, 2)),
-  BIC = c(round(BIC(fit_simple), 2), round(BIC(fit_final), 2))
+                          round(summary(fit_final)$adj.r.squared, 4))
 )
 
 kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
@@ -1359,6 +1353,7 @@ kable(summary_results, caption = "Comparison of Simple and Final Multivariate Mo
 ## model validation
 
 ### refitting the model on the test data
+
 ```{r model validation refitting}
 fit_final_test <- lm(formula_final, data = test_data)
 summary(fit_final_test)
@@ -1491,7 +1486,7 @@ mse_train_log <- sum((train_data$logViolent - pred_interval_train_log[, "fit"])^
 
 cat("MSPR:", round(mspr_test_log, 2), "\n")
 cat("MSE:", round(mse_train_log, 2), "\n")
-cat("Ratio MSPR/MSE:", round(mspr_test/mse_train_log, 4), "\n")
+cat("Ratio MSPR/MSE:", round(mspr_test_log/mse_train_log, 4), "\n")
 
 # R-squared on test data
 ss_res_test <- sum((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
@@ -1564,12 +1559,6 @@ validation_simple <- c(round(mspr_test_simple, 2), round(mse_simple, 2), round(m
 df_validation <- data.frame(multivar_backtransformed = validation_backtrans, multivar_logscale = validation_logscale, univar = validation_simple)
 rownames(df_validation) <- c("MSPR", "MSE", "Ratio MSPR/MSE", "R² (test)", "R² (training)")
 df_validation
-```
-```{r}
-fit_final <- lm(formula_final, data = test_data)
-final_sums <- summary(fit_final)
-final_sums
-plot(fit_final)
 ```
 
 
