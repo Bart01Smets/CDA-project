@@ -1145,46 +1145,45 @@ print(plots)
 ```
 Using these plots, many influential outliers could be discovered. In order to exclude any datapoints that were influential due to observation errors, which should be removed form the dataset. The variable values of these points were extracted and manually checked, to check whether these are observations errors, rare cases, or valid but extreme cases.
 ```{r influence diagnostics}
-# Calculate diagnostics
+# Calculate diagnostics and tresholds
 stud_res_final <- rstudent(fit_final)
 leverage <- hatvalues(fit_final)
+cooks_dist <- cooks.distance(fit_final)
+dffits_values <- dffits(fit_final)
+dfbetas_valuues <- dfbetas(fit_final)
+
+
 leverage_threshold <- 2 * p / n_train
-cooks_d <- cooks.distance(fit_final)
-dffits_val <- dffits(fit_final)
 dffits_threshold <- 2 * sqrt(p / n_train)
-dfbetas_val <- dfbetas(fit_final)
 dfbetas_threshold <- 2 / sqrt(n_train)
 
-# dataframe
+# new dataframe with all diagnoistics
 diagnostics <- data.frame(
   obs = 1:n_train,
-  population = train_data$population,
-  # zowel studentized deleted residuals als studentized residuals insteken?
-  # DFBETAS ook insteken (per beta kan je dat bepalen) (chapter 10 Diagnostics slide 40)
+  # population = train_data$population, 
   stud_residual = stud_res_final,
   leverage = leverage,
-  cooks_d = cooks_d,
-  dffits = dffits_val
+  cooks_dist = cooks_dist,
+  dffits = dffits_values
 )
 
-# Flag observations
+# Flag observations crossing the tresholds
 diagnostics$outlier_residual <- abs(diagnostics$stud_residual) > 2
 diagnostics$high_leverage <- diagnostics$leverage > leverage_threshold
-diagnostics$high_cooks <- diagnostics$cooks_d > 4 / n_train
+diagnostics$high_cooks <- diagnostics$cooks_dist > 4 / n_train
 diagnostics$high_dffits <- abs(diagnostics$dffits) > dffits_threshold
 
-high_dfbetas <- apply(abs(dfbetas_val), 1, function(x) any(x > dfbetas_threshold))
+high_dfbetas <- apply(abs(dfbetas_valuues), 1, function(x) any(x > dfbetas_threshold))
 
 diagnostics$high_dfbetas <- high_dfbetas
 
 # Select only the flag columns
 flag_cols <- c("outlier_residual", "high_leverage", "high_cooks", "high_dffits", "high_dfbetas")
 
-# Count TRUEs per row
+# Count TRUE flags for each row
 diagnostics$flag_count <- rowSums(diagnostics[flag_cols])
 
-
-# summ
+# summary
 cat("Outliers by studentized residuals (|r*| > 2):", sum(diagnostics$outlier_residual), "\n")
 cat("High leverage observations (h >", round(leverage_threshold, 4), "):", 
     sum(diagnostics$high_leverage), "\n")
@@ -1201,10 +1200,14 @@ problematic <- diagnostics[
   diagnostics$high_cooks |
   diagnostics$high_dffits |
   diagnostics$high_dfbetas , ]
+
+problematic_sorted <- problematic[order(-problematic$flag_count), ]
+
 problematic_with_data <- merge(problematic_sorted, train_data, by.x = "obs", by.y = "row.names", all.x = TRUE)
 
 problematic_with_data <- problematic_with_data[order(-problematic_with_data$flag_count), ]
-problematic_with_data[, c("flag_count", "communityname", "population.y", "PctPopUnderPov", "PctBSorMore", "racepctblack", "agePct12t29", "PctImmig", "ViolentCrimesPerPop")]
+
+problematic_with_data[, c("flag_count", "communityname", "population", "PctPopUnderPov", "PctBSorMore", "racepctblack", "agePct12t29", "PctImmig", "ViolentCrimesPerPop")]
 
 ```
 By looking at all 318 Communities in the dataset that were flagged as problematic, so crossing the treshold of one of the diagnotic tests, no evidence could be found of no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, that were flagged by all 5 diagnostic tests, were reporeted to not have any people of black color in there community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a ViolentCrimesPerPop of 0, while this is not common in our dataset, we lack evidence to say that this we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
