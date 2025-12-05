@@ -1098,10 +1098,6 @@ olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
 olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
 ```
 ```{r dffits plots, fig.width=10, fig.height=8}
-# Deze functies werken ook
-#ols_plot_dfbetas(fit_final)
-#ols_plot_dffits(fit_final)
-
 # IMPORTANT remark: the labelled observations are the points with 2 times the threshold (the reason is the visualisation)
 dffits_vals <- data.frame(dffits(fit_final))
 
@@ -1209,7 +1205,7 @@ problematic_with_data <- problematic_with_data[order(-problematic_with_data$flag
 problematic_with_data[, c("flag_count", "communityname", "population", "PctPopUnderPov", "PctBSorMore", "racepctblack", "agePct12t29", "PctImmig", "ViolentCrimesPerPop")]
 
 ```
-By looking at all 318 Communities in the dataset that were flagged as problematic, so crossing the treshold of one of the diagnotic tests, no evidence could be found of no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, that were flagged by all 5 diagnostic tests, were reporeted to not have any people of black color in there community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a ViolentCrimesPerPop of 0, while this is not common in our dataset, we lack evidence to say that this we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
+By looking at all 318 Communities in the dataset that were flagged as problematic, so crossing the treshold of one of the diagnotic tests, no evidence could be found of no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, that were flagged by all 5 diagnostic tests, were reported to not have any people of black color in there community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a ViolentCrimesPerPop of 0, while this is not common in our dataset, we lack evidence to say that this we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
 
 These findings show that these flagged communities likely represent valid but extreme cases present in our dataset whose demographic or crime-related profiles differ substantially from the average. Therefore, there is no reason to discard any of them. So instead of removing them, another way to account for their impact would be to run a robust regression, instead of a normal linear regression.
 
@@ -1312,44 +1308,34 @@ For the percentage of people between the age of 12 and 29, we find a negative as
 
 
 
-## Summary
-Dusja multivariate model stuk beter dan univariate model als je kijkt naar de tabel
 
-```{r summary}
-# summary
-
-mse_final <- sum(fit_final$residuals^2)/(n_training - p)
-summary_results <- data.frame(
-  Model = c("Simple (PctPopUnderPov only)", "Final Multivariate"),
-  R_squared = c(round(summary(fit_simple)$r.squared, 4),
-                      round(summary(fit_final)$r.squared, 4)),
-  Adj_R_squared = c(round(summary(fit_simple)$adj.r.squared, 4),
-                          round(summary(fit_final)$adj.r.squared, 4))
-)
-
-kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
-```
 
 ## model validation
 
 ### refitting the model on the test data
-
+When the final model is fitted to the test set or the full dataset, the estimated coefficients do not differ much from those obtained when fitting the model to the training set. The more data the model is fitted on, the more significant the p-values become.
 ```{r model validation refitting}
+crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
+crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
+
 fit_final_test <- lm(formula_final, data = test_data)
+fit_final_total <- lm(formula_final, data = crimes_table_subset)
 summary(fit_final_test)
 df1 <- data.frame(
   fit_on_training_data = coef(fit_final),
   fit_on_test_data = coef(fit_final_test),
+  fit_on_total_data = coef(fit_final_total),
   p_value_training = summary(fit_final)$coefficients[, 4],
-  p_value_test = summary(fit_final_test)$coefficients[, 4]
+  p_value_test = summary(fit_final_test)$coefficients[, 4],
+  p_value_total = summary(fit_final_total)$coefficients[, 4]
 )
 df1
 df2 <- data.frame(
-  R_squared = c(summary(fit_final)$r.squared, summary(fit_final_test)$r.squared),
-  Adjusted_R_squared = c(summary(fit_final)$adj.r.squared, summary(fit_final_test)$r.squared),
-  BIC_model = c(BIC(fit_final), BIC(fit_final_test))
+  R_squared = c(summary(fit_final)$r.squared, summary(fit_final_test)$r.squared, summary(fit_final_total)$r.squared),
+  Adjusted_R_squared = c(summary(fit_final)$adj.r.squared, summary(fit_final_test)$adj.r.squared, summary(fit_final_total)$adj.r.squared),
+  BIC_model = c(BIC(fit_final), BIC(fit_final_test), BIC(fit_final_total))
 )
-rownames(df2) <- c("fit on training data","fit on test data")
+rownames(df2) <- c("fit on training data","fit on test data", "fit on all data")
 df2
 ```
 
@@ -1383,6 +1369,12 @@ hist(pred_interval_test[, "upr"] - pred_interval_test[, "lwr"],
      xlim = c(0, 15000),
      breaks = 50)
 ```
+When point estimates are compared to observed values, large outcome values are tend to be underestimated and small outcome values are tend to be overestimated. This statement holds for both the prediction of the training data and the prediction of the test data. When the mean squared prediction error (for test data) is compared with the mean squared error (for training data), it can be noticed that the predictive power of the model is better for the test data than for the training data. This indicates that there is no overfitting. The same trend is visible when the values for $R^2$ are compared.
+
+The $R^2$ of the multivariate model is better than the $R^2$ of the univariate model. Although these values are difficult to compare due to the fact that the outcome variable is different $ViolentCrimesPerPop$ vs $log(ViolentCrimesPerPop))$. Since the logarithmic transformation is a non-linear transformation backtransformation of the predicted values of $log(ViolentCrimesPerPop))$ doesn't deliver the expected value (
+$E(\log(Y)\mid X = x) = \beta_0 + \beta_1 x \;\nRightarrow\; E(Y \mid X = x) = e^{\beta_0 + \beta_1 x}$).
+
+
 ```{r model plots}
 # prediction intervals test data
 df_prediction_test <- data.frame(observed = test_data$ViolentCrimesPerPop, predicted = pred_interval_test[, "fit"])
@@ -1541,16 +1533,25 @@ rownames(df_validation) <- c("MSPR", "MSE", "Ratio MSPR/MSE", "R² (test)", "R²
 df_validation
 ```
 
+## Summary
+Dusja multivariate model stuk beter dan univariate model als je kijkt naar de tabel
 
-```{r}
-crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
-crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
+```{r summary}
+# summary
 
-fit_final <- lm(formula_final, data = crimes_table_subset)
-final_sums <- summary(fit_final)
-final_sums
-plot(fit_final)
+mse_final <- sum(fit_final$residuals^2)/(n_training - p)
+summary_results <- data.frame(
+  Model = c("Simple (PctPopUnderPov only)", "Final Multivariate"),
+  R_squared = c(round(summary(fit_simple)$r.squared, 4),
+                      round(summary(fit_final)$r.squared, 4)),
+  Adj_R_squared = c(round(summary(fit_simple)$adj.r.squared, 4),
+                          round(summary(fit_final)$adj.r.squared, 4))
+)
+
+kable(summary_results, caption = "Comparison of Simple and Final Multivariate Models")
 ```
+
+
 
 
 
