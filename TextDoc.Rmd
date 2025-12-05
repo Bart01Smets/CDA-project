@@ -52,7 +52,6 @@ Next, we outline how our analyses help to answer the outlined research questions
 
 
 ```{r load data}
-
 violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/211/communities+and+crime+unnormalized.zip")
 ```
 
@@ -403,7 +402,7 @@ plot(fit_simple$fitted.values, stud_res,
 outliers_simple <- which(abs(stud_res) > 2)
 ```
 
-Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
+Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends to underestimate the total number of crimes for large populations.
 ```{r outliers vs population1}
 par(mfrow = c(1, 2))
 # Residuals vs population
@@ -674,15 +673,10 @@ selected_vars <- setdiff(
 
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
 
-# Nieuwe code
 formulas_interaction <- sapply(interaction_terms, function(i) {
   paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
                                   i)
 })
-# Oude code
-# formulas <- sapply(interaction_terms, function(i) {
-#   paste0(best_pred, " + ", i)
-# })
 
 formulas_interaction <- lapply(formulas_interaction, as.formula)
 models <- lapply(formulas_interaction, lm, data=train_data)
@@ -800,15 +794,10 @@ selected_vars <- setdiff(
 
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
 
-# Nieuwe code
 formulas_interaction <- sapply(interaction_terms, function(i) {
   paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
                                   i)
 })
-# Oude code
-# formulas <- sapply(interaction_terms, function(i) {
-#   paste0(best_pred, " + ", i)
-# })
 
 formulas_interaction <- lapply(formulas_interaction, as.formula)
 models <- lapply(formulas_interaction, lm, data=train_data)
