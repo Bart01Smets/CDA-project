@@ -1177,10 +1177,10 @@ high_dfbetas <- apply(abs(dfbetas_valuues), 1, function(x) any(x > dfbetas_thres
 
 diagnostics$high_dfbetas <- high_dfbetas
 
-# Select only the flag columns
+# Select flag columns
 flag_cols <- c("outlier_residual", "high_leverage", "high_cooks", "high_dffits", "high_dfbetas")
 
-# Count TRUE flags for each row
+# Count TRUE flags
 diagnostics$flag_count <- rowSums(diagnostics[flag_cols])
 
 # summary
@@ -1193,7 +1193,7 @@ cat("High DFFITS (|DFFITS| >", round(dffits_threshold, 4), "):",
     sum(diagnostics$high_dffits), "\n")
 ```
 ```{r}
-# Extract all flagged observations
+# Extract flagged observations
 problematic <- diagnostics[
   diagnostics$outlier_residual |
   diagnostics$high_leverage |
