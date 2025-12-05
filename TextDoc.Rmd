@@ -291,7 +291,7 @@ crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasin
 ```
 
 
-I was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables, scatter plots were created with log(*population*) as x variable (see appendix). The resulting scatter plots show that communities with a very small population indeed show a very large spread for all variables.
+It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables, scatter plots were created with log(*population*) as x variable (see appendix). The resulting scatter plots show that communities with a very small population indeed show a very large spread for all variables.
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
 df <- crimes_table_subset_num
@@ -369,7 +369,7 @@ print(confint(fit_simple))
 anova(fit_simple)
 ```
 #### Interpretation of univariate linear regressions
-The coefficient of `r round(coef(fit_simple)[2], 2)` represents the mean increase in violent crimes per 100K population if poverty rate increases by one percentage point. The R-squared value of `r round(summary(fit_simple)$r.squared, 4)` represents the proportionate reduction of total variation in violent crime rates by the poverty percentage, in this univariate model this R-squared is rather small and can be taken to mean that poverty by itself is insufficient to explain the variation in violent crime rates.
+The coefficient of `r round(coef(fit_simple)[2], 2)` represents the expected increase in violent crimes per 100K population if poverty rate increases by one percentage point. The R-squared value of `r round(summary(fit_simple)$r.squared, 4)` represents the proportionate reduction of total variation in *ViolentCrimesPerPop* by the poverty percentage, in this univariate model this R-squared is rather small and can be taken to mean that poverty by itself is insufficient to explain the variation in violent crime rates.
 
 ### Assumption checks
 
