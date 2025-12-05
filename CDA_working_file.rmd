@@ -1086,7 +1086,7 @@ par(mfrow = c(1, 1))
 
 ## Model diagnostics
 
-De plotjes voor dit gedeelte beperken tot de nuttige en die ook bespreken. hierin kan je goed zien dat er toch redelijk wat influential outliers zijn, dus dat robust wel is.
+After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Coook's distance, the leverage, DFFits, and DFBetas. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
 
 ```{r}
 p <- length(coef(fit_final))
@@ -1098,28 +1098,27 @@ olsrr::ols_plot_cooksd_bar(fit_final)
 olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
 olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
 ```
-Datapoints in these plots are either outliers, and/or have high leverage in the model. If datapoints returned to be both outliers and have a high leverage, they can be seen as highly influencial in the model and most problematic, to check wether these are  observations errors, rare cases, or valid but extreme cases. They were extracted and manually checked. 
+```{r dffits plots, fig.width=10, fig.height=8}
+# Deze functies werken ook
+#ols_plot_dfbetas(fit_final)
+#ols_plot_dffits(fit_final)
 
+# IMPORTANT remark: the labelled observations are the points with 2 times the threshold (the reason is the visualisation)
+dffits_vals <- data.frame(dffits(fit_final))
 
-```{r}
-train_data[88,]
-```
-```{r}
-train_data[229,]
-```
-```{r}
-train_data[1240,]
-```
-```{r}
-train_data[961,]
-```
-```{r}
-train_data[15,]
-```
-
-
-```{r dfbetas plots, fig.width=10, fig.height=8}
-car::dfbetasPlots(fit_final)
+# Plot
+plot <- ggplot(dffits_vals) +
+  geom_point(aes(x = 1:nrow(dffits_vals), y = dffits_vals[[1]])) +
+  geom_segment(aes(x = 1:nrow(dffits_vals), xend = 1:nrow(dffits_vals), y = 0, yend = dffits_vals[[1]]),
+               color = 'cornflowerblue') +
+  geom_hline(yintercept = c(2, -2) / sqrt(nrow(dffits_vals)), color = 'salmon') +
+  labs(x = 'Observation index', y = 'DFFITS', title = 'DFFITS',
+       subtitle = 'Thresholds are at \u00B1 2\u221A(p/n)') +
+  geom_text(aes(x = 1:nrow(dffits_vals), y = ifelse(dffits_vals[[1]] > 0, dffits_vals[[1]] + .05, dffits_vals[[1]] - .05),
+                label = ifelse(abs(dffits_vals[[1]]) > 2*2*sqrt(p/nrow(dffits_vals)),
+                               paste0(round(dffits_vals[[1]], digits = 2), ' (', 1:nrow(dffits_vals), ')'), '')))
+# Print plot
+print(plot)
 ```
 ```{r dfbetas plots, fig.width=10, fig.height=8}
 # IMPORTANT remark: the labelled observations are the points with 1,5 times the threshold (the reason is the visualisation)
@@ -1144,67 +1143,7 @@ ggplot(dfbetas_vals) +
 # Print plots
 print(plots)
 ```
-```{r dffits plots, fig.width=10, fig.height=8}
-# Deze functies werken ook
-#ols_plot_dfbetas(fit_final)
-#ols_plot_dffits(fit_final)
-
-# IMPORTANT remark: the labelled observations are the points with 2 times the threshold (the reason is the visualisation)
-dffits_vals <- data.frame(dffits(fit_final))
-
-# Plot
-plot <- ggplot(dffits_vals) +
-  geom_point(aes(x = 1:nrow(dffits_vals), y = dffits_vals[[1]])) +
-  geom_segment(aes(x = 1:nrow(dffits_vals), xend = 1:nrow(dffits_vals), y = 0, yend = dffits_vals[[1]]),
-               color = 'cornflowerblue') +
-  geom_hline(yintercept = c(2, -2) / sqrt(nrow(dffits_vals)), color = 'salmon') +
-  labs(x = 'Observation index', y = 'DFFITS', title = 'DFFITS',
-       subtitle = 'Thresholds are at \u00B1 2\u221A(p/n)') +
-  geom_text(aes(x = 1:nrow(dffits_vals), y = ifelse(dffits_vals[[1]] > 0, dffits_vals[[1]] + .05, dffits_vals[[1]] - .05),
-                label = ifelse(abs(dffits_vals[[1]]) > 2*2*sqrt(p/nrow(dffits_vals)),
-                               paste0(round(dffits_vals[[1]], digits = 2), ' (', 1:nrow(dffits_vals), ')'), '')))
-# Print plot
-print(plot)
-```
-
-Diagnostic plots (figuur) reveal several potential outliers and high-leverage points. To assess the impact of these points, we fit a robust regression using Bisquare weights. 
-
-```{r robust-inference}
-library(MASS)
-
-robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
-summary(robust, method = "XtX")
-```
-
-```{r}
-par(mfrow=c(2,2))
-plot(fit_final)
-par(mfrow=c(2,2))
-plot(robust, which = 1)
-qqnorm(resid(robust))
-qqline(resid(robust))
-
-```
-
-A comparison of the coefficients reveal no substantial differences, indicating that the influential points are not the result of gross errors. <hier moeten nog extra checks van influence on inferences bij>.
-The identified leverage-points can be called 'good leverages' as they exhibit high leverage but their residuals are still small, this even improves the precision of the regression coefficients. (zie referentie) It'
-
-```{r influence inference}
-# Compare OLS vs Robust coefficients
-comparison <- data.frame(
-  OLS = coef(fit_final),
-  Robust = coef(robust),
-  Difference = coef(fit_final) - coef(robust)
-)
-
-print(round(comparison, 4))
-```
-
-
-### Outlier and Influence Diagnostics 
-
-We use several diagnostic measures to identify influential observations
-
+Using these plots, many influential outliers could be discovered. In order to exclude any datapoints that were influential due to observation errors, which should be removed form the dataset. The variable values of these points were extracted and manually checked, to check whether these are observations errors, rare cases, or valid but extreme cases.
 ```{r influence diagnostics}
 # Calculate diagnostics
 stud_res_final <- rstudent(fit_final)
@@ -1234,6 +1173,17 @@ diagnostics$high_leverage <- diagnostics$leverage > leverage_threshold
 diagnostics$high_cooks <- diagnostics$cooks_d > 4 / n_train
 diagnostics$high_dffits <- abs(diagnostics$dffits) > dffits_threshold
 
+high_dfbetas <- apply(abs(dfbetas_val), 1, function(x) any(x > dfbetas_threshold))
+
+diagnostics$high_dfbetas <- high_dfbetas
+
+# Select only the flag columns
+flag_cols <- c("outlier_residual", "high_leverage", "high_cooks", "high_dffits", "high_dfbetas")
+
+# Count TRUEs per row
+diagnostics$flag_count <- rowSums(diagnostics[flag_cols])
+
+
 # summ
 cat("Outliers by studentized residuals (|r*| > 2):", sum(diagnostics$outlier_residual), "\n")
 cat("High leverage observations (h >", round(leverage_threshold, 4), "):", 
@@ -1249,18 +1199,48 @@ problematic <- diagnostics[
   diagnostics$outlier_residual |
   diagnostics$high_leverage |
   diagnostics$high_cooks |
-  diagnostics$high_dffits, ]
+  diagnostics$high_dffits |
+  diagnostics$high_dfbetas , ]
+problematic_with_data <- merge(problematic_sorted, train_data, by.x = "obs", by.y = "row.names", all.x = TRUE)
 
-print(problematic)
+problematic_with_data <- problematic_with_data[order(-problematic_with_data$flag_count), ]
+problematic_with_data[, c("flag_count", "communityname", "population.y", "PctPopUnderPov", "PctBSorMore", "racepctblack", "agePct12t29", "PctImmig", "ViolentCrimesPerPop")]
 
 ```
+By looking at all 318 Communities in the dataset that were flagged as problematic, so crossing the treshold of one of the diagnotic tests, no evidence could be found of no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, that were flagged by all 5 diagnostic tests, were reporeted to not have any people of black color in there community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a ViolentCrimesPerPop of 0, while this is not common in our dataset, we lack evidence to say that this we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
 
-```{r influence plot, fig.width=8, fig.height=6}
-# Influence plot
-plot(leverage, stud_res_final, 
-     xlab = "Leverage", ylab = "Studentized Residuals",
-     main = "Influence Plot",
-     cex = sqrt(cooks_d) * 10)
+These findings show that these flagged communities likely represent valid but extreme cases present in our dataset whose demographic or crime-related profiles differ substantially from the average. Therefore, there is no reason to discard any of them. So instead of removing them, another way to account for their impact would be to run a robust regression, instead of a normal linear regression.
+
+### Attemping to solve the influencial outliers with robust regression.
+
+To futher assess and account for the impact of these points, we fit a robust regression using Bisquare weights.
+
+```{r robust-inference}
+library(MASS)
+
+robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
+summary(robust, method = "XtX")
+```
+```{r}
+par(mfrow=c(2,2))
+plot(fit_final)
+par(mfrow=c(2,2))
+plot(robust, which = 1)
+qqnorm(resid(robust))
+qqline(resid(robust))
+
+```
+When using a robust model, the coefficients revealed nearly identical to those from the OLS, indicating that the influential points are not the result of gross errors. The small differnces in coefficients show that these are already quite stable and thus that maybe the outliers and influential points did not distort the OLS model significantly
+
+```{r influence inference}
+# Compare OLS vs Robust coefficients
+comparison <- data.frame(
+  OLS = coef(fit_final),
+  Robust = coef(robust),
+  Difference = coef(fit_final) - coef(robust)
+)
+
+print(round(comparison, 4))
 ```
 
 
