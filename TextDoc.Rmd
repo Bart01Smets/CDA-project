@@ -365,15 +365,8 @@ plot(fit_simple$fitted.values, stud_res,
      main = "Studentized Residuals vs Fitted")
 outliers_simple <- which(abs(stud_res) > 2)
 ```
-<<<<<<< HEAD
 
-<<<<<<< HEAD
-Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends to underestimate the total number of crimes for large populations.
-=======
 Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
-
-
-=======
 
 ```{r outliers vs population1}
 # >>>>>>> ab3368e76b00913d4bc73fc6eb05f62b776166b6
@@ -1092,6 +1085,7 @@ ci_upper <- ci_pov$"CI Upper"[ci_pov$Level == "Medium"]
 ```
 
 The effect of *PctPopUnderPov* varies with *PctBsorMore* through the interaction terms. This means that the effect of *PctPopUnderPov* is not simply given by its coefficient, but instead we can look at the estimated effect of *PctPopUnderPov* on the expected value of the logarithm of (violent crime rate per population of 100k + 1) as `r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore"]` * *PctBSorMore*. If we take for example the mean of *PctBSorMore* to calculate the effect of *PctPopUnderPov* when the interacting variable is held at its average and all variables are held constant, we can find `r coef_mean`. The confidence interval of this effect is [`r ci_lower`, `r ci_upper`].
+
 With a confidence coefficient of .95 we estimate that the true effect of *PctPopUnderPov* (including its interaction) on the expected value of the logarithm of (violent crime rate per population of 100k + 1) per unit increase in *PctPopUnderPov* (1 percent) is somewhere between `r ci_lower` and `r ci_upper`, when the interacting variable is held at its average and all other variables are held constant.  The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of *PctPopUnderPov* on the logarithm of (violent crime rate per population of 100k + 1) gets larger. 
 
 #### Interpretation of *PctBSorMore*
@@ -1118,7 +1112,6 @@ The coefficient `r b["PctImmig"]` represents the expected increase in the logari
 #### Interpretation of *agePct12t29* 
 
 For the percentage of people between the age of 12 and 29, we find a negative association with the logarithm of (violent crime rate per population of 100k + 1). This is expressed by a coefficient of `r b["agePct12t29"]` with 95% confidence interval [`r confidence_intervals[5,1]`, `r confidence_intervals[5,2]`]. With 95% confidence we estimate that the true coefficient of *agePct12t29* is  between `r confidence_intervals[5,1]` and `r confidence_intervals[5,2]` when all other variables are fixed. Increasing percentage of *agePct12t29* is associated with a decrease in the mean logarithm of (violent crime rate per population of 100k + 1).
-
 
 ## Model validation
 
@@ -1362,6 +1355,6 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 
 # Retrieved 2025-12-03, License - CC BY-SA 3.0
 
-```{r show-code, ref.label=all_labels(), echo = TRUE, eval=FALSE}
+```{r show-code, ref.label=knitr::all_labels(), echo = TRUE, eval=FALSE, include=TRUE}
 
 ```
