@@ -390,9 +390,7 @@ lines(lowess(train_data$logpopulation, stud_res), col = "blue")
 par(mfrow = c(1, 1))
 ```
 
-### Multivariate model
 
-The first all-variable procedure resulted in a model using the following predictor variables: *racepctblack*, *PctPopUnderPov*, *PctLess9thGrade*, *PctNotHSGrad_i* and *PctImmig*. However for this model, the assumptions of normality and equal error variances of the error terms are again violated.
 
 ```{r model selection, message=FALSE}
 max_extra_predictors <- 4
@@ -474,9 +472,11 @@ lines(lowess(fit_multi$fitted.values, stud_res_multi), col = "blue")
 
 par(mfrow = c(1, 1))
 ```
-Applying the log transformation offered a substantial improvement of our model showing approximate constant variances and residuals reasonably close to normal.
+### Multivariate model
 
-Using the log transform Y variable to select a new model resulted in a similar model as before but with the *PctBSorMore* variable instead of the *PctNotHSGrad*. In this model, it could be observed from the partial regression plots that *PctRaceBlack* was not in the correct functional form. For this reason, a logit transformation was attempted which resulted in a more linear relation on the partial regression plots. Fitting the model with this logit transformed *racepctblack* seemed to also stabilize the residual vs fitted plot. This was followed by selecting a interaction term for the model, which showed that the best interaction given the BIC values would be between the main predictor *PctPopUnderPov* and *PctLess9thGrade*. However, this interaction introduced a high Vif value for both predictors and the interaction term possibly due to the presence of multiple education variables. Opting us to only take one education variable going forward. This resulted in a similar model with the *PctLess9thGrade* changed for *agePct12t29*. This model showed to have as best interaction term *PctPopUnderPov:agePct12t29*. However, This interaction resulted in a High VIF for both variables and their interaction term. For that reason, the second best interaction term *PctPopUnderPov:PctBSorMore* was chosen in the final model. This resulted in a final model:
+The first all-variable procedure resulted in a model using the following predictor variables: *racepctblack*, *PctPopUnderPov*, *PctLess9thGrade*, *PctNotHSGrad_i* and *PctImmig*. However for this model, the assumptions of normality and equal error variances of the error terms are again violated.
+
+Applying the log transformation offered a substantial improvement of our model showing approximate constant variances and residuals reasonably close to normal. Using the log transform Y variable to select a new model resulted in a similar model as before but with the *PctBSorMore* variable instead of the *PctNotHSGrad*. In this model, it could be observed from the partial regression plots that *PctRaceBlack* was not in the correct functional form. For this reason, a logit transformation was attempted which resulted in a more linear relation on the partial regression plots. Fitting the model with this logit transformed *racepctblack* seemed to also stabilize the residual vs fitted plot. This was followed by selecting a interaction term for the model, which showed that the best interaction given the BIC values would be between the main predictor *PctPopUnderPov* and *PctLess9thGrade*. However, this interaction introduced a high VIF value for both predictors and the interaction term possibly due to the presence of multiple education variables. Opting us to only take one education variable going forward. This resulted in a similar model with the *PctLess9thGrade* changed for *agePct12t29*. This model showed to have as best interaction term *PctPopUnderPov:agePct12t29*. However, This interaction resulted in a High VIF value for both variables and their interaction term. For that reason, the second best interaction term *PctPopUnderPov:PctBSorMore* was chosen in the final model. This resulted in a final model:
 
 ```{r}
 fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
@@ -549,9 +549,7 @@ multi_var_summary <- summary(fit_multi)
 multi_var_summary
 ```
 
-$$
-ViolentCrimesPerPop_i = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \beta_2 \cdot PctBSorMore + \beta_3 \cdot agePct12t29  + \beta_4 \cdot PctImmig_i + \beta_5 \cdot race_black_logit + \beta_6 \cdot PctPopUnderPov:PctBSorMore + \epsilon_i
-$$
+
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
 predictor_list <- row.names(multi_var_summary$coefficients[-1,])
 
@@ -811,7 +809,17 @@ final_sums
 plot(fit_final)
 par(mfrow = c(1, 1))
 ```
+$$
+\begin{aligned}
+ViolentCrimesPerPop_i =\;& 7.358 
+    + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore_i - 0.026 \cdot agePct12t29_i + 0.030 \cdot PctImmig_i\\
+& + 0.273 \cdot race\_black\_logit_i + 0.0008 \cdot PctPopUnderPov_i \cdot PctBSorMore_i + \epsilon_i\\
+\end{aligned}
+$$
 
+$$
+ViolentCrimesPerPop_i = 7.358 + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore - 0.026 \cdot agePct12t29  + 0.030 \cdot PctImmig_i + 0.273 \cdot race_black_logit + 0.0008 \cdot PctPopUnderPov:PctBSorMore + \epsilon_i
+$$
 ```{r vivs2, ref.label="viskys"}
 vif <- vif(fit_final)
 print(vif)
