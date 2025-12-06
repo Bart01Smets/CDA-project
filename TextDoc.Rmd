@@ -1,7 +1,7 @@
 ---
 title: "Analysis of Continuous Data project"
 author: "Thomas Sertijn, Ilja Van Bever, Lieselot Van de Putte"
-date: "2025-11-09"
+date: 
 output:
   bookdown::pdf_document2:
     toc: false
@@ -99,6 +99,7 @@ crimes_table_subset <- violent_crimes_table %>%
 The variable *NumImmig* is converted to a percentage of the total population, since the outcome variable *ViolentCrimesPerPop* (total number of violent crimes per 100K population) is expressed relative to the population size. We call this converted variable *PctImmig*. It's important to mention that this is not an exact transformation, because all demographic data is from 1990, but per-capita crime rates use 1995 population counts.
 
 ```{r converting numimmig}
+# transformation of NumImmig variable
 crimes_table_subset$ViolentCrimesPerPop <- as.numeric(crimes_table_subset$ViolentCrimesPerPop)
 crimes_table_subset$PctImmig <- crimes_table_subset$NumImmig/crimes_table_subset$population*100
 crimes_table_subset = crimes_table_subset[,-c('NumImmig', 'fold')]
@@ -111,6 +112,7 @@ at least a bachelor’s degree (%)", "percentage of population that is african a
 ```
 
 ```{r counting NA values}
+# counting the number of NA values per column
 crimes_table_subset %>%
   pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
   group_by(variable) %>%
@@ -122,6 +124,7 @@ crimes_table_subset %>%
 By examining the missing data, there were 221 (of the 2215) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. No imputations were used in order to have a more transparent model building procedure and to avoid overestimating the quality of the model fit. Therefore these observations were not taken into account for the model building. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
 
 ```{r identifying NA values}
+# filtered subset with only NA values
 na_subset <- crimes_table_subset %>%
   filter(is.na(ViolentCrimesPerPop)
   )
@@ -130,14 +133,14 @@ na_subset
 ```
 
 ```{r na county community}
+# filtered subset without NA values
 crimes_table_subset = na.omit(crimes_table_subset)
 colSums(crimes_table_subset == "?", na.rm = TRUE)
 ```
 
 ## Descriptive analysis
 ```{r summary statistics}
-#str(crimes_table_subset)
-#summary(crimes_table_subset)
+# calculating table with summary statistics
 crimes_table_subset %>%
   pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
   group_by(variable) %>%
@@ -811,9 +814,9 @@ par(mfrow = c(1, 1))
 ```
 $$
 \begin{aligned}
-ViolentCrimesPerPop_i =\;& 7.358 
-    + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore_i - 0.026 \cdot agePct12t29_i + 0.030 \cdot PctImmig_i\\
-& + 0.273 \cdot race\_black\_logit_i + 0.0008 \cdot PctPopUnderPov_i \cdot PctBSorMore_i + \epsilon_i\\
+Violent&CrimesPerPop_i =\; 7.358 
+    + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore_i - 0.026 \cdot agePct12t29_i\\
+&  + 0.030 \cdot PctImmig_i + 0.273 \cdot race\_black\_logit_i + 0.0008 \cdot PctPopUnderPov_i \cdot PctBSorMore_i + \epsilon_i\\
 \end{aligned}
 $$
 
@@ -888,7 +891,7 @@ par(mfrow = c(1, 1))
 ```
 ## Model diagnostics
 
-After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Cook's distance, the leverage, DFFITS, and DFBetas. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
+After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Cook's distance, the leverage, DFFITS, and DFBETAS. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
 
 ```{r}
 p <- length(coef(fit_final))
