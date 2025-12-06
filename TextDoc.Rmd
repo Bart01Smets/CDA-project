@@ -140,7 +140,7 @@ colSums(crimes_table_subset == "?", na.rm = TRUE)
 
 ## Descriptive analysis
 ```{r summary statistics}
-# calculating table with summary statistics
+# calculating table with summary statistics for non-missing data
 crimes_table_subset %>%
   pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
   group_by(variable) %>%
@@ -157,6 +157,7 @@ crimes_table_subset %>%
 ```
 
 ```{r summary statistics nas}
+# calculating table with summary statistics for missing data
 na_subset %>%
   pivot_longer(cols = where(is.numeric), names_to = "variable", values_to = "value") %>%
   group_by(variable) %>%
