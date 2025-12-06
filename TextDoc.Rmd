@@ -817,9 +817,6 @@ ViolentCrimesPerPop_i =\;& 7.358
 \end{aligned}
 $$
 
-$$
-ViolentCrimesPerPop_i = 7.358 + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore - 0.026 \cdot agePct12t29  + 0.030 \cdot PctImmig_i + 0.273 \cdot race_black_logit + 0.0008 \cdot PctPopUnderPov:PctBSorMore + \epsilon_i
-$$
 ```{r vivs2, ref.label="viskys"}
 vif <- vif(fit_final)
 print(vif)
