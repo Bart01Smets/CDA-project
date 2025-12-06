@@ -1014,6 +1014,9 @@ These findings show that these flagged communities likely represent valid but ex
 
 To further assess and account for the impact of these points, we fit a robust regression using Bisquare weights.
 
+When using a robust model, the coefficients revealed nearly identical to those from the OLS, indicating that the influential points are not the result of gross errors. The small differnces in coefficients show that these are already quite stable and thus that maybe the outliers and influential points did not distort the OLS model significantly
+
+
 ```{r robust-inference}
 library(MASS)
 
@@ -1031,7 +1034,6 @@ qqline(resid(robust))
 
 ```
 
-When using a robust model, the coefficients revealed nearly identical to those from the OLS, indicating that the influential points are not the result of gross errors. The small differnces in coefficients show that these are already quite stable and thus that maybe the outliers and influential points did not distort the OLS model significantly
 
 ```{r influence inference}
 # Compare OLS vs Robust coefficients
