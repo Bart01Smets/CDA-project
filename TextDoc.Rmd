@@ -1625,8 +1625,8 @@ schedule <- data.frame(
            "Thomas",
            "Lieselot",
            "Ilja",
-           "Lieselot",
-           "Lieselot")
+           "Lieselot&Ilja",
+           "Lieselot&Ilja")
 )
 
 # Print the table
