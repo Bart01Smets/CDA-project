@@ -375,7 +375,7 @@ plot(fit_simple$fitted.values, stud_res,
 outliers_simple <- which(abs(stud_res) > 2)
 ```
 
-```{r outliers vs population1}
+```{r outliers_vs_population1}
 par(mfrow = c(1, 2))
 # Residuals vs population
 plot(train_data$logpopulation, fit_simple$residuals,
@@ -389,6 +389,8 @@ abline(h = 0, col = "red", lty = 2)
 lines(lowess(train_data$logpopulation, stud_res), col = "blue")
 par(mfrow = c(1, 1))
 ```
+
+### Multivariate model
 
 
 
@@ -442,7 +444,7 @@ multi_var_summary <- summary(fit_multi)
 multi_var_summary
 ```
 
-```{r final model-diagnostics, fig.width=10, fig.height=8}
+```{r multimodel1_model_diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
 
 #Residuals vs Fitted
@@ -472,20 +474,19 @@ lines(lowess(fit_multi$fitted.values, stud_res_multi), col = "blue")
 
 par(mfrow = c(1, 1))
 ```
-### Multivariate model
 
 The first all-variable procedure resulted in a model using the following predictor variables: *racepctblack*, *PctPopUnderPov*, *PctLess9thGrade*, *PctNotHSGrad_i* and *PctImmig*. However for this model, the assumptions of normality and equal error variances of the error terms are again violated.
 
 Applying the log transformation offered a substantial improvement of our model showing approximate constant variances and residuals reasonably close to normal. Using the log transform Y variable to select a new model resulted in a similar model as before but with the *PctBSorMore* variable instead of the *PctNotHSGrad*. In this model, it could be observed from the partial regression plots that *PctRaceBlack* was not in the correct functional form. For this reason, a logit transformation was attempted which resulted in a more linear relation on the partial regression plots. Fitting the model with this logit transformed *racepctblack* seemed to also stabilize the residual vs fitted plot. This was followed by selecting a interaction term for the model, which showed that the best interaction given the BIC values would be between the main predictor *PctPopUnderPov* and *PctLess9thGrade*. However, this interaction introduced a high VIF value for both predictors and the interaction term possibly due to the presence of multiple education variables. Opting us to only take one education variable going forward. This resulted in a similar model with the *PctLess9thGrade* changed for *agePct12t29*. This model showed to have as best interaction term *PctPopUnderPov:agePct12t29*. However, This interaction resulted in a High VIF value for both variables and their interaction term. For that reason, the second best interaction term *PctPopUnderPov:PctBSorMore* was chosen in the final model. This resulted in a final model:
 
-```{r}
+```{r logtransformed_first_model}
 fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
                 PctPopUnderPov + PctBSorMore + racepctblack + 
                 PctImmig + PctPopUnderPov:PctBSorMore,
               data = train_data)
 
 multi_var_summary <- summary(fit_log)
-multi_var_summary
+#multi_var_summary
 plot(fit_log)
 par(mfrow = c(1, 1))
 ```
@@ -545,13 +546,13 @@ cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
 
 fit_multi <- lm(best_pred, data = train_data)
-multi_var_summary <- summary(fit_multi)
-multi_var_summary
+multi_var_summary1 <- summary(fit_multi)
+multi_var_summary1
 ```
 
 
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
-predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+predictor_list <- row.names(multi_var_summary1$coefficients[-1,])
 
 partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
   temp <- data
@@ -599,7 +600,7 @@ pct_to_logit <-  function(percentage, addition = 1e-6) {
 train_data$race_black_logit <- pct_to_logit(train_data$racepctblack)
 test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
 ```
-```{r}
+```{r logit_model_test}
 fit_logit <- lm(logViolent ~ 
                 PctPopUnderPov + 
                 PctLess9thGrade +
@@ -610,7 +611,7 @@ fit_logit <- lm(logViolent ~
 
 
 multi_var_logit_summary <- summary(fit_logit)
-multi_var_logit_summary
+#multi_var_logit_summary
 plot(fit_logit)
 par(mfrow = c(1, 1))
 ```
@@ -676,16 +677,16 @@ best_interaction <- row.names(interaction_table[1,])
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "), "+",
                                   "PctPopUnderPov:PctLess9thGrade"))
-fit_final <- lm(formula_final, data = train_data)
-summary(fit_final)
+fit_less_9thgrade <- lm(formula_final, data = train_data)
+summary(fit_less_9thgrade)
 ```
 
-```{r}
+```{r VIFs_model}
 library(car)
 # practicum: car::vif(fit)
-vif <- vif(fit_final)
+vif <- vif(fit_less_9thgrade)
 print(vif)
-cat("BIC: ", BIC(fit_final))
+cat("BIC: ", BIC(fit_less_9thgrade))
 ```
 ```{r filtering formulas for education}
 
@@ -732,12 +733,12 @@ cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
 
 fit_multi <- lm(best_pred, data = train_data)
-multi_var_summary <- summary(fit_multi)
-multi_var_summary
+multi_var_summary2 <- summary(fit_multi)
+multi_var_summary2
 ```
 
 ```{r}
-predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+predictor_list <- row.names(multi_var_summary2$coefficients[-1,])
 selected_vars <- setdiff(
   row.names(multi_var_summary$coefficients),
   c("(Intercept)", "PctPopUnderPov")
@@ -784,7 +785,7 @@ interaction_table
 best_interaction <- row.names(interaction_table[1,])
 ```
 
-```{r}
+```{r model_best1education}
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "),  "+",
                                   best_interaction))
@@ -799,13 +800,13 @@ vif <- vif(fit_final)
 print(vif)
 cat("BIC: ", BIC(fit_final))
 ```
-```{r}
+```{r model_1education2}
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "),  "+",
                                   "PctPopUnderPov:PctBSorMore"))
 fit_final <- lm(formula_final, data = train_data)
 final_sums <- summary(fit_final)
-final_sums
+#final_sums
 plot(fit_final)
 par(mfrow = c(1, 1))
 ```
@@ -817,13 +818,20 @@ ViolentCrimesPerPop_i =\;& 7.358
 \end{aligned}
 $$
 
+<<<<<<< HEAD
 ```{r vivs2, ref.label="viskys"}
+=======
+$$
+ViolentCrimesPerPop_i = 7.358 + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore - 0.026 \cdot agePct12t29  + 0.030 \cdot PctImmig_i + 0.273 \cdot race_black_logit + 0.0008 \cdot PctPopUnderPov:PctBSorMore + \epsilon_i
+$$
+```{r vivs2}
+>>>>>>> 3abb57d (Part 2 figures)
 vif <- vif(fit_final)
 print(vif)
 cat("BIC: ", BIC(fit_final))
 ```
-```{r fig.width=10, fig.height=8, warnings=FALSE}
-predictor_list <- row.names(multi_var_summary$coefficients[-1,])
+```{r partials_final_model, fig.width=10, fig.height=8, warnings=FALSE}
+predictor_list <- row.names(multi_var_summary2$coefficients[-1,])
 plots <- lapply(predictor_list, function(predictor) {
     partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
 }
@@ -871,7 +879,7 @@ lines(lowess(fit_final$fitted.values, stud_res_final), col = "blue")
 
 ```
 
-```{r outliers vs population2}
+```{r outliers_vs_population2}
 par(mfrow = c(1, 2))
 # Residuals vs population
 plot(train_data$logpopulation, fit_final$residuals,
@@ -1380,11 +1388,91 @@ population scatter plots:
 
 ### Model building
 
+#### Univariate model
+
 Simple model assumption plots:
 
-```{r ref.label="simple-lm-diagnostics"}
+```{r ref.label="simple-lm-diagnostics", include=TRUE}
 
 ```
+
+Residuals based on population size:
+
+```{r ref.label="outliers_vs_population1", include=TRUE}
+
+```
+
+#### multivariate model
+
+Assumption checks first multivariate model:
+```{r ref.label="multimodel1_model_diagnostics", include=TRUE}
+
+```
+
+Assumption checks log transformation test: 
+```{r ref.label="logtransformed_first_model", include=TRUE}
+
+```
+Partial regression plots first log model:
+
+```{r ref.label="partial-regression-plots2", include=TRUE}
+
+```
+
+Logit transformed *racepctblack* model assumsions check:
+
+```{r ref.label="logit_model_test"}
+
+```
+
+Partial regression logits:
+
+```{r ref.label="partial-regression-logit"}
+
+```
+
+VIF check model with *less9thgrade*
+```{r ref.label="VIFs_model"}
+
+```
+
+Assumptions check one education model:
+
+```{r ref.label="model_best1education"}
+
+```
+
+Vifs first one education model:
+
+```{r ref.label="viskys"}
+
+```
+
+Assumptions one education model with *PctPopPov:PctBSorMore* interaction:
+
+```{r ref.label="model_1education2"}
+
+```
+
+Vifs for *PctPopPov:PctBSorMore* interaction model:
+
+```{r ref.label="vivs2"}
+
+```
+
+Partials for *PctPopPov:PctBSorMore* interaction model:
+
+```{r ref.label="partials_final_model"}
+
+```
+
+Plot of outliers vs population:
+
+```{r ref.label="outliers_vs_population2"}
+
+```
+
+### Diagnostics:
 
 
 ## Contributions
@@ -1395,7 +1483,7 @@ During this project, AI has been used either to find out why certain errors occu
 
 prompt:
 
-how can i reference to figures in my appendix in r since this is after all text
+how can i reference to figures in my appendix in r since this is after all text (did not wortk!!!)
 
 Or to fix an error in getting the full formulas in a table during the model building:
 
