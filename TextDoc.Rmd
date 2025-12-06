@@ -1567,6 +1567,42 @@ prediction tests:
 
 ## Contributions
 
+```{r echo=FALSE, include=TRUE}
+# Create the table in R
+schedule <- data.frame(
+  Subject = c("Data extraction",
+              "Data preparation",
+              "Descriptive analyses",
+              "Model building",
+              "Model diagnostics",
+              "Model interpretation",
+              "Model validation",
+              "Statistical discussion linear model",
+              "Final conclusion and discussion"),
+  Code = c("Thomas",
+           "Ilja",
+           "Ilja",
+           "Thomas",
+           "Thomas&Ilja",
+           "Lieselot",
+           "Ilja",
+           "Lieselot",
+           "Lieselot"),
+  Text = c("Thomas",
+           "Ilja",
+           "Ilja",
+           "Thomas",
+           "Thomas",
+           "Lieselot",
+           "Ilja",
+           "Lieselot",
+           "Lieselot")
+)
+
+# Print the table
+kable(schedule, caption = "Project contribution Overview", align = c('l', 'c', 'c'))
+```
+
 ## AI:
 
 During this project, AI has been used either to find out why certain errors occured, Github related issues, and some practical issues such as for example referencing to figures in a later part of the code:
