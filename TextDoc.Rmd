@@ -215,13 +215,13 @@ cor_matrix <- cor(crimes_table_subset_num[,-c('population', 'logpopulation')])
 cor_values <- as.data.frame(as.table(cor_matrix))
 
 
-ggcorrplot(cor_matrix, lab = TRUE, type = "lower", 
+ cor_discriptives <- ggcorrplot(cor_matrix, lab = TRUE, type = "lower", 
            lab_size = 3, colors = c("red", "white", "blue"))
 
 ```
 Univariate descriptive analysis is performed, for both the missing values and the non-missing values. Neither summary statistics nor visualisations of the predictor distributions (like boxplots and histograms) indicate that the missing data have characteristics that differ substantially from the non-missing data.
 
-To understand how the variables in the dataset relate to one another, correlation coefficients were calculated and scatter plots were examined to visualize the relationships between the variables, the outcome variable (*ViolentCrimesPerPop*), and the main predictor (*PctPopUnderPov*).
+To understand how the variables in the dataset relate to one another, correlation coefficients were calculated and scatter plots were examined to visualize the relationships between the variables, the outcome variable (*ViolentCrimesPerPop*), and the main predictor (*PctPopUnderPov*)
 
 It is notable that the variable *racepctblack* shows the strongest correlation with the outcome variable ($r = 0.63$), even surpassing *PctPopUnderPov*, the main predictor selected for this study. Given some strong correlations between predictor variables (for example between *PctNotHSGrad* and *PctLess9thGrade* ($r = 0.93$), between *perCapInc* and *PctBSorMore* ($r = 0.77$), and between *PctNotHSGrad* and *PctBSorMore* ($r = -0.75$)) and the linear relationships some variables have with *PctPopUnderPov*, it is recommended to assess multicollinearity during the model-building stage.
 
@@ -270,7 +270,7 @@ Two extreme values for the *ViolentCrimesPerPop* variable appear. Chestercity ha
 crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=FALSE), , drop = FALSE]
 ```
 
-It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables. Scatter plots show that communities with a very small population indeed show a very large spread for all variables.
+It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables. Scatter plots show that communities with a very small population indeed show a very large spread for all variables (fig. \@ref(fig:scattersforpop)).
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
 df <- crimes_table_subset_num
@@ -1350,6 +1350,43 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 
 ## Figures
 
+### Descriptives {#descriptive-boxes}
+
+```{r first_boxplots, ref.label="boxplots", fig.cap="...", include=TRUE, fig.width=8, fig.height=6}
+
+```
+
+```{r comparison boxplots, ref.label="histograms na comparison", fig.cap="...", include=TRUE, fig.width=8, fig.height=6}
+
+```
+
+correlation plot:
+
+```{r correlatiion_plot_discriptives, ref.label="cor_discriptives", include=TRUE}
+
+```
+
+scatter plots:
+
+```{r scatters_descriptives, ref.label="scatter plots", fig.width=8, fig.height=10, include=TRUE}
+
+```
+
+population scatter plots:
+
+```{r scattersforpop, ref.label="scatter plots population", fig.width=8, fig.height=10, include=TRUE}
+
+```
+
+### Model building
+
+Simple model assumption plots:
+
+```{r ref.label="simple-lm-diagnostics"}
+
+```
+
+
 ## Contributions
 
 ## AI:
@@ -1360,7 +1397,7 @@ prompt:
 
 how can i reference to figures in my appendix in r since this is after all text
 
-Or to fix an error in getting the full formulas in a tzble during the model building:
+Or to fix an error in getting the full formulas in a table during the model building:
 
 prompt:
 model_ranking <- data.frame( + formula = sapply(formulas, deparse), + BIC = bic_values + ) Error in (function (..., row.names = NULL, check.rows = FALSE, check.names = TRUE, : arguments imply differing number of rows: 1, 2, 3. Why do i get this error?
