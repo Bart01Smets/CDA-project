@@ -1,7 +1,4 @@
 ---
-title: "Analysis of Continuous Data project"
-author: "Thomas Sertijn, Ilja Van Bever, Lieselot Van de Putte"
-date: 
 output:
   bookdown::pdf_document2:
     toc: false
@@ -10,6 +7,11 @@ output:
     toc: false
     number_sections: false
 ---
+\begin{center}
+{\Large Analysis of Continuous Data project}\\[0.5em]
+{\small Thomas Sertijn, Ilja Van Bever, Lieselot Van de Putte}
+\end{center}
+
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE,
