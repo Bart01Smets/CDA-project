@@ -30,7 +30,7 @@ library(MASS)
 library(stdmod)
 ```
 
-# Research question
+## Research question
 
 For this research the effect of socio-economic disadvantage to violent crime rates was investigated. More specifically we want to explore the association between poverty and violent crime rates in the USA. Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs of committing crime against each other. It could be argued that the incentive to commit crime is higher for people who have a lower income, as they have more to gain and less to lose by committing crimes. Following this, we would then also expect that communities with higher poverty rates will also be associated with higher crime rates.
 
@@ -38,7 +38,7 @@ For this research the effect of socio-economic disadvantage to violent crime rat
 
 For this research, a dataset related to data gathered for the prediction of serious crime rates in the US is used. This dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting, which resulted in missing total violent crime values for those states.
 
-# Methods
+## Methods
 
 For the purpose of our research question we selected a subset of variables present in in the dataset. Some economic variables: *PctPopUnderPov*, *perCapInc*, and *PctEmploy*, which give some information about economic status of the community, and a sociological subset, containing education levels in the communities, combined with *NummImmig*, *RacePctBlack*, *AgePct12t29*, all variables giving some info about the social composition and demographic structure of the communities.
 
@@ -90,7 +90,7 @@ crimes_table_subset <- violent_crimes_table %>%
          )
 ```
 
-# Data preparation
+## Data preparation
 
 The variable *NumImmig* is converted to a percentage of the total population, since the outcome variable *ViolentCrimesPerPop* (total number of violent crimes per 100K population) is expressed relative to the population size. We call this converted variable *PctImmig*. It's important to mention that this is not an exact transformation, because all demographic data is from 1990, but per-capita crime rates use 1995 population counts.
 
@@ -130,7 +130,7 @@ crimes_table_subset = na.omit(crimes_table_subset)
 colSums(crimes_table_subset == "?", na.rm = TRUE)
 ```
 
-# Descriptive analysis
+## Descriptive analysis
 ```{r summary statistics}
 #str(crimes_table_subset)
 #summary(crimes_table_subset)
@@ -283,7 +283,7 @@ print(wrap_plots(plots, ncol = 3))
 
 ```
 
-# Model Building
+## Model Building
 
 ```{r dataset split}
 set.seed(987654321)
@@ -297,7 +297,7 @@ cat("Training set size:", n_training, "\n")
 cat("Test set size:", nrow(test_data), "\n")
 ```
 
-## Univariate linear regression
+### Univariate linear regression
 
 The simple univariate regression equation we estimate with the training set is given as follows:
 
@@ -383,7 +383,7 @@ lines(lowess(train_data$logpopulation, stud_res), col = "blue")
 par(mfrow = c(1, 1))
 ```
 
-## Multivariate model
+### Multivariate model
 
 The first all-variable procedure resulted as model in:
 $$
@@ -1084,7 +1084,7 @@ ci_upper <- ci_pov$"CI Upper"[ci_pov$Level == "Medium"]
 ```
 
 The effect of *PctPopUnderPov* varies with *PctBsorMore* through the interaction terms. This means that the effect of *PctPopUnderPov* is not simply given by its coefficient, but instead we can look at the estimated effect of *PctPopUnderPov* on the expected value of the logarithm of (violent crime rate per population of 100k + 1) as `r round(b["PctPopUnderPov"], 5)` + `r round(b["PctPopUnderPov:PctBSorMore"], 5)` * PctBSorMore. If we take for example the mean of the *PctBSorMore* to calculate the effect of *PctPopUnderPov* when the interacting variable is held at its average and all variables are held constant, we can find `r round(coef_mean,5)`. The confidence interval of this effect is [`r round(ci_lower,5)`, `r round(ci_upper,5)`]
-With a confidence coefficient of .95 we estimate that the true effect of *PctPopUnderPov* (including its interaction) on the expected value of the logarithm of (violent crime rate per population of 100k + 1) per unit increase in *PctPopUnderPov* (1 percent) is somewhere between `r round(ci_lower,5)` and `r round(ci_upper,5)`, when the interacting variable is held at its average and all other variables are held constant.  The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of *PctPopUnderPov* on the logarithm of (violent crime rate per population of 100k + 1) gets larger. 
+With a confidence coefficient of .95 we estimate that the true effect of *PctPopUnderPov* (including its interaction) on the expected value of the logarithm of (violent crime rate per population of 100k + 1) per unit increase in *PctPopUnderPov* (1 percent) is somewhere between `r round(ci_lower,5)` and `r round(ci_upper,5)`, when the interacting variable is held at its average and all other variables are held constant. The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of *PctPopUnderPov* on the logarithm of (violent crime rate per population of 100k + 1) gets larger. 
 
 #### Interpretation of *PctBSorMore*
 
@@ -1095,11 +1095,11 @@ ci_lower2 <- ci_pov2$"CI Lower"[ci_pov2$Level == "Medium"]
 ci_upper2 <- ci_pov2$"CI Upper"[ci_pov2$Level == "Medium"]
 ```
 
-The interpretation for *PctBSorMore* is similar to the one above because of their interaction. The conditional effect on of *PctBSorMore* on the logarithm of violent crime rate is given by: `r round(b["PctBSorMore"], 5)` + `r round(b["PctPopUnderPov:PctBSorMore"], 5)`* PctPopUnderPov.  Similarly to before we can take the mean of *PctPopUnderPov* and estimate the conditional effect of *PctBSorMore* on the expected value of the logarithm of (violent crime rate per population of 100k + 1) per unit increase of *PctBSorMore*, when keeping poverty at its mean and all other variables constant: `r round(b["PctBSorMore"], 5)` + `r round(b["PctPopUnderPov:PctBSorMore"] * mean_poverty, 5)`. Contrary to above, we now see a interference effect: for higher levels of *PctPopUnderPov* the negative effect of *PctBSorMore* becomes less negative (the slope becomes less steep). With a 95% confidence interval of [`r round(ci_lower2, 5)`, `r round(ci_upper2, 5)`] which can be interpreted as: with a confidence coefficient of 0.95 we estimate that the true effect on the mean logarithm of (violent crime rate per population of 100k + 1) by increasing *PctBSorMore* by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant is somewhere between [`r round(ci_lower2, 5)`, `r round(ci_upper2, 5)`]. Thus, under the conditions stated above, if a higher percentage of the population has a Bachelors degree or higher, the logarithm of the (violent crime rate per population of 100k + 1) is expected to decrease and this effect is less pronounced for higher levels of *PctPopUnderPov*.
+The interpretation for *PctBSorMore* is similar to the one above because of their interaction. The conditional effect on of *PctBSorMore* on the logarithm of violent crime rate is given by: `r round(b["PctBSorMore"], 5)` + `r round(b["PctPopUnderPov:PctBSorMore"], 5)`* PctPopUnderPov.  Similarly to before we can take the mean of *PctPopUnderPov* and estimate the conditional effect of *PctBSorMore* on the expected value of the logarithm of (violent crime rate per population of 100k + 1) per unit increase of *PctBSorMore*, when keeping poverty at its mean and all other variables constant: `r round(b["PctBSorMore"], 5)` + `r round(b["PctPopUnderPov:PctBSorMore"] * mean_poverty, 5)` (95% CI: [`r round(ci_lower2, 5)`, `r round(ci_upper2, 5)`]). Contrary to above, we now see a interference effect: for higher levels of *PctPopUnderPov* the negative effect of *PctBSorMore* becomes less negative (the slope becomes less steep). Thus, under the conditions stated above, if a higher percentage of the population has a Bachelors degree or higher, the logarithm of the (violent crime rate per population of 100k + 1) is expected to decrease and this effect is less pronounced for higher levels of *PctPopUnderPov*.
 
 #### Interpretation of *race_black_logit*  
 
-The interpretation of *race_black_logit* is more complicated as on top of the log transformed response variable, we now also have a logit transformed predictor variable. It has no interaction terms so we can interpret the main effect on its own. A one-unit increase in the log-odds of percentage African American is associated with a `r round(b["race_black_logit"], 5)` change in the expected value of the logarithm of (violent crime rate per population of 100k + 1) when keeping all other variables constant; where a one-unit increase in the log-odds has to be interpreted as a multiplication of the odds of being African American by e ($\approx$ 2.72). The 95% confidence interval is [`r round(confidence_intervals[4,1], 5)`, `r round(confidence_intervals[4,2], 5)`].This is a positive association: for increasing levels of the log-odds of percentage African Americans, there is an expected increase of the logarithm of (violent crime rate per population of 100k + 1). 
+*race_black_logit* has no interaction terms so we can interpret the main effect on its own. A one-unit increase in the log-odds of percentage African American is associated with a `r round(b["race_black_logit"], 5)` change in the expected value of the logarithm of (violent crime rate per population of 100k + 1) when keeping all other variables constant; where a one-unit increase in the log-odds has to be interpreted as a multiplication of the odds of being African American by e ($\approx$ 2.72). The 95% confidence interval is [`r round(confidence_intervals[4,1], 5)`, `r round(confidence_intervals[4,2], 5)`].This is a positive association: for increasing levels of the log-odds of percentage African Americans, there is an expected increase of the logarithm of (violent crime rate per population of 100k + 1). 
 
 
 #### Interpretation of *PctImmig*
@@ -1300,7 +1300,7 @@ rownames(df_validation) <- c("outcome variable", "MSPR", "MSE", "Ratio MSPR/MSE"
 df_validation
 ```
 
-# Statistical discussion
+## Statistical discussion
 
 There is a large portion of missing data in our dataset (221 of the 2215 observations). The main source of missing data is the *ViolentCrimesPerPop* variable, where 221 observations are missing assumably because of incomplete rape reporting in Midwestern States. This missingness could lead to biased estimates if these communities differ in crime-related or demographic characteristics. Though the characteristics of the communities with missing data are not much different from those of the non-missing data. We thus assume that this missingness does not have an important effect on our found results. However, if these communities are different in ways not captured by our measured variables, there could still be bias present. Moreover, the LEMAS survey includes all communities with police departments of more than 100 officers, but only a random sample of smaller departments. As a result, the representation of small communities in the dataset is less precise.
 
@@ -1312,7 +1312,7 @@ Then, it should be noted that the data are from 1990-1995. Since then, the socia
 
 At last, it is mentioned in the description of the original dataset that many relevant factors are not included. Specifically, it is mentioned that per capita crime rates are calculated using resident populations, so communities with large numbers of visitors are expected to have higher crime rates, even if the actual risk is not different across communities. This, together with other unmeasured factors, implies that our results should be interpreted as correlations and not as causations.
 
-# Conclusion
+## Conclusion
 
 In this report, we investigate how violent crime rates and socio-economic disadvantage, and more specifically the poverty rate, are associated in U.S. communities. For this purpose we used a merged dataset with detailed data on both crimes and demographic variables from 1990 and 1995.
 
@@ -1358,7 +1358,7 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 
 ## Contributions
 
-## 
+## Code
 
 ```{r show-code, ref.label=knitr::all_labels(), echo = TRUE, eval=FALSE, include=TRUE}
 
