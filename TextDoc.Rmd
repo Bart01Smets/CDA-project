@@ -422,11 +422,7 @@ lines(lowess(train_data$logpopulation, stud_res), col = "blue")
 par(mfrow = c(1, 1))
 ```
 
-<<<<<<< HEAD
 ### Multivariate linear model
-=======
-### Multivariate model
->>>>>>> 57f06e1 (figure fixes)
 
 ```{r model selection, message=FALSE}
 max_extra_predictors <- 4
