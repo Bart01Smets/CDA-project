@@ -810,22 +810,12 @@ final_sums <- summary(fit_final)
 plot(fit_final)
 par(mfrow = c(1, 1))
 ```
-$$
-\begin{aligned}
-ViolentCrimesPerPop_i =\;& 7.358 
-    + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore_i - 0.026 \cdot agePct12t29_i + 0.030 \cdot PctImmig_i\\
-& + 0.273 \cdot race\_black\_logit_i + 0.0008 \cdot PctPopUnderPov_i \cdot PctBSorMore_i + \epsilon_i\\
-\end{aligned}
-$$
 
-<<<<<<< HEAD
-```{r vivs2, ref.label="viskys"}
-=======
 $$
 ViolentCrimesPerPop_i = 7.358 + 0.026 \cdot PctPopUnderPov_i - 0.026 \cdot PctBSorMore - 0.026 \cdot agePct12t29  + 0.030 \cdot PctImmig_i + 0.273 \cdot race_black_logit + 0.0008 \cdot PctPopUnderPov:PctBSorMore + \epsilon_i
 $$
+
 ```{r vivs2}
->>>>>>> 3abb57d (Part 2 figures)
 vif <- vif(fit_final)
 print(vif)
 cat("BIC: ", BIC(fit_final))
