@@ -879,7 +879,7 @@ par(mfrow = c(1, 1))
 ```
 ## Model diagnostics
 
-After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Cook's distance, the leverage, DFFits, and DFBetas. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
+After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Cook's distance, the leverage, DFFITS, and DFBetas. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
 
 ```{r}
 p <- length(coef(fit_final))
@@ -893,10 +893,6 @@ olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
 ```
 
 ```{r dffits plots, fig.width=10, fig.height=8}
-# Deze functies werken ook
-#ols_plot_dfbetas(fit_final)
-#ols_plot_dffits(fit_final)
-
 # IMPORTANT remark: the labelled observations are the points with 2 times the threshold (the reason is the visualisation)
 dffits_vals <- data.frame(dffits(fit_final))
 
@@ -940,7 +936,6 @@ print(plots)
 ```
 
 Using these plots, many influential outliers could be discovered. In order to exclude any data points that were influential due to observation errors, the variable values of these points were extracted and manually checked to see whether these are observations errors, rare cases, or valid but extreme cases.
-
 
 ```{r influence diagnostics}
 # Calculate diagnostics and tresholds
@@ -1011,7 +1006,7 @@ problematic_with_data[, c("flag_count", "communityname", "population", "PctPopUn
 
 ```
 
-By looking at all 318 Communities in the dataset that were flagged as problematic, meaning they crossed the threshold of one of the diagnostic tests, no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exhibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, both flagged by all 5 diagnostic tests, were reported to not have any people of black color in their community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a *ViolentCrimesPerPop* of 0, while this is not common in our dataset, we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
+By looking at all 318 communities in the dataset that were flagged as problematic, meaning they crossed the threshold of one of the diagnostic tests, no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exhibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, both flagged by all 5 diagnostic tests, were reported to not have any people of black color in their community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a *ViolentCrimesPerPop* of 0, while this is not common in our dataset, we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
 
 These findings show that these flagged communities likely represent valid but extreme cases present in our dataset whose demographic or crime-related profiles differ substantially from the average. Therefore, there is no reason to discard any of them. So instead of removing them, another way to account for their impact would be to run a robust regression, instead of a normal linear regression.
 
@@ -1050,8 +1045,9 @@ print(round(comparison, 4))
 ```
 
 
-## interpretation final model
+## Interpretation of the final model
 
+Our final model is: <<<formule mode>>>.
 ```{r}
 summary(fit_final)
 print(confint(fit_final))
@@ -1353,6 +1349,14 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 # Posted by DonJ, modified by community. See post 'Timeline' for change history
 
 # Retrieved 2025-12-03, License - CC BY-SA 3.0
+
+# Appendix
+
+## Figures
+
+## Contributions
+
+## 
 
 ```{r show-code, ref.label=knitr::all_labels(), echo = TRUE, eval=FALSE, include=TRUE}
 
