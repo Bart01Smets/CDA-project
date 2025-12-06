@@ -27,6 +27,7 @@ library(tidyr)
 library(ggcorrplot)
 library(patchwork)
 library(MASS)
+library(stdmod)
 ```
 
 # Research question
@@ -35,11 +36,11 @@ For this research the effect of socio-economic disadvantage to violent crime rat
 
 ## Design of the dataset
 
-For this research, a dataset related to data gathered for the prediction of serious crime rates in the US. This dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting, which resulted in missing total violent crime values for those states.
+For this research, a dataset related to data gathered for the prediction of serious crime rates in the US is used. This dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting, which resulted in missing total violent crime values for those states.
 
 # Methods
 
-For the purpose of our research question we selected a subset of variables present in in the dataset. Some economic variables: PctPopUnderPov, perCapInc, and PctEmploy, which give some information about economic status of the community, and a sociological subset, containing education levels in the communities, combined with NummImmig, RacePctBlack, AgePct12t29, all variables giving some info about the social composition and demographic structure of the communities.
+For the purpose of our research question we selected a subset of variables present in in the dataset. Some economic variables: *PctPopUnderPov*, *perCapInc*, and *PctEmploy*, which give some information about economic status of the community, and a sociological subset, containing education levels in the communities, combined with *NummImmig*, *RacePctBlack*, *AgePct12t29*, all variables giving some info about the social composition and demographic structure of the communities.
 
 1.  To gain an initial understanding of the association between poverty rates (*PctPopUnderPov*) and violent crime rates (*ViolentCrimesPerPop*), a univariate regression is performed.
 
@@ -47,7 +48,7 @@ For the purpose of our research question we selected a subset of variables prese
 
 Before building the models, some descriptive analysis of the dataset and variables is performed. Next, the dataset is randomly split into a training dataset (80% of the data) and a holdout set (20% of the data).
 
-For the multivariate model, an All-variable procedure is emplored to test every combination of possible variables as a model. The best model is chosen based on the Bayesian Information Criterion (BIC). Next, the assumptions of this best model are checked and partial regression plots are generated to check if each of the added variables are in the correct functional form. Afterwards, the most apropriate interaction term  with the main predictor PctPopUnderPov is selected based on the same BIC procedure. Finally, multicollinearity is assessed using the Variance Inflation Factor (VIF) to obtain a more interpretable model. After determining the final model, some model diagnostics are calculated to determine outliers and influential points. Finally the model is validated by the holdout dataset.
+For the multivariate model, an All-variable procedure is emplored to test every combination of possible variables as a model. The best model is chosen based on the Bayesian Information Criterion (BIC). Next, the assumptions of this best model are checked and partial regression plots are generated to check if each of the added variables are in the correct functional form. Afterwards, the most appropriate interaction term  with the main predictor *PctPopUnderPov* is selected based on the same BIC procedure. Finally, multicollinearity is assessed using the Variance Inflation Factor (VIF) to obtain a more interpretable model. After determining the final model, some model diagnostics are calculated to determine outliers and influential points. Finally the model is validated by the holdout dataset.
 
 ```{r load data}
 violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/211/communities+and+crime+unnormalized.zip")
@@ -114,7 +115,7 @@ crimes_table_subset %>%
   )
 ```
 
-By examining the missing data, there were 221 (of the 2215) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. No imputations were used to have a more transparent model building procedure and to avoid overestimating the quality of the model fit. So these observations where not taken into account for the model building. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
+By examining the missing data, there were 221 (of the 2215) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. No imputations were used in order to have a more transparent model building procedure and to avoid overestimating the quality of the model fit. Therefore these observations were not taken into account for the model building. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
 
 ```{r identifying NA values}
 na_subset <- crimes_table_subset %>%
@@ -212,7 +213,7 @@ ggcorrplot(cor_matrix, lab = TRUE, type = "lower",
 ```
 Univariate descriptive analysis is performed, for both the missing values and the non-missing values. Neither summary statistics nor visualisations of the predictor distributions (like boxplots and histograms) indicate that the missing data have characteristics that differ substantially from the non-missing data.
 
-To understand how the variables in the dataset relate to one another, correlation coefficients were calculated and scatter plots were examined to visualize the relationships between the variables, the outcome variable (ViolentCrimesPerPop), and the main predictor (PctPopUnderPov).
+To understand how the variables in the dataset relate to one another, correlation coefficients were calculated and scatter plots were examined to visualize the relationships between the variables, the outcome variable (*ViolentCrimesPerPop*), and the main predictor (*PctPopUnderPov*).
 
 It is notable that the variable *racepctblack* shows the strongest correlation with the outcome variable ($r = 0.63$), even surpassing *PctPopUnderPov*, the main predictor selected for this study. Given some strong correlations between predictor variables (for example between *PctNotHSGrad* and *PctLess9thGrade* ($r = 0.93$), between *perCapInc* and *PctBSorMore* ($r = 0.77$), and between *PctNotHSGrad* and *PctBSorMore* ($r = -0.75$)) and the linear relationships some variables have with *PctPopUnderPov*, it is recommended to assess multicollinearity during the model-building stage.
 
@@ -550,7 +551,7 @@ fit_multi <- lm(best_pred, data = train_data)
 multi_var_summary <- summary(fit_multi)
 multi_var_summary
 ```
-Using the log transform Y variable to selected a new model resulted in a similar model as before but with the PctBSorMore variable instead of the PctNotHSGrad. In this model, it could be observed from the partial regression plots that PctRaceBlack was not in the correct functional form. For this reason, a logit transformation was attempted which resulted in a more linear relation on the partial regression plots. Fitting the model with this logit transformed racepctblack seemed to also stabilize the residual vs fitted plot. This was followed by selecting a interaction term for the model, which showed that the best interaction given the BIC values would be between the main predictor PctPopUnderPov and PctLess9thGrade. However, this interaction introduced a high Vif value for both predictors and the interaction term possibly due to the presence of multiple education variables. Opting us to only take one education variable going forward. This resulted in a similar model with the PctLess9thGrade changed for agePct12t29. This model showed to have as best interaction term PctPopUnderPov:agePct12t29. However, This interaction resulted in a High VIF fot both variables and their interaction term. For that reason, the second best interaction term PctPopUnderPov:PctBSorMore was chosen in the final model. This resulted in a final model:
+Using the log transform Y variable to select a new model resulted in a similar model as before but with the *PctBSorMore* variable instead of the *PctNotHSGrad*. In this model, it could be observed from the partial regression plots that *PctRaceBlack* was not in the correct functional form. For this reason, a logit transformation was attempted which resulted in a more linear relation on the partial regression plots. Fitting the model with this logit transformed *racepctblack* seemed to also stabilize the residual vs fitted plot. This was followed by selecting a interaction term for the model, which showed that the best interaction given the BIC values would be between the main predictor *PctPopUnderPov* and *PctLess9thGrade*. However, this interaction introduced a high Vif value for both predictors and the interaction term possibly due to the presence of multiple education variables. Opting us to only take one education variable going forward. This resulted in a similar model with the *PctLess9thGrade* changed for *agePct12t29*. This model showed to have as best interaction term *PctPopUnderPov:agePct12t29*. However, This interaction resulted in a High VIF for both variables and their interaction term. For that reason, the second best interaction term *PctPopUnderPov:PctBSorMore* was chosen in the final model. This resulted in a final model:
 
 $$
 ViolentCrimesPerPop_i = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \beta_2 \cdot PctBSorMore + \beta_3 \cdot agePct12t29  + \beta_4 \cdot PctImmig_i + \beta_5 \cdot race_black_logit + \beta_6 \cdot PctPopUnderPov:PctBSorMore + \epsilon_i
@@ -886,7 +887,7 @@ par(mfrow = c(1, 1))
 ```
 ## Model diagnostics
 
-After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Coook's distance, the leverage, DFFits, and DFBetas. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
+After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Cook's distance, the leverage, DFFits, and DFBetas. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
 
 ```{r}
 p <- length(coef(fit_final))
@@ -946,7 +947,7 @@ ggplot(dfbetas_vals) +
 print(plots)
 ```
 
-Using these plots, many influential outliers could be discovered. In order to exclude any datapoints that were influential due to observation errors, which should be removed form the dataset. The variable values of these points were extracted and manually checked, to check whether these are observations errors, rare cases, or valid but extreme cases.
+Using these plots, many influential outliers could be discovered. In order to exclude any data points that were influential due to observation errors, the variable values of these points were extracted and manually checked to see whether these are observations errors, rare cases, or valid but extreme cases.
 
 
 ```{r influence diagnostics}
@@ -1018,13 +1019,13 @@ problematic_with_data[, c("flag_count", "communityname", "population", "PctPopUn
 
 ```
 
-By looking at all 318 Communities in the dataset that were flagged as problematic, so crossing the treshold of one of the diagnotic tests, no evidence could be found of no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, that were flagged by all 5 diagnostic tests, were reporeted to not have any people of black color in there community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a ViolentCrimesPerPop of 0, while this is not common in our dataset, we lack evidence to say that this we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
+By looking at all 318 Communities in the dataset that were flagged as problematic, meaning they crossed the treshold of one of the diagnotic tests, no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, that were flagged by all 5 diagnostic tests, were reported to not have any people of black color in their community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a *ViolentCrimesPerPop* of 0, while this is not common in our dataset, we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
 
 These findings show that these flagged communities likely represent valid but extreme cases present in our dataset whose demographic or crime-related profiles differ substantially from the average. Therefore, there is no reason to discard any of them. So instead of removing them, another way to account for their impact would be to run a robust regression, instead of a normal linear regression.
 
 ### Attemping to solve the influencial outliers with robust regression.
 
-To futher assess and account for the impact of these points, we fit a robust regression using Bisquare weights.
+To further assess and account for the impact of these points, we fit a robust regression using Bisquare weights.
 
 ```{r robust-inference}
 library(MASS)
@@ -1056,17 +1057,17 @@ comparison <- data.frame(
 print(round(comparison, 4))
 ```
 
-## Interpretation of the final model
+
+## interpretation final model
 
 Our final model is:`r formula_final`.
-
 ```{r}
 summary(fit_final)
 print(confint(fit_final))
 ```
 
 ```{r}
-library(stdmod)
+
 b <- coef(fit_final)
 
 mean_bsormore <- mean(train_data$PctBSorMore)
@@ -1080,45 +1081,46 @@ confidence_intervals <- confint(fit_final)
 
 #### Notes on interpretation
 
-The intercept on its own is not interpretable as it would require all predictor variables (and interaction terms) to be zero. This is not in the scope of our model. If it were, the intercept of `r b["(intercept)"]` could be interpreted as the estimated log of expected (violent crime rate per 100k + 1) when all predictor variables are 0. There is no use in interpreting interaction-term coefficients on their own, as they indicate the effect of one predictor on the other, but have no direct effect on its own.
+The intercept on its own is not interpretable as it would require all predictor variables (and interaction terms) to be zero. This is not in the scope of our model. If it were, the intercept of `r b["(intercept)"]` could be interpreted as the expected log of (violent crime rate per 100k + 1) when all predictor variables are 0.
+There is no use in interpreting interaction-term coefficients on their own, as they indicate the effect of one predictor on the other, but have no direct effect on its own. 
 
-#### Interpretation of PctPopUnderPov
+
+#### Interpretation of *PctPopUnderPov*
 
 ```{r}
-set.seed(987654321)
 ci_pov <- cond_effect_boot(fit_final,
             x = "PctPopUnderPov", w = "PctBSorMore", nboot = 2000)
 ci_lower <- ci_pov$"CI Lower"[ci_pov$Level == "Medium"]
 ci_upper <- ci_pov$"CI Upper"[ci_pov$Level == "Medium"]
 ```
 
-The effect of PctPopUnderPov varies with PctBsorMore through their interaction. This means that the effect of PctPopUnderPov is not simply given by its coefficient, but instead we can look at the estimated effect of PctPopUnderPov on the mean of the logarithm of (violent crime rate per 100k + 1) as `r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore"]` \* PctBSorMore. If we take for example the mean of the PctBSorMore to calculate the effect of PctPoponderpov when the interacting variable is held at its average and all variables are held constant, we can find `r coef_mean`. The confidence interval of this effect is [`r ci_lower`, `r ci_upper`] With a confidence coefficient of .95 we estimate that the true conditional effect of PctPopUnderPov (with its interaction) on the expected value of the logarithm of (violent crimes per population of 100k + 1) per unit increase in PctPopUnderPov (1 percent point) is somewhere between `r ci_lower`% and `r ci_upper`%, when the interacting variable is held at its average and all other variables are held constant. The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of PctPopUnderPov on the logarithm of (violent crimes + 1) gets larger. Theoretically this could be explained due to the bigger gap in socio-economic standing, which could provoke more violent crimes.
+The effect of *PctPopUnderPov* varies with *PctBsorMore* through the interaction terms. This means that the effect of *PctPopUnderPov* is not simply given by its coefficient, but instead we can look at the estimated effect of *PctPopUnderPov* on the expected value of the logarithm of (violent crime rate per population of 100k + 1) as `r b["PctPopUnderPov"]` + `r b["PctPopUnderPov:PctBSorMore]` * PctBSorMore. If we take for example the mean of the *PctBSorMore* to calculate the effect of *PctPopUnderPov* when the interacting variable is held at its average and all variables are held constant, we can find `r coef_mean`. The confidence interval of this effect is [`r ci_lower`, `r ci_higher`]
+With a confidence coefficient of .95 we estimate that the true effect of *PctPopUnderPov* (including its interaction) on the expected value of the logarithm of (violent crime rate per population of 100k + 1) per unit increase in *PctPopUnderPov* (1 percent) is somewhere between `r ci_lower` and `r ci_higher`, when the interacting variable is held at its average and all other variables are held constant.  The interaction effect is reinforcing: with increasing percentages of people with higher education, the effect of *PctPopUnderPov* on the logarithm of (violent crime rate per population of 100k + 1) gets larger. 
 
-#### Interpretation of PctBSorMore
+#### Interpretation of *PctBSorMore*
 
 ```{r}
-set.seed(987654321)
 ci_pov2 <- cond_effect_boot(fit_final,
             x = "PctBSorMore", w = "PctPopUnderPov", nboot = 2000)
 ci_lower2 <- ci_pov2$"CI Lower"[ci_pov2$Level == "Medium"]
 ci_upper2 <- ci_pov2$"CI Upper"[ci_pov2$Level == "Medium"]
 ```
 
-The interpretation for PctBSorMore is similar to the one above because of their interaction. The conditional effect on of PctBSorMore on the log violent crime rate is given by: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"]`\* PctPopUnderPov. Similarly to before we can take the mean of PctPopUnderPov and estimate the conditional effect of PctBSorMore on the log expected value of crime rate per unit increase of PctBSorMore, when keeping poverty at its mean and all other variables constant: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Contrary to above, we now see a interference effect: for higher levels of PctPopUnderPov the negative effect of PctBSorMore becomes less negative (the slope becomes less steep). With a confidence interval of [`r ci_lower2`, `r ci_upper2`] which can be interpreted as: with a confidence coefficient of 0.95 we estimated that the true effect on the logarithm of (expected crime rate + 1) by increasing PctBSorMore by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant is somewhere between [`r ci_lower2`, `r ci_upper2`]. Thus, under the conditions stated above, if a higher percentage of the population has a Bachelors degree or higher, the estimated logarithm of the (mean crime rate + 1) decreases and this effect is less pronounced for higher levels of PctPopUnderPov.
+The interpretation for *PctBSorMore* is similar to the one above because of their interaction. The conditional effect on of *PctBSorMore* on the logarithm of violent crime rate is given by: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"]`* PctPopUnderPov.  Similarly to before we can take the mean of *PctPopUnderPov* and estimate the conditional effect of *PctBSorMore* on the expected value of the logarithm of (violent crime rate per population of 100k + 1) per unit increase of *PctBSorMore*, when keeping poverty at its mean and all other variables constant: `r b["PctBSorMore"]` + `r b["PctPopUnderPov:PctBSorMore"] * mean_poverty`. Contrary to above, we now see a interference effect: for higher levels of *PctPopUnderPov* the negative effect of *PctBSorMore* becomes less negative (the slope becomes less steep). With a 95% confidence interval of [`r ci_lower2`, `r ci_higher`] which can be interpreted as: with a confidence coefficient of 0.95 we estimate that the true effect on the mean logarithm of (violent crime rate per population of 100k + 1) by increasing *PctBSorMore* by one unit (1%), keeping PctPovUnderPop at its mean and all other variables constant is somewhere between [`r ci_lower2`, `r ci_higher`]. Thus, under the conditions stated above, if a higher percentage of the population has a Bachelors degree or higher, the logarithm of the (violent crime rate per population of 100k + 1) is expected to decrease and this effect is less pronounced for higher levels of *PctPopUnderPov*.
 
-#### Interpretation of race_black_logit
+#### Interpretation of *race_black_logit*  
 
-The interpretation of race_black_logit is more complicated as on top of the log transformed response variable, we now also have a logit transformed predictor variable. It has no interaction terms so we can interpret the main effect on its own. A one-unit increase in the log-odds of percentage African American is associated with a `r b["race_black_logit"]` change in the logarithm of the (expected value of Violent Crimes per 100k + 1) when keeping all other variables constant; where a one-unit increase in the log-odds has to be interpreted as a multiplication of the odds of being African American by e ($\approx$ 2.72). 95% confidence interval is [`r confidence_intervals[4,1]`, `r confidence_intervals[4,2]`] respectively. With a confidence coefficient of 0.95 we estimated that the true parameter of race_black_logit is somewhere between `r confidence_intervals[4,1]` and `r confidence_intervals[4,2]`. This is a positive association: for increasing levels of the log-odds of percentage African Americans, there is an increase in the logarithm of the expected value of (violent crime rates per 100k + 1).
+The interpretation of *race_black_logit* is more complicated as on top of the log transformed response variable, we now also have a logit transformed predictor variable. It has no interaction terms so we can interpret the main effect on its own. A one-unit increase in the log-odds of percentage African American is associated with a `r b["race_black_logit"]` change in the expected value of the logarithm of (violent crime rate per population of 100k + 1) when keeping all other variables constant; where a one-unit increase in the log-odds has to be interpreted as a multiplication of the odds of being African American by e ($\approx$ 2.72). The 95% confidence interval is [`r confidence_intervals[4,1]`, `r confidence_intervals[4,2]`].This is a positive association: for increasing levels of the log-odds of percentage African Americans, there is an expected increase of the logarithm of (violent crime rate per population of 100k + 1). 
 
-#### Interpretation of PctImmig -- nog niet af
 
-The effect of PctImmig on log Violent crime rates is: `r b["PctImmig"]`. With confidence coefficient .95 we estimate that the percentage change in expected crime rates per 100k population per unit increase in PctImmig when keeping all other variables constant will be somewhere between `r confidence_intervals[6,1]` and `r confidence_intervals[6,2]`. This increase in violent crimes associated with the increase in percentage of foreign borns agrees with the ....\<????\>
+#### Interpretation of *PctImmig*
 
-#### agePct12t29 -- nog niet af
+The coefficient `r b["PctImmig"]` represents the expected increase in the logarithm of (violent crime rate per population of 100k + 1) for an increase of one percentage point in *PctImmig*, keeping all other variables constant (95% CI:`r confidence_intervals[6,1]`, `r confidence_intervals[6,2]`). An increase in percentage of immigrants is thus associated with an increase in the mean of log (violent crime rate per population of 100k + 1).
 
-For the percentage of people between the age of 12 and 29, we find a negative association with the logartihm of (violent crime rates per 100k + 1). This is expressed by a coefficient of `r b["agePct12t29"]` with 95% confidence interval [`r confidence_intervals[5,1]`, `r confidence_intervals[5,2]`]. with 95% confidence we estimate that the true parameter of agePct12t29 is somewhere between `r confidence_intervals[5,1]` and `r confidence_intervals[5,2]`. This negative association is not in line with our prior assumption.
 
-#### Family confidence interval
+#### Interpretation of *agePct12t29* 
+
+For the percentage of people between the age of 12 and 29, we find a negative association with the logarithm of (violent crime rate per population of 100k + 1). This is expressed by a coefficient of `r b[agePct12t29]` with 95% confidence interval [`r confidence_intervals[5,1]`, `r confidence_intervals[5,2]`]. With 95% confidence we estimate that the true coefficient of *agePct12t29* is  between `r confidence_intervals[5,1]` and `r confidence_intervals[5,2]` when all other variables are fixed. Increasing percentage of *agePct12t29* is associated with a decrease in the mean logarithm of (violent crime rate per population of 100k + 1). This negative association is not in line with our prior assumption that violent crimes would increase for this age group.
 
 
 ## Model validation
@@ -1311,7 +1313,7 @@ df_validation
 
 # Statistical discussion
 
-There is a large portion of missing data in our dataset (221 of the 2215 observations). The main source of missing data is the ViolentCrimesPerPop variable, where 221 observations are missing because of incomplete rape reporting in Midwestern States. This missingness could lead to biased estimates if these communities differ in crime-related or demographic characteristics. Although the characteristics of the communities with missing data are not much different from those of the non-missing data. We thus assume that this missingness does not have an important effect on our found results. However, if these communities are different in ways not captured by our measured variables, there could still be bias present. Moreover, the LEMAS survey includes all communities with police departments of more than 100 officers, but only a random sample of smaller departments. As a result, the representation of small communities in the dataset is less precise.
+There is a large portion of missing data in our dataset (221 of the 2215 observations). The main source of missing data is the *ViolentCrimesPerPop* variable, where 221 observations are missing assumably because of incomplete rape reporting in Midwestern States. This missingness could lead to biased estimates if these communities differ in crime-related or demographic characteristics. Although the characteristics of the communities with missing data are not much different from those of the non-missing data. We thus assume that this missingness does not have an important effect on our found results. However, if these communities are different in ways not captured by our measured variables, there could still be bias present. Moreover, the LEMAS survey includes all communities with police departments of more than 100 officers, but only a random sample of smaller departments. As a result, the representation of small communities in the dataset is less precise.
 
 Smaller communities have greater variance in both predictor and outcome variables than larger communities. <<< Wat schrijven we hier nog bij?>>>
 
