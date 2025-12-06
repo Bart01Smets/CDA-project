@@ -176,13 +176,21 @@ na_subset %>%
 ```
 
 ```{r boxplots, fig.width=8, fig.height=12}
+# selecting numeric columns
 numeric_cols_na <- sapply(na_subset, is.numeric)
+# NA subset, only numeric columns
 crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
+# extra column logpopulation
 crimes_table_subset$logpopulation <- log10(crimes_table_subset$population)
+
+# selecting numeric columns
 numeric_cols <- sapply(crimes_table_subset, is.numeric)
+# subset, only numeric columns
 crimes_table_subset_num <- crimes_table_subset[, ..numeric_cols]
+# setting the number of plots per pg
 par(mfrow = c(4,2))
 
+# plots for visualisation distributions
 plots <- lapply(names(crimes_table_subset_num_na), function(columnname) {
   column <- crimes_table_subset_num[[columnname]]
   boxplot(column,
@@ -199,8 +207,11 @@ plots <- lapply(names(crimes_table_subset_num_na), function(columnname) {
 ```{r histograms na comparison, fig.width=10, fig.height=10}
 numeric_cols_na <- sapply(na_subset, is.numeric)
 crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
+
+# setting number of plots per pg
 par(mfrow = c(4,2))
 
+# plotting histograms for comparison missing and non-missing data
 plots <- lapply(names(crimes_table_subset_num_na), function(columnname) {
   column <- crimes_table_subset_num[[columnname]]
   column_na <- crimes_table_subset_num_na[[columnname]]  
@@ -217,11 +228,13 @@ plots <- lapply(names(crimes_table_subset_num_na), function(columnname) {
 ```
 
 ```{r correlations, fig.height= 4, fig.width= 5}
+# calculating correlation matrix
 cor_matrix <- cor(crimes_table_subset_num[,-c('population', 'logpopulation')])
+# transformation to dataframe
 cor_values <- as.data.frame(as.table(cor_matrix))
 
-
- cor_discriptives <- ggcorrplot(cor_matrix, lab = TRUE, type = "lower", 
+# correlation plot with ggplot
+cor_discriptives <- ggcorrplot(cor_matrix, lab = TRUE, type = "lower", 
            lab_size = 3, colors = c("red", "white", "blue"))
 
 ```
@@ -234,13 +247,18 @@ It is notable that the variable *racepctblack* shows the strongest correlation w
 The scatter plots show that most variables display a roughly linear relationship with *ViolentCrimesPerPop*, although that trend is often distorted in the extreme regions of the x-axis. *agePct12t29* has a very low correlation coefficient with *ViolentCrimesPerPop* (0.11). The variable *perCapInc* shows a higher correlation (-0.32), but there is clearly no linear trend present.
 
 ```{r scatter plots, fig.width=8, fig.height=10}
+# vector with variables
 x_vars <- colnames(crimes_table_subset_num)
+
+# creating named vector
 dict_labels <- setNames(sapply(x_vars, function(x_var) get_label(crimes_table_subset_num[[x_var]])), x_vars)
 
-
+# preparing dataframe for plots
 df <- crimes_table_subset_num[,-c("population", "logpopulation")]
 y_var <- "ViolentCrimesPerPop"
 x_vars <- setdiff(colnames(df), y_var)
+
+# creating plots with ViolentCrimesPerPop as Y variable
 plots <- lapply(x_vars, function(x_var) {
     ggplot(df, aes_string(x_var,y_var)) +
     geom_point(alpha = 0.6, size = 0.7) +
@@ -253,6 +271,7 @@ plots <- lapply(x_vars, function(x_var) {
 # Print 9 plots per pg
 print(wrap_plots(plots, ncol = 3))
 
+# creating plots with PctPopUnderPov as Y variable
 df <- crimes_table_subset_num[,-c("population", "ViolentCrimesPerPop", "logpopulation")]
 y_var <- "PctPopUnderPov"
 x_vars <- setdiff(colnames(df), y_var)
@@ -273,15 +292,19 @@ print(wrap_plots(plots, ncol = 3))
 Two extreme values for the *ViolentCrimesPerPop* variable appear. Chestercity has the highest number of violent crimes (4877) per 100K population. Spencercity, on the other hand, reports zero violent crimes. Given that Spencercity is a small community (11,066 inhabitants), it is difficult to assess the accuracy of the reported value. In the model diagnostics section, we will examine whether these two observations are outliers with respect to our linear model.
 
 ```{r outlier}
+# table of observations with low number of crimes
 crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=FALSE), , drop = FALSE]
 ```
 
 It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables. Scatter plots show that communities with a very small population indeed show a very large spread for all variables (fig. \@ref(fig:scattersforpop)).
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
+# preparing dataframe for plots
 df <- crimes_table_subset_num
 x_var <- "logpopulation"
 y_vars <- setdiff(colnames(df), x_var)
+
+# plot variables in relation to log(population)
 plots <- lapply(y_vars, function(y_var) {
     ggplot(df, aes_string(x_var,y_var))+
     geom_point(alpha = 0.6, size = 0.7) +
@@ -300,6 +323,7 @@ print(wrap_plots(plots, ncol = 3))
 ## Model Building
 
 ```{r dataset split}
+# set.seed and splitting dataset at random in test and training dataset
 set.seed(987654321)
 n <- nrow(crimes_table_subset_num)
 training <- sample(1:n, size = floor(0.8 * n))
@@ -319,6 +343,7 @@ $$
 ViolentCrimesPerPop_i = 138.26 + 38.87 \cdot PctPopUnderPov_i + \epsilon_i
 $$
 ```{r Univariate regression}
+# fit of simple linear model
 fit_simple <- lm(ViolentCrimesPerPop ~ PctPopUnderPov, data = train_data)
 summary(fit_simple)
 ```
@@ -332,12 +357,12 @@ cat("Regression equation: ViolentCrimesPerPop =",
     round(coef(fit_simple)[1], 2), "+", 
     round(coef(fit_simple)[2], 2), "* PctPopUnderPov\n\n")
 
-# R-squared and BIC-value
+# R-squared, R-squared_adjusted and BIC-value
 cat("R-squared:", round(summary(fit_simple)$r.squared, 4), "\n")
 cat("Adjusted R-squared:", round(summary(fit_simple)$adj.r.squared, 4), "\n")
 cat("BIC:", BIC(fit_simple), "\n")
 
-# MSE
+# MSE calculation
 sse_simple <- sum(fit_simple$residuals^2) 
 mse_simple <- sse_simple/(n_training - 2) 
 cat("SSE:", round(sse_simple, 2), "\n")
@@ -383,12 +408,13 @@ outliers_simple <- which(abs(stud_res) > 2)
 
 ```{r outliers_vs_population1}
 par(mfrow = c(1, 2))
-# Residuals vs population
+# Residuals vs log(population)
 plot(train_data$logpopulation, fit_simple$residuals,
      xlab = "log(population)", ylab = "Residuals")
 abline(h = 0, col = "red", lty = 2)
 lines(lowess(train_data$logpopulation, fit_simple$residuals), col = "blue")
 
+# Studentized residuals vs log(population)
 plot(train_data$logpopulation, stud_res,
      xlab = "log(population)", ylab = "Studentized Residuals")
 abline(h = 0, col = "red", lty = 2)
@@ -396,18 +422,16 @@ lines(lowess(train_data$logpopulation, stud_res), col = "blue")
 par(mfrow = c(1, 1))
 ```
 
-### Multivariate model
-
-
+### Multivariate linear model
 
 ```{r model selection, message=FALSE}
 max_extra_predictors <- 4
-# Define predictor variables for model selection
+# define predictor variables for model selection
 predictors <- c("perCapInc", "PctEmploy", 
                 "PctLess9thGrade", "PctNotHSGrad", "PctBSorMore",
                 "racepctblack", "agePct12t29", "PctImmig")
 
-# Educ variables
+# education variables
 educ <- c("PctLess9thGrade", "PctNotHSGrad", "PctBSorMore")
 
 formulas <- list()
@@ -421,6 +445,7 @@ formulas <- unlist(formulas)
 formulas <- sapply(formulas, as.formula)
 models <- lapply(formulas, lm, data=train_data)
 
+# calculating BIC, R squared, adjusted R squared
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
@@ -453,7 +478,7 @@ multi_var_summary
 ```{r multimodel1_model_diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
 
-#Residuals vs Fitted
+# Residuals vs Fitted
 plot(fit_multi$fitted.values, fit_multi$residuals,
      xlab = "Fitted values", ylab = "Residuals",
      main = "Residuals vs Fitted")
@@ -486,18 +511,19 @@ The first all-variable procedure resulted in a model using the following predict
 Applying the log transformation offered a substantial improvement of our model showing approximate constant variances and residuals reasonably close to normal. Using the log transform Y variable to select a new model resulted in a similar model as before but with the *PctBSorMore* variable instead of the *PctNotHSGrad*. In this model, it could be observed from the partial regression plots that *PctRaceBlack* was not in the correct functional form. For this reason, a logit transformation was attempted which resulted in a more linear relation on the partial regression plots. Fitting the model with this logit transformed *racepctblack* seemed to also stabilize the residual vs fitted plot. This was followed by selecting a interaction term for the model, which showed that the best interaction given the BIC values would be between the main predictor *PctPopUnderPov* and *PctLess9thGrade*. However, this interaction introduced a high VIF value for both predictors and the interaction term possibly due to the presence of multiple education variables. Opting us to only take one education variable going forward. This resulted in a similar model with the *PctLess9thGrade* changed for *agePct12t29*. This model showed to have as best interaction term *PctPopUnderPov:agePct12t29*. However, This interaction resulted in a High VIF value for both variables and their interaction term. For that reason, the second best interaction term *PctPopUnderPov:PctBSorMore* was chosen in the final model. This resulted in a final model:
 
 ```{r logtransformed_first_model}
+# log regression
 fit_log <- lm(log(ViolentCrimesPerPop + 1) ~ 
                 PctPopUnderPov + PctBSorMore + racepctblack + 
                 PctImmig + PctPopUnderPov:PctBSorMore,
               data = train_data)
 
 multi_var_summary <- summary(fit_log)
-#multi_var_summary
 plot(fit_log)
 par(mfrow = c(1, 1))
 ```
 
 ```{r adding column with log transform}
+# adding extra column log(ViolentCrimesPerPop + 1)
 train_data$logViolent <- log(train_data$ViolentCrimesPerPop + 1)
 test_data$logViolent <- log(test_data$ViolentCrimesPerPop + 1)
 ```
@@ -543,7 +569,7 @@ model_ranking <- model_ranking[order(model_ranking$BIC), ]
 ```
 
 ```{r show best model 2}
-# Print best model
+# print best model
 best <- which.min(model_ranking$BIC)
 best_pred <- model_ranking$formula[best]
 cat("\nBest model:\n")
@@ -551,6 +577,7 @@ cat(best_pred, "\n")
 cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
 
+# fit linear model with selected variables
 fit_multi <- lm(best_pred, data = train_data)
 multi_var_summary1 <- summary(fit_multi)
 multi_var_summary1
