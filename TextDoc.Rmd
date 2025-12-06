@@ -310,14 +310,15 @@ cat("Test set size:", nrow(test_data), "\n")
 The simple univariate regression equation we estimate with the training set is given as follows:
 
 $$
-ViolentCrimesPerPop_i = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \epsilon_i
+ViolentCrimesPerPop_i = 138.26 + 38.87 \cdot PctPopUnderPov_i + \epsilon_i
 $$
 ```{r Univariate regression}
 fit_simple <- lm(ViolentCrimesPerPop ~ PctPopUnderPov, data = train_data)
 summary(fit_simple)
 ```
-Here a coefficient of `r round(coef(fit_simple)[2], 2)` could be found which represents the expected increase in violent crimes per 100K population if poverty rate increases by one percentage point. The R-squared value of `r round(summary(fit_simple)$r.squared, 4)` represents the proportionate reduction of total variation in *ViolentCrimesPerPop* by the poverty percentage, in this univariate model this R-squared is rather small and can be taken to mean that poverty by itself is insufficient to explain the variation in violent crime rates.
-For the simple linear model the assumptions of linearity are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. It could also be seen that larger populations tended to have larger residuals, meaning that the model tends to underestimate the total number of crimes for large populations.
+Here a coefficient for the slope of `r round(coef(fit_simple)[2], 2)` could be found, which represents the expected increase in violent crimes per 100K population if poverty rate increases by one percentage point. The model has a $R^2$ of `r round(summary(fit_simple)$r.squared, 4)`, which is rather small and indicates that poverty by itself is insufficient to explain the variation in violent crime rates.
+
+For the simple linear model the assumptions of linearity are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. Regarding the population size, it can be noted that the residuals for smaller populations are rather negative, while the residuals for larger populations are rather positive. This means that the model tends to underestimate the total number of crimes for large populations and overestimate, while the total number of crimes for small populations are rather underestimated.
 
 ```{r Extract relevant statistics, echo=FALSE, include=FALSE}
 
@@ -374,8 +375,6 @@ plot(fit_simple$fitted.values, stud_res,
 outliers_simple <- which(abs(stud_res) > 2)
 ```
 
-Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
-
 ```{r outliers vs population1}
 par(mfrow = c(1, 2))
 # Residuals vs population
@@ -393,11 +392,7 @@ par(mfrow = c(1, 1))
 
 ### Multivariate model
 
-The first all-variable procedure resulted as model in:
-$$
-ViolentCrimesPerPop_i = \beta_0 + \beta_1 \cdot PctPopUnderPov_i + \beta_2 \cdot PctLess9thGrade_i + \beta_3 \cdot PctNotHSGrad_i + \beta_4 \cdot PctImmig_i + \epsilon_i
-$$
-However for this model, the assumptions of normality and equal error variances of the error terms are again violated.
+The first all-variable procedure resulted in a model using the following predictor variables: *racepctblack*, *PctPopUnderPov*, *PctLess9thGrade*, *PctNotHSGrad_i* and *PctImmig*. However for this model, the assumptions of normality and equal error variances of the error terms are again violated.
 
 ```{r model selection, message=FALSE}
 max_extra_predictors <- 4
@@ -479,7 +474,7 @@ lines(lowess(fit_multi$fitted.values, stud_res_multi), col = "blue")
 
 par(mfrow = c(1, 1))
 ```
-Applying the log transformation offered a substantial improvement of our model showing approximate constant variances and residuals reasonably close to normal. The reduction in R-squared suggests that the model-fit was inflated due to heteroscedasticity.
+Applying the log transformation offered a substantial improvement of our model showing approximate constant variances and residuals reasonably close to normal.
 
 Using the log transform Y variable to select a new model resulted in a similar model as before but with the *PctBSorMore* variable instead of the *PctNotHSGrad*. In this model, it could be observed from the partial regression plots that *PctRaceBlack* was not in the correct functional form. For this reason, a logit transformation was attempted which resulted in a more linear relation on the partial regression plots. Fitting the model with this logit transformed *racepctblack* seemed to also stabilize the residual vs fitted plot. This was followed by selecting a interaction term for the model, which showed that the best interaction given the BIC values would be between the main predictor *PctPopUnderPov* and *PctLess9thGrade*. However, this interaction introduced a high Vif value for both predictors and the interaction term possibly due to the presence of multiple education variables. Opting us to only take one education variable going forward. This resulted in a similar model with the *PctLess9thGrade* changed for *agePct12t29*. This model showed to have as best interaction term *PctPopUnderPov:agePct12t29*. However, This interaction resulted in a High VIF for both variables and their interaction term. For that reason, the second best interaction term *PctPopUnderPov:PctBSorMore* was chosen in the final model. This resulted in a final model:
 
@@ -1051,7 +1046,6 @@ print(round(comparison, 4))
 
 ## Interpretation of the final model
 
-Our final model is: <<<formule mode>>>.
 ```{r}
 summary(fit_final)
 print(confint(fit_final))
