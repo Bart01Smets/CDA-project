@@ -937,7 +937,6 @@ print(plots)
 
 Using these plots, many influential outliers could be discovered. In order to exclude any data points that were influential due to observation errors, the variable values of these points were extracted and manually checked to see whether these are observations errors, rare cases, or valid but extreme cases.
 
-
 ```{r influence diagnostics}
 # Calculate diagnostics and tresholds
 stud_res_final <- rstudent(fit_final)
@@ -1350,6 +1349,14 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 # Posted by DonJ, modified by community. See post 'Timeline' for change history
 
 # Retrieved 2025-12-03, License - CC BY-SA 3.0
+
+# Appendix
+
+## Figures
+
+## Contributions
+
+## 
 
 ```{r show-code, ref.label=knitr::all_labels(), echo = TRUE, eval=FALSE, include=TRUE}
 
