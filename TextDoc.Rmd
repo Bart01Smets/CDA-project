@@ -585,19 +585,22 @@ multi_var_summary1
 
 
 ```{r partial-regression-plots2, fig.width=10, fig.height=8}
+# list with all predictoren
 predictor_list <- row.names(multi_var_summary1$coefficients[-1,])
 
+# function to generate partial regression plots
 partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
   temp <- data
   controls <- setdiff(predictor_list, predictor)
-  
   formula_outcome  <- as.formula(paste(outcome, "~", 
                                        paste(controls, collapse = " + ")))
   formula_pred <- as.formula(paste(predictor, "~",
                                    paste(controls, collapse = " + ")))
   
+  # regression of outcome variable ~ controls
   lm_outcome <- lm(formula_outcome, data = temp)
   temp$resid_outcome <- resid(lm_outcome)
+  # regression of predictor variable ~ controls
   lm_pred <- lm(formula_pred, data = temp)
   temp$resid_pred <- resid(lm_pred)
 
@@ -609,6 +612,8 @@ ggplot(temp, aes(x = resid_pred, y = resid_outcome)) +
   labs(x = paste("Residuals ", predictor, " ~ controls", sep = ""),
        y = paste("Residuals ", outcome, " ~ controls", sep = ""))
 }
+
+# generate plots for all predictor variables
 plots <- lapply(predictor_list, function(predictor) {
     partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
 }
@@ -618,7 +623,7 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 ```{r making logit tranformation}
-
+# function for logit transformation of racepctblack predictor variable
 pct_to_logit <-  function(percentage, addition = 1e-6) {
   percentiles_in_range01 <- percentage / 100
   # add small value to avoid 0 and 1
@@ -630,6 +635,7 @@ pct_to_logit <-  function(percentage, addition = 1e-6) {
   logit
 }
 
+# extra colmuns in dataframes with logit(racepctblack)
 train_data$race_black_logit <- pct_to_logit(train_data$racepctblack)
 test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
 ```
@@ -650,6 +656,7 @@ par(mfrow = c(1, 1))
 ```
 
 ```{r partial-regression-logits, fig.width=10, fig.height=8}
+# generate partial regression plots for all predictor variables
 predictor_list <- row.names(multi_var_logit_summary$coefficients[-1,])
 plots <- lapply(predictor_list, function(predictor) {
     partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
@@ -716,18 +723,19 @@ summary(fit_less_9thgrade)
 
 ```{r VIFs_model}
 library(car)
-# practicum: car::vif(fit)
+# calculating VIF values
 vif <- vif(fit_less_9thgrade)
 print(vif)
 cat("BIC: ", BIC(fit_less_9thgrade))
 ```
 ```{r filtering formulas for education}
-
+# filtering formulas with more than 1 education variable
 filtered_formulas <- Filter(function(f) {
   variables <- all.vars(f)              
   number_education_variables <- sum(variables %in% educ)   
   number_education_variables <= 1                     
 }, formulas)
+
 #change formulas to contain the logit based race variable
 filtered_formulas <- lapply(filtered_formulas, function(f) {
   f_str <- deparse(f)                                # formula -> character vector
@@ -819,6 +827,7 @@ best_interaction <- row.names(interaction_table[1,])
 ```
 
 ```{r model_best1education}
+# fitting selected linear model with 1 education variable
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "),  "+",
                                   best_interaction))
@@ -834,6 +843,7 @@ print(vif)
 cat("BIC: ", BIC(fit_final))
 ```
 ```{r model_1education2}
+# fitting final selected linear model with 1 education variable
 formula_final <- as.formula(paste("logViolent ~", 
                                   paste(predictor_list, collapse = " + "),  "+",
                                   "PctPopUnderPov:PctBSorMore"))
@@ -853,11 +863,13 @@ Violent&CrimesPerPop_i =\; 7.358
 $$
 
 ```{r vivs2}
+# calculating VIF
 vif <- vif(fit_final)
 print(vif)
 cat("BIC: ", BIC(fit_final))
 ```
 ```{r partials_final_model, fig.width=10, fig.height=8, warnings=FALSE}
+# partial regression plots for predictor variables
 predictor_list <- row.names(multi_var_summary2$coefficients[-1,])
 plots <- lapply(predictor_list, function(predictor) {
     partial_regression_plot(train_data, "logViolent", predictor, predictor_list)
@@ -871,7 +883,7 @@ print(wrap_plots(plots, ncol = 3))
 ```{r compare2}
 # Compare models
 cat("Comparison of models:\n")
-cat("Original model adjusted R²: ", round(summary(fit_final)$adj.r.squared, 4), "\n") ## dit moet nog aangepast worden
+cat("Univariate linear model adjusted R²: ", round(summary(fit_simple)$adj.r.squared, 4), "\n")
 cat("interaction term model adjusted R²:  ", round(summary(fit_final)$adj.r.squared, 4), "\n")
 
 ```
@@ -879,7 +891,7 @@ cat("interaction term model adjusted R²:  ", round(summary(fit_final)$adj.r.squ
 ```{r final-model-diagnostics, fig.width=10, fig.height=8}
 par(mfrow = c(2, 2))
 
-#Residuals vs Fitted
+# Residuals vs Fitted
 plot(fit_final$fitted.values, fit_final$residuals,
      xlab = "Fitted values", ylab = "Residuals",
      main = "Residuals vs Fitted (Final Model)")
@@ -908,12 +920,13 @@ lines(lowess(fit_final$fitted.values, stud_res_final), col = "blue")
 
 ```{r outliers_vs_population2}
 par(mfrow = c(1, 2))
-# Residuals vs population
+# Residuals vs log(population)
 plot(train_data$logpopulation, fit_final$residuals,
      xlab = "log(population)", ylab = "Residuals")
 abline(h = 0, col = "red", lty = 2)
 lines(lowess(train_data$logpopulation, fit_final$residuals), col = "blue")
 
+# Studentized residuals vs log(population)
 plot(train_data$logpopulation, stud_res_final,
      xlab = "log(population)", ylab = "Studentized Residuals")
 abline(h = 0, col = "red", lty = 2)
@@ -940,7 +953,7 @@ olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
 # IMPORTANT remark: the labelled observations are the points with 2 times the threshold (the reason is the visualisation)
 dffits_vals <- data.frame(dffits(fit_final))
 
-# Plot
+# DFFITS Plot
 plot <- ggplot(dffits_vals) +
   geom_point(aes(x = 1:nrow(dffits_vals), y = dffits_vals[[1]])) +
   geom_segment(aes(x = 1:nrow(dffits_vals), xend = 1:nrow(dffits_vals), y = 0, yend = dffits_vals[[1]]),
@@ -960,7 +973,7 @@ print(plot)
 # DFBETAS values (placing them in a data frame ensures easy compatibility with ggplot2)
 dfbetas_vals <- data.frame(dfbetas(fit_final))
 
-# Plot
+# DFBETAS plot
 colnames_dfbetas <- colnames(dfbetas_vals)
 plots <- lapply(colnames_dfbetas[-1], function(predictor) {
 ggplot(dfbetas_vals) +
@@ -982,7 +995,7 @@ print(plots)
 Using these plots, many influential outliers could be discovered. In order to exclude any data points that were influential due to observation errors, the variable values of these points were extracted and manually checked to see whether these are observations errors, rare cases, or valid but extreme cases.
 
 ```{r influence diagnostics}
-# Calculate diagnostics and tresholds
+# Calculate diagnostics and thresholds
 stud_res_final <- rstudent(fit_final)
 leverage <- hatvalues(fit_final)
 cooks_dist <- cooks.distance(fit_final)
@@ -994,7 +1007,7 @@ leverage_threshold <- 2 * p / n_train
 dffits_threshold <- 2 * sqrt(p / n_train)
 dfbetas_threshold <- 2 / sqrt(n_train)
 
-# new dataframe with all diagnoistics
+# new dataframe with all diagnostics
 diagnostics <- data.frame(
   obs = 1:n_train,
   # population = train_data$population, 
@@ -1057,6 +1070,7 @@ To further assess and account for the impact of these points, we fit a robust re
 ```{r robust-inference}
 library(MASS)
 
+# robust linear regression
 robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
 summary(robust, method = "XtX")
 ```
@@ -1092,7 +1106,6 @@ print(confint(fit_final))
 ```
 
 ```{r}
-
 b <- coef(fit_final)
 
 mean_bsormore <- mean(train_data$PctBSorMore)
@@ -1107,6 +1120,7 @@ confidence_intervals <- confint(fit_final)
 #### Interpretation of *PctPopUnderPov*
 
 ```{r}
+# calculating confidence intervals using bootstrap
 ci_pov <- cond_effect_boot(fit_final,
             x = "PctPopUnderPov", w = "PctBSorMore", nboot = 2000)
 ci_lower <- ci_pov$"CI Lower"[ci_pov$Level == "Medium"]
@@ -1118,6 +1132,7 @@ The effect of *PctPopUnderPov* varies with *PctBsorMore* through the interaction
 #### Interpretation of *PctBSorMore*
 
 ```{r}
+# calculating confidence intervals using bootstrap
 ci_pov2 <- cond_effect_boot(fit_final,
             x = "PctBSorMore", w = "PctPopUnderPov", nboot = 2000)
 ci_lower2 <- ci_pov2$"CI Lower"[ci_pov2$Level == "Medium"]
@@ -1146,12 +1161,16 @@ For the percentage of people between the age of 12 and 29, we find a negative as
 ### Refitting the model on the test data
 When the final model is fitted to the test set or the full dataset, the estimated coefficients do not differ much from those obtained when fitting the model to the training set. The more data the model is fitted on, the more significant the p-values become.
 ```{r model validation refitting}
+# adding new columns to total dataframe
 crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
 crimes_table_subset$race_black_logit <- pct_to_logit(crimes_table_subset$racepctblack)
 
+# fitting final multivariate model to total dataframe and to test dataframe
 fit_final_test <- lm(formula_final, data = test_data)
 fit_final_total <- lm(formula_final, data = crimes_table_subset)
 summary(fit_final_test)
+
+# summary of fitting results: fit on training data vs fit on test data vs fit on total data
 df1 <- data.frame(
   fit_on_training_data = coef(fit_final),
   fit_on_test_data = coef(fit_final_test),
@@ -1161,6 +1180,8 @@ df1 <- data.frame(
   p_value_total = summary(fit_final_total)$coefficients[, 4]
 )
 df1
+
+# summary of fitting results: fit on training data vs fit on test data vs fit on total data
 df2 <- data.frame(
   R_squared = c(summary(fit_final)$r.squared, summary(fit_final_test)$r.squared, summary(fit_final_total)$r.squared),
   Adjusted_R_squared = c(summary(fit_final)$adj.r.squared, summary(fit_final_test)$adj.r.squared, summary(fit_final_total)$adj.r.squared),
@@ -1178,23 +1199,34 @@ df2
 backtransformation <- function(value){
   exp(value) - 1
 }
+# prediction intervals on logscale (final model)
 pred_interval_test_log <- predict(fit_final, newdata = test_data, interval = "prediction", level = 0.95)
 pred_interval_train_log <- predict(fit_final, newdata = train_data, interval = "prediction", level = 0.95)
+
+# prediction intervals on normal scale (final model)
 pred_interval_test <- apply(pred_interval_test_log, 1:2, backtransformation)
 pred_interval_train <- apply(pred_interval_train_log, 1:2, backtransformation)
+
+# prediction intervals on normal scale (simple model)
 pred_interval_test_simple <- predict(fit_simple, newdata = test_data, interval = "prediction", level = 0.95)
 pred_interval_train_simple <- predict(fit_simple, newdata = train_data, interval = "prediction", level = 0.95)
 ```
 
 
 ```{r model validation prediction interval}
+# number of observations in test set inside prediction interval (logscale, final model)
 inside_log <- test_data$logViolent >= pred_interval_test_log[, "lwr"] & test_data$logViolent <= pred_interval_test_log[, "upr"]
+
+# number of observations in test set inside prediction interval (normal scale, final model)
 inside <- test_data$ViolentCrimesPerPop >= pred_interval_test[, "lwr"] & test_data$ViolentCrimesPerPop <= pred_interval_test[, "upr"]
+
+# number of observations in test set inside prediction interval (normal scale, simple model)
 inside_simple <- test_data$ViolentCrimesPerPop >= pred_interval_test_simple[, "lwr"] & test_data$ViolentCrimesPerPop <= pred_interval_test_simple[, "upr"]
 cat("Fraction of datapoints in prediction interval (logscale):", mean(inside_log), "\n")
 cat("Fraction of datapoints in prediction interval:", mean(inside), "\n")
 cat("Fraction of datapoints in prediction interval (univariate model):", mean(inside_simple), "\n")
 
+# histogram of width of prediction interval (normal scale, final model)
 hist(pred_interval_test[, "upr"] - pred_interval_test[, "lwr"],
      main = "Width prediction interval",
      xlab = "Width prediction interval",
@@ -1203,11 +1235,14 @@ hist(pred_interval_test[, "upr"] - pred_interval_test[, "lwr"],
 plot(pred_interval_test[, "fit"], pred_interval_test[, "upr"] - pred_interval_test[, "lwr"], main = "Width prediction interval",
      xlab = "Point estimate", ylab = "Width prediction interval")
 
+# histogram of width of prediction interval (logscale, final model)
 hist(pred_interval_test_log[, "upr"] - pred_interval_test_log[, "lwr"],
      main = "Width prediction interval (log)",
      xlab = "Width prediction interval",
      #xlim = c(0, 15000),
      breaks = 50)
+
+# histogram of width of prediction interval (normal scale, simple model)
 hist(pred_interval_test_simple[, "upr"] - pred_interval_test_simple[, "lwr"],
      main = "Width prediction interval (univariate model)",
      xlab = "Width prediction interval",
@@ -1221,7 +1256,7 @@ When point estimates are compared to observed values, both the univariate and th
 The $R^2$ of the multivariate model is higher than the $R^2$ of the univariate model. However, these values are difficult to compare, because the outcome variable differs between the two models ($ViolentCrimesPerPop$ vs. $\log(ViolentCrimesPerPop)$) and back-transforming the predicted values of $\log(ViolentCrimesPerPop)$ does not yield the expected value for $ViolentCrimesPerPop$ (,except under strict assumptions regarding the residuals).
 
 ```{r model plots}
-# prediction intervals test data logscale
+# prediction intervals test data (logscale, final model)
 df_prediction_test_logscale <- data.frame(observed = test_data$logViolent, predicted = pred_interval_test_log[, "fit"])
 
 ggplot(df_prediction_test_logscale, aes(observed, predicted))+
@@ -1233,7 +1268,7 @@ ggplot(df_prediction_test_logscale, aes(observed, predicted))+
        y = "number of violent crimes per 100K population (predicted)",
        title = "Test dataset (log scale)")
 
-# prediction intervals training data logscale
+# prediction intervals training data (logscale, final model)
 df_prediction_train_logscale <- data.frame(observed = train_data$logViolent, predicted = pred_interval_train_log[, "fit"])
 
 ggplot(df_prediction_train_logscale, aes(observed, predicted))+
@@ -1245,7 +1280,7 @@ ggplot(df_prediction_train_logscale, aes(observed, predicted))+
        y = "number of violent crimes per 100K population (predicted)",
        title = "Train dataset (log scale)")
 
-# prediction intervals test data simple
+# prediction intervals test data (normal scale, simple model)
 df_prediction_test_simple <- data.frame(observed = test_data$ViolentCrimesPerPop, predicted = pred_interval_test_simple[, "fit"])
 
 ggplot(df_prediction_test_simple, aes(observed, predicted))+
@@ -1257,7 +1292,7 @@ ggplot(df_prediction_test_simple, aes(observed, predicted))+
        y = "number of violent crimes per 100K population (predicted)",
        title = "Test dataset (univariate)")
 
-# prediction intervals training data simple
+# prediction intervals training data (normal scale, simple model)
 df_prediction_train_simple <- data.frame(observed = train_data$ViolentCrimesPerPop, predicted = pred_interval_train_simple[, "fit"])
 
 ggplot(df_prediction_train_simple, aes(observed, predicted))+
@@ -1293,7 +1328,7 @@ ss_tot_train <- sum((train_data$logViolent - mean(train_data$logViolent))^2)
 r2_train_log <- 1 - ss_res_train/ss_tot_train
 cat("R² on training set:", round(r2_train_log, 4), "\n")
 
-# Results for multivariate model backtransformed logscale
+# Results for multivariate model logscale
 validation_logscale <- c("log(ViolentCrimesPerPop)", round(mspr_test_log, 2), round(mse_train_log, 2), round(mspr_test_log/mse_train_log, 4), round(r2_test_log, 4), round(r2_train_log, 4))
 ```
 
@@ -1321,7 +1356,7 @@ ss_tot_train <- sum((train_data$ViolentCrimesPerPop - mean(train_data$ViolentCri
 r2_train_simple <- 1 - ss_res_train_simple/ss_tot_train
 cat("R² on training set:", round(r2_train_simple, 4), "\n")
 
-# Results for univariate model
+# Results for univariate model (normal scale)
 validation_simple <- c("ViolentCrimesPerPop", round(mspr_test_simple, 2), round(mse_simple, 2), round(mspr_test_simple/mse_simple, 4), round(r2_test_simple, 4), round(r2_train_simple, 4))
 
 df_validation <- data.frame(multivar_logscale = validation_logscale, univar = validation_simple)
