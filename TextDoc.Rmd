@@ -35,24 +35,19 @@ For this research the effect of socio-economic disadvantage to violent crime rat
 
 ## Design of the dataset
 
-For this research, a dataset related to data gathered for the prediction of serious crime rates in the US. This dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting, which resulted in missing total violent crime values for those states. We will investigate whether this missingness has probably a large effect on the model and if necessary use imputations.
+For this research, a dataset related to data gathered for the prediction of serious crime rates in the US. This dataset combines 1990 U.S. Census socio-economic data, 1990 law enforcement data from the Law Enforcement Management and Admin Stats (LEMAS) survey, and 1995 FBI crime data, thereby creating two cohorts. For the FBI crime data, it is mentioned that states with a lower amount of visitors have a lower per capita crime rate and vice verse. The LEMAS survey covers all communities with police departments of at least 100 officers and a random sample of smaller departments. If communities were absent from either the crime or census datasets (e.g., those with very small departments), then they were removed. All demographic data is from 1990, but per-capita crime rates use 1995 population counts. Finally, rape counts, a component of violent crime, are missing in some states due to inconsistent reporting, which resulted in missing total violent crime values for those states.
 
 # Methods
 
-For the purpose of our research question we selected a subset of variables present in in the dataset. Some economic variables: PctPopUnderPov, perCapInc, and PctEmploy, which give some information about economic status of the community, and a sociological subset, containing education levels in the communities, combined with NummImmig, RacePctBlack, AgePct12t29, all variables giving some info about the social composition and demographic structure of the communities. These variables were then used to anwser the following questions:
+For the purpose of our research question we selected a subset of variables present in in the dataset. Some economic variables: PctPopUnderPov, perCapInc, and PctEmploy, which give some information about economic status of the community, and a sociological subset, containing education levels in the communities, combined with NummImmig, RacePctBlack, AgePct12t29, all variables giving some info about the social composition and demographic structure of the communities.
 
-1.  What is the association between poverty rates (*PctPopUnderPov*) and violent crime rates (*ViolentCrimesPerPop*) in U.S. communities? We first present an univariate analysis to gain an initial understanding of whether our hypothesis holds, how strong the relationship is, but do not take any confounding factors into account yet.
+1.  To gain an initial understanding of the association between poverty rates (*PctPopUnderPov*) and violent crime rates (*ViolentCrimesPerPop*), a univariate regression is performed.
 
-2.  How does the found association change when we include other socio-economic factors in our analysis? To assess this, we use a multivariate regression to analyze if the relationship is confounded by other socio-economic variables (1), whether there are relevant interaction effects at play (2) and to see if the inclusion of these other socio-economic variables improves the performance of our model substantially (3).
+2.  To analyze if the relationship is confounded by other socio-economic variables, whether there are relevant interaction effects at play and to see if the inclusion of these other socio-economic variables improves the performance of our model substantially, a multivariate regression is performed.
 
-## Model building
+Before building the models, some descriptive analysis of the dataset and variables is performed. Next, the dataset is randomly split into a training dataset (80% of the data) and a holdout set (20% of the data).
 
-Before building the models, some descriptive analysis of the dataset and variables was performed. Next, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model. For each model, the model is trained on the train set and assumptions of linear regression are checked. 
-For the multivariate model, an All-variable procedure was emplored to test every combination of possible variables as a model. The best model will be chosen based on the Bayesian Information Criterion. After which the assumptions of this best model are checked. Next, partial residual plots are generated to check if each of the added variables are in the correct functional form and whether transformations are needed to better capture their relationship with the outcome. Afterwards, the interaction term  with the main predictor PctPopUnderPov is selected based on this same BIC procedure. Finally, multicollinearity is assessed using the Variance Inflation Factor (VIF) to obtain a more interpretable model.
-
-After determining the final model, some model diagnostics are calculated to determine outliers and influential points. After diagnostics, the model is validated by the holdout dataset.
-
-
+For the multivariate model, an All-variable procedure is emplored to test every combination of possible variables as a model. The best model is chosen based on the Bayesian Information Criterion (BIC). Next, the assumptions of this best model are checked and partial regression plots are generated to check if each of the added variables are in the correct functional form. Afterwards, the most apropriate interaction term  with the main predictor PctPopUnderPov is selected based on the same BIC procedure. Finally, multicollinearity is assessed using the Variance Inflation Factor (VIF) to obtain a more interpretable model. After determining the final model, some model diagnostics are calculated to determine outliers and influential points. Finally the model is validated by the holdout dataset.
 
 ```{r load data}
 violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/211/communities+and+crime+unnormalized.zip")
@@ -96,7 +91,7 @@ crimes_table_subset <- violent_crimes_table %>%
 
 # Data preparation
 
-After loading in the data and selecting the subset, *NumImmig* is converted to a percentage by dividing it by the population size and multiplying by 100% since the outcome variable *ViolentCrimesPerPop* (total number of violent crimes per 100K population) is expressed relative to the population size. We call this converted variable *PctImmig*. It's important to mention that this is not an exact transformation, because all demographic data is from 1990, but per-capita crime rates use 1995 population counts.
+The variable *NumImmig* is converted to a percentage of the total population, since the outcome variable *ViolentCrimesPerPop* (total number of violent crimes per 100K population) is expressed relative to the population size. We call this converted variable *PctImmig*. It's important to mention that this is not an exact transformation, because all demographic data is from 1990, but per-capita crime rates use 1995 population counts.
 
 ```{r converting numimmig}
 crimes_table_subset$ViolentCrimesPerPop <- as.numeric(crimes_table_subset$ViolentCrimesPerPop)
@@ -119,7 +114,7 @@ crimes_table_subset %>%
   )
 ```
 
-By examining the missing data, there were 221 (of the 1994) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. No imputations were used to have a more transparent model building procedure and to avoid overestimating the quality of the model fit. As already mentioned in the section on the study design, these NA values are possibly due to the fact that rape counts, a component of violent crime, were not included in the statistics for several states. The observations where the outcome variable has an NA value are removed, as these rows are not useful for the regression. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
+By examining the missing data, there were 221 (of the 2215) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. No imputations were used to have a more transparent model building procedure and to avoid overestimating the quality of the model fit. So these observations where not taken into account for the model building. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
 
 ```{r identifying NA values}
 na_subset <- crimes_table_subset %>%
@@ -134,9 +129,7 @@ crimes_table_subset = na.omit(crimes_table_subset)
 colSums(crimes_table_subset == "?", na.rm = TRUE)
 ```
 
-# Univariate descriptives
-
-
+# Descriptive analysis
 ```{r summary statistics}
 #str(crimes_table_subset)
 #summary(crimes_table_subset)
@@ -170,7 +163,6 @@ na_subset %>%
     NAs = sum(is.na(value))
   )
 ```
-Univariate descriptive analysis is performed, for both the missing values and the non-missing values. Neither summary statistics nor visualisations of the predictor distributions (like boxplots and histograms) indicate that the missing data have characteristics that differ substantially from the non-missing data.
 
 ```{r boxplots, fig.width=8, fig.height=12}
 numeric_cols_na <- sapply(na_subset, is.numeric)
@@ -209,9 +201,6 @@ for(columnname in names(crimes_table_subset_num_na)){
 }
 ```
 
-# Multivariate descriptives
-
-After investigating the univariate descriptives, multivariate descriptives are looked at.
 ```{r correlations, fig.height= 4, fig.width= 5}
 cor_matrix <- cor(crimes_table_subset_num[,-c('population', 'logpopulation')])
 cor_values <- as.data.frame(as.table(cor_matrix))
@@ -221,19 +210,13 @@ ggcorrplot(cor_matrix, lab = TRUE, type = "lower",
            lab_size = 3, colors = c("red", "white", "blue"))
 
 ```
-To gain insight into how the different variables in the dataset are correlated with each other, the correlation coefficients are computed and scatter plots are investigated showing the relationship between the variables and the outcome variable (*ViolentCrimesPerPop*) and the main predictor variable (*PctPopUnderPov*).
+Univariate descriptive analysis is performed, for both the missing values and the non-missing values. Neither summary statistics nor visualisations of the predictor distributions (like boxplots and histograms) indicate that the missing data have characteristics that differ substantially from the non-missing data.
 
-The following predictors are highly correlated with each other.
+To understand how the variables in the dataset relate to one another, correlation coefficients were calculated and scatter plots were examined to visualize the relationships between the variables, the outcome variable (ViolentCrimesPerPop), and the main predictor (PctPopUnderPov).
 
--   *PctNotHSGrad* and *PctLess9thGrade* ($r = 0.93$)
--   *perCapInc* and *PctBSorMore* ($r = 0.77$)
--   *PctNotHSGrad* and *PctBSorMore* ($r = -0.75$)
+It is notable that the variable *racepctblack* shows the strongest correlation with the outcome variable ($r = 0.63$), even surpassing *PctPopUnderPov*, the main predictor selected for this study. Given some strong correlations between predictor variables (for example between *PctNotHSGrad* and *PctLess9thGrade* ($r = 0.93$), between *perCapInc* and *PctBSorMore* ($r = 0.77$), and between *PctNotHSGrad* and *PctBSorMore* ($r = -0.75$)) and the linear relationships some variables have with *PctPopUnderPov*, it is recommended to assess multicollinearity during the model-building stage.
 
-It is noticeable that the variable *racepctblack* is the one most strongly correlated with the outcome variable ($r = 0.63$), even more than *PctPopUnderPov*, the main predictor that was chosen for this research.
-
-The scatter plots showed that most variables display a roughly linear relationship with *ViolentCrimesPerPop*, although that trend is often distorted in the extreme regions of the x-axis. *agePct12t29* has a very low correlation coefficient with *ViolentCrimesPerPop* (0.11). *perCapInc* shower a higher correlation (-0.32), but there is clearly no linear trend present.
-
-Some variables exhibit a linear relationship with *PctPopUnderPov* or have a high correlation with each other. This suggests that evaluating multicollinearity during the model-building stage is recommended.
+The scatter plots show that most variables display a roughly linear relationship with *ViolentCrimesPerPop*, although that trend is often distorted in the extreme regions of the x-axis. *agePct12t29* has a very low correlation coefficient with *ViolentCrimesPerPop* (0.11). The variable *perCapInc* shows a higher correlation (-0.32), but there is clearly no linear trend present.
 
 ```{r scatter plots, fig.width=8, fig.height=10}
 x_vars <- colnames(crimes_table_subset_num)
@@ -325,9 +308,8 @@ fit_simple <- lm(ViolentCrimesPerPop ~ PctPopUnderPov, data = train_data)
 summary(fit_simple)
 ```
 Here a coefficient of `r round(coef(fit_simple)[2], 2)` could be found which represents the expected increase in violent crimes per 100K population if poverty rate increases by one percentage point. The R-squared value of `r round(summary(fit_simple)$r.squared, 4) represents the proportionate reduction of total variation in *ViolentCrimesPerPop* by the poverty percentage, in this univariate model this R-squared is rather small and can be taken to mean that poverty by itself is insufficient to explain the variation in violent crime rates.
-For the simple linear model the assumptions of linearity are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. It could also be seen that larger populations tended to have larger residuals meaning that the model tends to underestimate the total number of crimes for large populations.
+For the simple linear model the assumptions of linearity are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. It could also be seen that larger populations tended to have larger residuals, meaning that the model tends to underestimate the total number of crimes for large populations.
 
-In the next step, we extend the model by adding relevant predictors and reassess the assumptions.
 ```{r Extract relevant statistics, echo=FALSE, include=FALSE}
 
 cat("Regression equation: ViolentCrimesPerPop =", 
@@ -1170,9 +1152,6 @@ df2
 
 ### Prediction of the test data
 
-Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the MSE.
-
-
 ```{r model validation backtransformation}
 ### Predictions on test set
 # backtransformation of the data to the normal scale
@@ -1219,7 +1198,7 @@ For the multivariate model `r mean(inside)*100` % of the observed values fall wi
 
 When point estimates are compared to observed values, both the univariate and the multivariate model tends to underestimate large outcome values and tends to overestimate small outcome values. This statement holds for both the prediction of the training data and the prediction of the test data. When the mean squared prediction error (for test data) is compared with the mean squared error (for training data), it can be noticed that the predictive power of the model is better for the test data than for the training data. This indicates that there is no overfitting. The same trend is visible when the values for $R^2$ are compared.
 
-The $R^2$ of the multivariate model is higher than the $R^2$ of the univariate model. However, these values are difficult to compare because the outcome variable differs between the two models ($ViolentCrimesPerPop$ vs. $\log(ViolentCrimesPerPop)$). Since the logarithmic transformation is non-linear, back-transforming the predicted values of $\log(ViolentCrimesPerPop)$ does not yield the expected value ($E(\log(Y) \mid X = x) = \beta_0 + \beta_1 x ;\nRightarrow; E(Y \mid X = x) = e^{\beta_0 + \beta_1 x}$), except under strict assumptions regarding the residuals.
+The $R^2$ of the multivariate model is higher than the $R^2$ of the univariate model. However, these values are difficult to compare, because the outcome variable differs between the two models ($ViolentCrimesPerPop$ vs. $\log(ViolentCrimesPerPop)$) and back-transforming the predicted values of $\log(ViolentCrimesPerPop)$ does not yield the expected value for $ViolentCrimesPerPop$ (,except under strict assumptions regarding the residuals).
 
 ```{r model plots}
 # prediction intervals test data logscale
@@ -1332,26 +1311,21 @@ df_validation
 
 # Statistical discussion
 
-There are several characteristics of the dataset that require discussion. First, we focus on how the missing data in our dataset affects our found results. The main source of missing data in our analysis, is the ViolentCrimesPerPop variable, where 221 observations are missing because of incomplete rape reporting in Midwestern States. This missingness could lead to biased estimates if these communities differ in crime-related or demographic characteristics. Therefore, we tested to check if the characteristics of the communities with missing data were different from those of the non-missing data, and found no important differences. We thus assume that this missingness does not have an important effect on our found results. However, if these communities are different in ways not captured by our measured variables, there could still be bias present.
+There is a large portion of missing data in our dataset (221 of the 2215 observations). The main source of missing data is the ViolentCrimesPerPop variable, where 221 observations are missing because of incomplete rape reporting in Midwestern States. This missingness could lead to biased estimates if these communities differ in crime-related or demographic characteristics. Although the characteristics of the communities with missing data are not much different from those of the non-missing data. We thus assume that this missingness does not have an important effect on our found results. However, if these communities are different in ways not captured by our measured variables, there could still be bias present. Moreover, the LEMAS survey includes all communities with police departments of more than 100 officers, but only a random sample of smaller departments. As a result, the representation of small communities in the dataset is less precise.
 
-Second, the data from the LEMAS survey consists of all communities with police departments with more than 100 officers, but only a random sample of smaller ones. Because of this, large (and thus more urban) communities are overrepresented, while small communities are underrepresented in the dataset.
+Smaller communities have greater variance in both predictor and outcome variables than larger communities. <<< Wat schrijven we hier nog bij?>>>
 
-Additionally, based on our dataset, we expected that smaller communities have greater variance in both predictor and outcome variables, which we see confirmed in our scatter plots. The reason for this is that per capita crime rates in small populations are more volatile, as one crime in a community of 1,000 translates to 100 per 100,000 population. Because of this, small changes in actual crime numbers lead to large fluctuations in converted rates.
-
-We dealt with the heteroskedasticity of the outcome variables by applying a log transformation. Nevertheless, variability for these smaller communities should thus be interpreted with caution.
-
-Another caveat is that the FBI’s data is from 1995, while the Census' populations data containing demographic variables are from 1990. This way, data from 1990 is used to predict crime rates from 1995. If the demographic variables of communities changed drastically during this period, the predictor variables would not represent these communities well in 1995, when the actual crimes happened. For instance, if we assume that the poverty rate would increase substantially between 1990 and 1995, the 1990 poverty rate used in our analysis might then underestimate the actual relationship in 1995. However, we expect that, because of the short timespan and as we expect most of the socio-economic variables we used to change only slowly, this to have a limited impact on our results.
+Another caveat is that the FBI’s data is from 1995, while the Census' populations data containing demographic variables are from 1990. If the demographic variables of certain communities changed drastically during this period, the predictor variables would not represent these communities well in 1995 (when the actual crimes happened).
 
 Then, it should be noted that the data are from 1990-1995. Since then, the social and economic environment have changed, implying that our estimated relationships would not hold today as crime rates, reporting practices,... have evolved. Thus, these results should be carefully interpreted in today's context as the mechanisms driving these relationships are different in comparison to when the data collection happened.  
 
 At last, it is mentioned in the description of the original dataset that many relevant factors are not included. Specifically, it is mentioned that per capita crime rates are calculated using resident populations, so communities with large numbers of visitors are expected to have higher crime rates, even if the actual risk is not different across communities. This, together with other unmeasured factors, implies that our results should be interpreted as correlations and not as causations.
 
-We conclude that our regression analysis results are thus valid for a subset of U.S. communities in the 1990's and that the results should be cautiously interpreted in this context.
-
-
 # Conclusion
 
-In this report, we investigate how violent crime rates and socio-economic disadvantage, and more specifically the poverty rate, are associated in U.S. communities. We do so by using a merged dataset with detailed data on both crimes and demographic variables from 1990 and 1995. Specifically, our analysis consists of two parts. First, we perform a univariate linear regression to investigate the direct relationship between poverty and violent crime rates. Here, we find a significant positive relationship.
+In this report, we investigate how violent crime rates and socio-economic disadvantage, and more specifically the poverty rate, are associated in U.S. communities. We do so by using a merged dataset with detailed data on both crimes and demographic variables from 1990 and 1995.
+
+Specifically, our analysis consists of two parts. First, we perform a univariate linear regression to investigate the direct relationship between poverty and violent crime rates. Here, we find a significant positive relationship.
 
 In the second part we make use of a multivariate model including a range of other (socio-economic) predictor variables. We find that this final model indeed does substantially improve our model in comparison to the univariate model. Notably, we also include an interaction term in this final model between percentage of residents with bachelor's degrees or higher and the poverty rate. The positive coefficient on this interaction term indicates that the impact of poverty on crime rates depends on the percentage of residents holding a bachelor's degree or more, implying that the effect of poverty on violent crime becomes more positive as education increases. We assume that this is because a high poverty rate in combination with a high educational attainment rate could imply there to be the a large level of inequality present in the community. This inequality then may be associated with higher violent crime rates. There is a huge literature on this topic (Kelly (2000), Fajnzylber et al. (2002) and Kang (2016)).
 
