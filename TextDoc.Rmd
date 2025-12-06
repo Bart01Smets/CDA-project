@@ -369,7 +369,6 @@ outliers_simple <- which(abs(stud_res) > 2)
 Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
 
 ```{r outliers vs population1}
-# >>>>>>> ab3368e76b00913d4bc73fc6eb05f62b776166b6
 par(mfrow = c(1, 2))
 # Residuals vs population
 plot(train_data$logpopulation, fit_simple$residuals,
