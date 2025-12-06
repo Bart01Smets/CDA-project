@@ -31,7 +31,7 @@ library(MASS)
 
 # Research question
 
-For this research the effect of socio-economic disadvantage to violent crime rates was investigated. More specifically we want to explore the association between poverty and violent crime rates in the USA. Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs of committing crime against each other. It could be argued that the incentive to commit crime is higher for people who have a lower income, as they have more to gain and less to lose by committing crimes. Following this, we would then also expect that communities with higher poverty rates will also be associated with higher crime rates. Depending on the results of our analysis, our analysis could be used to inform relevant policies. It would, for instance, give another argument to redistributive policies: if an effect is found, this policy might also result in a reduction in violent crime, next to an economic benefit. Our analysis hopes to shed further light on this issue.
+For this research the effect of socio-economic disadvantage to violent crime rates was investigated. More specifically we want to explore the association between poverty and violent crime rates in the USA. Becker (1968) stated that the decision to commit crime is a rational choice where people weigh the benefits and costs of committing crime against each other. It could be argued that the incentive to commit crime is higher for people who have a lower income, as they have more to gain and less to lose by committing crimes. Following this, we would then also expect that communities with higher poverty rates will also be associated with higher crime rates.
 
 ## Design of the dataset
 
@@ -48,7 +48,7 @@ For the purpose of our research question we selected a subset of variables prese
 ## Model building
 
 Before building the models, some descriptive analysis of the dataset and variables was performed. Next, the dataset is randomly split into a training set (80% of the data) and a holdout set (20% of the data). This holdout set will be used to validate the final model. For each model, the model is trained on the train set and assumptions of linear regression are checked. 
-For the multivariate model, an All-variable procedure was emplored to test every combination of possible variables as a model. The best model will be chosen based on the Bayesian Information Criterion. After which the assumptions of this best model are checked. Next, partial residual plots are generated to check if each of the added variables are in the correct functional form and whether transformations are needed to better capture their relationship with the outcome. Afterwards, the interaction term  with the main predictor PctPopUnderPov is selected based on this same BIC procedure. As a final part of the model building, the multicollinearity is assess using the Variance Inflation Factor (VIF).
+For the multivariate model, an All-variable procedure was emplored to test every combination of possible variables as a model. The best model will be chosen based on the Bayesian Information Criterion. After which the assumptions of this best model are checked. Next, partial residual plots are generated to check if each of the added variables are in the correct functional form and whether transformations are needed to better capture their relationship with the outcome. Afterwards, the interaction term  with the main predictor PctPopUnderPov is selected based on this same BIC procedure. Finally, multicollinearity is assessed using the Variance Inflation Factor (VIF) to obtain a more interpretable model.
 
 After determining the final model, some model diagnostics are calculated to determine outliers and influential points. After diagnostics, the model is validated by the holdout dataset.
 
@@ -119,7 +119,7 @@ crimes_table_subset %>%
   )
 ```
 
-By examining the missing data, there were 221 (of the 1994) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. Imputations in this case would not be very helpful as the model would then partially be trained on artificial outcomes. As already mentioned in the section on the study design, these NA values are possibly due to the fact that rape counts, a component of violent crime, were not included in the statistics for several states. The rows where the outcome variable has an NA value are removed, as these rows are not useful for the regression. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
+By examining the missing data, there were 221 (of the 1994) observations identified as NA values for the outcome variable *ViolentCrimesPerPop*. No imputations were used to have a more transparent model building procedure and to avoid overestimating the quality of the model fit. As already mentioned in the section on the study design, these NA values are possibly due to the fact that rape counts, a component of violent crime, were not included in the statistics for several states. The observations where the outcome variable has an NA value are removed, as these rows are not useful for the regression. It can be noted that the variables *countyCode* and *communityCode* are also frequently unknown.
 
 ```{r identifying NA values}
 na_subset <- crimes_table_subset %>%
@@ -136,7 +136,6 @@ colSums(crimes_table_subset == "?", na.rm = TRUE)
 
 # Univariate descriptives
 
-After removing NA values from the database univariate descriptives are calculated, for both the missing values and the non-missing values.
 
 ```{r summary statistics}
 #str(crimes_table_subset)
@@ -171,8 +170,7 @@ na_subset %>%
     NAs = sum(is.na(value))
   )
 ```
-
-To gain insight into the univariate distributions, boxplots and histograms are generated. These histograms are then compared to the histograms of the distributions for the variables with missing data for violent crimes to evaluate if there are important deviations. Neither the summary statistics nor the histograms indicate that the missing data have characteristics that differ substantially from the non-missing data.
+Univariate descriptive analysis is performed, for both the missing values and the non-missing values. Neither summary statistics nor visualisations of the predictor distributions (like boxplots and histograms) indicate that the missing data have characteristics that differ substantially from the non-missing data.
 
 ```{r boxplots, fig.width=8, fig.height=12}
 numeric_cols_na <- sapply(na_subset, is.numeric)
@@ -213,16 +211,7 @@ for(columnname in names(crimes_table_subset_num_na)){
 
 # Multivariate descriptives
 
-After investigating the univariate descriptives, multivariate descriptives are looked at. The constructed correlation matrix shows the extent to which the variables in the dataset are correlated with each other. It's important to mention that these correlations are indicators of an association, not of a causation. The following predictors are highly correlated with each other. Therefore, it might be best not to include them together in a model later.
-
--   *PctNotHSGrad* and *PctLess9thGrade* ($r = 0.93$)
--   *perCapInc* and *PctBSorMore* ($r = 0.77$)
--   *PctNotHSGrad* and *PctBSorMore* ($r = -0.75$)
-
-However the choice for predictors for the model will be dealt with thoroughly during the model building.
-
-It is noticeable that the variable *racepctblack* is the one most strongly correlated with the outcome variable ($r = 0.63$), even more than *PctPopUnderPov*, the head predictor that was chosen for this research.
-
+After investigating the univariate descriptives, multivariate descriptives are looked at.
 ```{r correlations, fig.height= 4, fig.width= 5}
 cor_matrix <- cor(crimes_table_subset_num[,-c('population', 'logpopulation')])
 cor_values <- as.data.frame(as.table(cor_matrix))
@@ -232,13 +221,19 @@ ggcorrplot(cor_matrix, lab = TRUE, type = "lower",
            lab_size = 3, colors = c("red", "white", "blue"))
 
 ```
+To gain insight into how the different variables in the dataset are correlated with each other, the correlation coefficients are computed and scatter plots are investigated showing the relationship between the variables and the outcome variable (*ViolentCrimesPerPop*) and the main predictor variable (*PctPopUnderPov*).
 
-The following scatter plots were generated:
+The following predictors are highly correlated with each other.
 
--   for each variable, a scatter plot showing the relationship with the outcome variable *ViolentCrimesPerPop*;
--   for each variable, a scatter plot showing the relationship with the main predictor variable *PctPopUnderPov*.
+-   *PctNotHSGrad* and *PctLess9thGrade* ($r = 0.93$)
+-   *perCapInc* and *PctBSorMore* ($r = 0.77$)
+-   *PctNotHSGrad* and *PctBSorMore* ($r = -0.75$)
 
-The scatter plots showed that most variables display a roughly linear relationship with *ViolentCrimesPerPop*, although that trend is often distorted in the extreme regions of the x-asis. It's also visible that some variables exhibit a linear relationship with *PctPopUnderPov*. This suggests that these variables are probably not suitable as additional predictors when *PctPopUnderPov* is already included in the model as this may introduce multicollinearity.
+It is noticeable that the variable *racepctblack* is the one most strongly correlated with the outcome variable ($r = 0.63$), even more than *PctPopUnderPov*, the main predictor that was chosen for this research.
+
+The scatter plots showed that most variables display a roughly linear relationship with *ViolentCrimesPerPop*, although that trend is often distorted in the extreme regions of the x-axis. *agePct12t29* has a very low correlation coefficient with *ViolentCrimesPerPop* (0.11). *perCapInc* shower a higher correlation (-0.32), but there is clearly no linear trend present.
+
+Some variables exhibit a linear relationship with *PctPopUnderPov* or have a high correlation with each other. This suggests that evaluating multicollinearity during the model-building stage is recommended.
 
 ```{r scatter plots, fig.width=8, fig.height=10}
 x_vars <- colnames(crimes_table_subset_num)
@@ -277,13 +272,13 @@ plots <- lapply(x_vars, function(x_var) {
 print(wrap_plots(plots, ncol = 3))
 ```
 
-The scatter plots also reveal one outlier for the *ViolentCrimesPerPop* variable. However, outliers and their influence will be further investigated in the diagnostic section.
+Two extreme values for the *ViolentCrimesPerPop* variable appear. Chestercity has the highest number of violent crimes (4877 violent crimes per 100K population). Spencercity, on the other hand, reports zero violent crimes. Given that Spencercity is a small community (11,066 inhabitants), it is difficult to assess the accuracy of the reported value. In the model diagnostics section, we will examine whether these two observations are outliers with respect to our linear model.
 
 ```{r outlier}
-crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=TRUE), , drop = FALSE]
+crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=FALSE), , drop = FALSE]
 ```
 
-It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables, scatter plots were created with log(*population*) as x variable (see appendix). The resulting scatter plots show that communities with a very small population indeed show a very large spread for all variables.
+It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables. Scatter plots show that communities with a very small population indeed show a very large spread for all variables.
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
 df <- crimes_table_subset_num
@@ -396,8 +391,9 @@ Figures to get a visual illustration of whether outliers are more common in smal
 
 
 =======
->>>>>>> ab3368e76b00913d4bc73fc6eb05f62b776166b6
+
 ```{r outliers vs population1}
+# >>>>>>> ab3368e76b00913d4bc73fc6eb05f62b776166b6
 par(mfrow = c(1, 2))
 # Residuals vs population
 plot(train_data$logpopulation, fit_simple$residuals,
@@ -1078,7 +1074,7 @@ comparison <- data.frame(
 print(round(comparison, 4))
 ```
 
-## interpretation final model
+## Interpretation of the final model
 
 Our final model is:`r formula_final`.
 
@@ -1143,9 +1139,9 @@ For the percentage of people between the age of 12 and 29, we find a negative as
 #### Family confidence interval
 
 
-## model validation
+## Model validation
 
-### refitting the model on the test data
+### Refitting the model on the test data
 When the final model is fitted to the test set or the full dataset, the estimated coefficients do not differ much from those obtained when fitting the model to the training set. The more data the model is fitted on, the more significant the p-values become.
 ```{r model validation refitting}
 crimes_table_subset$logViolent <- log(crimes_table_subset$ViolentCrimesPerPop + 1)
@@ -1172,9 +1168,9 @@ rownames(df2) <- c("fit on training data","fit on test data", "fit on all data")
 df2
 ```
 
-### prediction of the test data
+### Prediction of the test data
 
-Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the Mean Squared Error (MSPR) when the model is used to predict data in the training set.
+Using the holdout set, we compute the Mean Squared Prediction Error (MSPR) and comparing it to the MSE.
 
 
 ```{r model validation backtransformation}
@@ -1191,30 +1187,39 @@ pred_interval_test_simple <- predict(fit_simple, newdata = test_data, interval =
 pred_interval_train_simple <- predict(fit_simple, newdata = train_data, interval = "prediction", level = 0.95)
 ```
 
-As expected, 95% of the data points fall within the 95% prediction intervals. However, after backtransformation of the outcome variables it can be noticed that the prediction intervals are far too wide, making the predictions difficult to use.
+
 ```{r model validation prediction interval}
 inside_log <- test_data$logViolent >= pred_interval_test_log[, "lwr"] & test_data$logViolent <= pred_interval_test_log[, "upr"]
 inside <- test_data$ViolentCrimesPerPop >= pred_interval_test[, "lwr"] & test_data$ViolentCrimesPerPop <= pred_interval_test[, "upr"]
-cat("Fraction of datapoints in prediction interval (logscale):", mean(inside), "\n")
+inside_simple <- test_data$ViolentCrimesPerPop >= pred_interval_test_simple[, "lwr"] & test_data$ViolentCrimesPerPop <= pred_interval_test_simple[, "upr"]
+cat("Fraction of datapoints in prediction interval (logscale):", mean(inside_log), "\n")
 cat("Fraction of datapoints in prediction interval:", mean(inside), "\n")
+cat("Fraction of datapoints in prediction interval (univariate model):", mean(inside_simple), "\n")
 
 hist(pred_interval_test[, "upr"] - pred_interval_test[, "lwr"],
      main = "Width prediction interval",
      xlab = "Width prediction interval",
-     xlim = c(0, 15000),
+     xlim = c(0, 5000),
      breaks = 50)
+plot(pred_interval_test[, "fit"], pred_interval_test[, "upr"] - pred_interval_test[, "lwr"], main = "Width prediction interval",
+     xlab = "Point estimate", ylab = "Width prediction interval")
 
 hist(pred_interval_test_log[, "upr"] - pred_interval_test_log[, "lwr"],
-     main = "Width prediction interval",
+     main = "Width prediction interval (log)",
+     xlab = "Width prediction interval",
+     #xlim = c(0, 15000),
+     breaks = 50)
+hist(pred_interval_test_simple[, "upr"] - pred_interval_test_simple[, "lwr"],
+     main = "Width prediction interval (univariate model)",
      xlab = "Width prediction interval",
      #xlim = c(0, 15000),
      breaks = 50)
 ```
+For the multivariate model `r mean(inside)*100` % of the observed values fall within the prediction interval. This means that the prediction intervals are a bit too strict. For the univariate model `r mean(inside_simple)*100` % of the observed values fall within the prediction interval. This means that the prediction intervals are a bit too lenient. The variance of the residuals is proportional to the magnitude of the outcome variable. The univariate model incorrectly assumes homoscedasticity in the residuals, causing prediction intervals to be too wide for low outcome values and too narrow for high outcome values. As a result, the lower bound of the prediction interval is often negative for low values. In contrast, the multivariate model (which models the log-transformed outcome variable) produces prediction intervals whose width is proportional to the magnitude of the outcome variable, which aligns better with reality. Therefore, the prediction intervals from the multivariate model are more useful than those from the univariate model. 
 
-When point estimates are compared to observed values, large outcome values are tend to be underestimated and small outcome values are tend to be overestimated. This statement holds for both the prediction of the training data and the prediction of the test data. When the mean squared prediction error (for test data) is compared with the mean squared error (for training data), it can be noticed that the predictive power of the model is better for the test data than for the training data. This indicates that there is no overfitting. The same trend is visible when the values for $R^2$ are compared.
+When point estimates are compared to observed values, both the univariate and the multivariate model tends to underestimate large outcome values and tends to overestimate small outcome values. This statement holds for both the prediction of the training data and the prediction of the test data. When the mean squared prediction error (for test data) is compared with the mean squared error (for training data), it can be noticed that the predictive power of the model is better for the test data than for the training data. This indicates that there is no overfitting. The same trend is visible when the values for $R^2$ are compared.
 
-The $R^2$ of the multivariate model is better than the $R^2$ of the univariate model. Although these values are difficult to compare due to the fact that the outcome variable is different $ViolentCrimesPerPop$ vs $log(ViolentCrimesPerPop))$. Since the logarithmic transformation is a non-linear transformation backtransformation of the predicted values of $log(ViolentCrimesPerPop))$ doesn't deliver the expected value (
-$E(\log(Y)\mid X = x) = \beta_0 + \beta_1 x \;\nRightarrow\; E(Y \mid X = x) = e^{\beta_0 + \beta_1 x}$).
+The $R^2$ of the multivariate model is higher than the $R^2$ of the univariate model. However, these values are difficult to compare because the outcome variable differs between the two models ($ViolentCrimesPerPop$ vs. $\log(ViolentCrimesPerPop)$). Since the logarithmic transformation is non-linear, back-transforming the predicted values of $\log(ViolentCrimesPerPop)$ does not yield the expected value ($E(\log(Y) \mid X = x) = \beta_0 + \beta_1 x ;\nRightarrow; E(Y \mid X = x) = e^{\beta_0 + \beta_1 x}$), except under strict assumptions regarding the residuals.
 
 ```{r model plots}
 # prediction intervals test data logscale
@@ -1344,14 +1349,15 @@ At last, it is mentioned in the description of the original dataset that many re
 We conclude that our regression analysis results are thus valid for a subset of U.S. communities in the 1990's and that the results should be cautiously interpreted in this context.
 
 
-#Final discussion/conclusion LINEAR MODEL
+# Conclusion
 
-In this report, we investigate how violent crime rates and socio-economic disadvantage, and more specifically the poverty rate, are associated in U.S. communities. We do so by using a merged dataset with detailed data on both crimes and demographic variables from 1990 and 1995. Specifically, our analysis consists of two parts. First, we perform a univariate linear regression to investigate the direct relationship between poverty and violent crime rates. Here, we find a significant positive relationship. However, we want to assess whether other socio-economic variables on top of poverty can substantially improve our model (1), whether these predictors can account for confounding (2), and whether there are interaction effects at play (3). 
+In this report, we investigate how violent crime rates and socio-economic disadvantage, and more specifically the poverty rate, are associated in U.S. communities. We do so by using a merged dataset with detailed data on both crimes and demographic variables from 1990 and 1995. Specifically, our analysis consists of two parts. First, we perform a univariate linear regression to investigate the direct relationship between poverty and violent crime rates. Here, we find a significant positive relationship.
 
-Thererefore, we make use of a multivariate model including a range of other (socio-economic) predictor variables. We find that this final model indeed does substantially improve our model in comparison to the univariate model. Notably, we also include an interaction term in this final model between percentage of residents with bachelor's degrees or higher and the poverty rate. The positive coefficient on this interaction term indicates that the impact of poverty on crime rates depends on the percentage of residents holding a bachelor's degree or more, implying that the effect of poverty on violent crime becomes more positive as education increases. We assume that this is because a high poverty rate in combination with a high educational attainment rate could imply there to be the a large level of inequality present in the community. This inequality then may be associated with higher violent crime rates. There is a huge literature on this topic, which would be impossible to completely summarize here. However, the interested reader is referred for this purpose to Kelly (2000), Fajnzylber et al. (2002) and Kang (2016), confirming this to be a plausible explanation.
+In the second part we make use of a multivariate model including a range of other (socio-economic) predictor variables. We find that this final model indeed does substantially improve our model in comparison to the univariate model. Notably, we also include an interaction term in this final model between percentage of residents with bachelor's degrees or higher and the poverty rate. The positive coefficient on this interaction term indicates that the impact of poverty on crime rates depends on the percentage of residents holding a bachelor's degree or more, implying that the effect of poverty on violent crime becomes more positive as education increases. We assume that this is because a high poverty rate in combination with a high educational attainment rate could imply there to be the a large level of inequality present in the community. This inequality then may be associated with higher violent crime rates. There is a huge literature on this topic (Kelly (2000), Fajnzylber et al. (2002) and Kang (2016)).
 
-Several limitations should be highlighted though. The dataset we use overrepresents larger communities, contains missing data and uses outdated demographic predictors. It is also doubtful whether the results would still hold in today's context because of demographic changes. Keeping this context in mind, our results imply that policies aiming to reduce poverty could reduce violent crime rates, especially in combination with policies that reduce (educational) inequality. However, it remains important that these results areinterpreted as correlational and not as causal, as many confounding factors that our analysis cannot for, could still be at play.
+Several limitations should be highlighted though. The dataset contains missing data and uses outdated demographic predictors. It is also doubtful whether the results would still hold in today's context because of demographic changes. Keeping this context in mind, our results show that the number of violent crimes is associated with socio-economic disadvantage.
 
+It's important to mention that all results are interpreted as correlational and not as causal. The theoretical framework, which is essential for establishing causal relationships, was not further developed in this statistical study. Moreover, the number of predictors included in the analysis was very limited, which means confounding could play a significant role.
 
 # References
 
