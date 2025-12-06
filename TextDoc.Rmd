@@ -1446,54 +1446,54 @@ Partial regression plots first log model:
 
 Logit transformed *racepctblack* model assumsions check:
 
-```{r ref.label="logit_model_test"}
+```{r ref.label="logit_model_test", include=TRUE}
 
 ```
 
 Partial regression logits:
 
-```{r ref.label="partial-regression-logit"}
+```{r ref.label="partial-regression-logit", include=TRUE}
 
 ```
 
 VIF check model with *less9thgrade*
-```{r ref.label="VIFs_model"}
+```{r ref.label="VIFs_model", include=TRUE}
 
 ```
 
 Assumptions check one education model:
 
-```{r ref.label="model_best1education"}
+```{r ref.label="model_best1education", include=TRUE}
 
 ```
 
 Vifs first one education model:
 
-```{r ref.label="viskys"}
+```{r ref.label="viskys", include=TRUE}
 
 ```
 
 Assumptions one education model with *PctPopPov:PctBSorMore* interaction:
 
-```{r ref.label="model_1education2"}
+```{r ref.label="model_1education2", include=TRUE}
 
 ```
 
 Vifs for *PctPopPov:PctBSorMore* interaction model:
 
-```{r ref.label="vivs2"}
+```{r ref.label="vivs2", include=TRUE}
 
 ```
 
 Partials for *PctPopPov:PctBSorMore* interaction model:
 
-```{r ref.label="partials_final_model"}
+```{r ref.label="partials_final_model", include=TRUE}
 
 ```
 
 Plot of outliers vs population:
 
-```{r ref.label="outliers_vs_population2"}
+```{r ref.label="outliers_vs_population2", include=TRUE}
 
 ```
 
