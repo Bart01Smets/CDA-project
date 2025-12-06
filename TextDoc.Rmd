@@ -365,15 +365,8 @@ plot(fit_simple$fitted.values, stud_res,
      main = "Studentized Residuals vs Fitted")
 outliers_simple <- which(abs(stud_res) > 2)
 ```
-<<<<<<< HEAD
 
-<<<<<<< HEAD
-Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends to underestimate the total number of crimes for large populations.
-=======
 Figures to get a visual illustration of whether outliers are more common in small pop. We see larger residuals for larger populations. This means that the model tends te underestimate the total number of crimes for large populations.
-
-
-=======
 
 ```{r outliers vs population1}
 # >>>>>>> ab3368e76b00913d4bc73fc6eb05f62b776166b6
