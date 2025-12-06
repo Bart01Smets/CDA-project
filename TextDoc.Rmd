@@ -1070,12 +1070,6 @@ coef_mean <- b["PctPopUnderPov"] +
 confidence_intervals <- confint(fit_final)
 ```
 
-#### Notes on interpretation
-
-The intercept on its own is not interpretable as it would require all predictor variables (and interaction terms) to be zero. This is not in the scope of our model. If it were, the intercept of `r round(b["(intercept)"], 4)` could be interpreted as the expected log of (violent crime rate per 100k + 1) when all predictor variables are 0.
-There is no use in interpreting interaction-term coefficients on their own, as they indicate the effect of one predictor on the other, but have no direct effect on its own. 
-
-
 #### Interpretation of *PctPopUnderPov*
 
 ```{r}
