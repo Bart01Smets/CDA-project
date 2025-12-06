@@ -172,7 +172,8 @@ crimes_table_subset$logpopulation <- log10(crimes_table_subset$population)
 numeric_cols <- sapply(crimes_table_subset, is.numeric)
 crimes_table_subset_num <- crimes_table_subset[, ..numeric_cols]
 par(mfrow = c(4,2))
-for(columnname in names(crimes_table_subset_num_na)){
+
+plots <- lapply(names(crimes_table_subset_num_na), function(columnname) {
   column <- crimes_table_subset_num[[columnname]]
   boxplot(column,
           main = columnname
@@ -182,24 +183,27 @@ for(columnname in names(crimes_table_subset_num_na)){
        xlab = get_label(column)
           )
 }
+)
 ```
 
 ```{r histograms na comparison, fig.width=10, fig.height=10}
 numeric_cols_na <- sapply(na_subset, is.numeric)
 crimes_table_subset_num_na <- na_subset[, ..numeric_cols_na]
 par(mfrow = c(4,2))
-for(columnname in names(crimes_table_subset_num_na)){
+
+plots <- lapply(names(crimes_table_subset_num_na), function(columnname) {
   column <- crimes_table_subset_num[[columnname]]
-  column_na <- crimes_table_subset_num_na[[columnname]]
+  column_na <- crimes_table_subset_num_na[[columnname]]  
   hist(column,   
        main = columnname,
        xlab = get_label(column)
           )
-  hist(column_na,   
+    hist(column_na,   
        main = paste(columnname, "(missing data)"),
        xlab = get_label(column)
           )
 }
+)
 ```
 
 ```{r correlations, fig.height= 4, fig.width= 5}
@@ -1009,8 +1013,6 @@ problematic_with_data[, c("flag_count", "communityname", "population", "PctPopUn
 By looking at all 318 communities in the dataset that were flagged as problematic, meaning they crossed the threshold of one of the diagnostic tests, no evidence could be found of errors or anomalies that would necessitate removal. Most of these communities were small and exhibited extreme demographic or crime-related characteristics. For example, two communities, Martinsvillecity and Vidorcity, both flagged by all 5 diagnostic tests, were reported to not have any people of black color in their community. As these are both small communities, we have no reason to suspect this observation to be wrongly annotated. Another example is Spencercity, which was reported to have a *ViolentCrimesPerPop* of 0, while this is not common in our dataset, we lack evidence to say that this observation is erroneous. Other observations showed either a high or low value in one or more variables compared to the majority of communities, reflecting genuine heterogeneity rather than data quality issues.
 
 These findings show that these flagged communities likely represent valid but extreme cases present in our dataset whose demographic or crime-related profiles differ substantially from the average. Therefore, there is no reason to discard any of them. So instead of removing them, another way to account for their impact would be to run a robust regression, instead of a normal linear regression.
-
-### Attemping to solve the influencial outliers with robust regression.
 
 To further assess and account for the impact of these points, we fit a robust regression using Bisquare weights.
 
