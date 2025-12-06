@@ -3,8 +3,12 @@ title: "Analysis of Continuous Data project"
 author: "Thomas Sertijn, Ilja Van Bever, Lieselot Van de Putte"
 date: "2025-11-09"
 output:
-  pdf_document: default
-  html_document: default
+  bookdown::pdf_document2:
+    toc: false
+    number_sections: false
+  bookdown::html_document2:
+    toc: false
+    number_sections: false
 ---
 
 ```{r setup, include = FALSE}
@@ -1355,6 +1359,20 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 ## Figures
 
 ## Contributions
+
+## AI:
+
+During this project, AI has been used either to find out why certain errors occured, Github related issues, and some practical issues such as for example referencing to figures in a later part of the code:
+
+prompt:
+
+how can i reference to figures in my appendix in r since this is after all text
+
+Or to fix an error in getting the full formulas in a tzble during the model building:
+
+prompt:
+model_ranking <- data.frame( + formula = sapply(formulas, deparse), + BIC = bic_values + ) Error in (function (..., row.names = NULL, check.rows = FALSE, check.names = TRUE, : arguments imply differing number of rows: 1, 2, 3. Why do i get this error?
+
 
 ## Code
 
