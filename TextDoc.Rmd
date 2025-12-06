@@ -435,41 +435,47 @@ predictors <- c("perCapInc", "PctEmploy",
 educ <- c("PctLess9thGrade", "PctNotHSGrad", "PctBSorMore")
 
 formulas <- list()
+# create all possible formulas to a max of max_extra_predictors plus main pred
 for (i in 1:max_extra_predictors) {
   tmp <- combn(predictors, i)
   tmp <- apply(tmp, 2, paste, collapse=" + ")
   tmp <- paste0("ViolentCrimesPerPop~PctPopUnderPov + ", tmp)
   formulas[[i]] <- tmp
 }
+# make the list compatible with the as formula function
 formulas <- unlist(formulas)
+# makes formulas into real formulas
 formulas <- sapply(formulas, as.formula)
+# make a model for each fomula option
 models <- lapply(formulas, lm, data=train_data)
 
-# calculating BIC, R squared, adjusted R squared
+# calculate the BIC, R squared, adjusted R squared for each model
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
                          , character(1))
 
-# build the frame
+# make dataframe for better comparison with these criteria
 model_ranking <- data.frame(
   formula = formula_vector,
   r.square = r_square,
   adj.r.square = adj_r_square,
   BIC = bics
 )
+# sort models based on lowest BIC value
 model_ranking <- model_ranking[order(model_ranking$BIC), ]
 ```
 ```{r show best model}
-# Print best model
+# Print best model based on lowest BIC
 best <- which.min(model_ranking$BIC)
+# extract formula
 best_pred <- model_ranking$formula[best]
-cat("\nBest model:\n")
-cat(best_pred, "\n")
-cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+# print stats
+cat("\nBest model:", best_pred)
+cat("\nBIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
-
+# show model stats
 fit_multi <- lm(best_pred, data = train_data)
 multi_var_summary <- summary(fit_multi)
 multi_var_summary
@@ -517,7 +523,7 @@ fit_log <- lm(log(ViolentCrimesPerPop + 1) ~
                 PctImmig + PctPopUnderPov:PctBSorMore,
               data = train_data)
 
-multi_var_summary <- summary(fit_log)
+multi_var_summary_logtest <- summary(fit_log)
 plot(fit_log)
 par(mfrow = c(1, 1))
 ```
@@ -538,6 +544,7 @@ predictors <- c("perCapInc", "PctEmploy",
 # Educ variables
 educ <- c("PctLess9thGrade", "PctNotHSGrad", "PctBSorMore")
 
+# create all possible formulas to a max of max_extra_predictors plus main pred
 formulas <- list()
 for (i in 1:max_extra_predictors) {
   tmp <- combn(predictors, i)
@@ -548,35 +555,41 @@ for (i in 1:max_extra_predictors) {
 ```
 
 ```{r model selection2, message=FALSE}
+# make the list compatible with the as formula function
 formulas <- unlist(formulas)
+# makes formulas into real formulas
 formulas <- sapply(formulas, as.formula)
+# make a model for each fomula option
 models <- lapply(formulas, lm, data=train_data)
 
+# calculate the BIC, R squared, adjusted R squared for each model
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
                          , character(1))
 
-# build the frame
+# make dataframe for better comparison with these criteria
 model_ranking <- data.frame(
   formula = formula_vector,
   r.square = r_square,
   adj.r.square = adj_r_square,
   BIC = bics
 )
+# sort models based on lowest BIC value
 model_ranking <- model_ranking[order(model_ranking$BIC), ]
 ```
 
 ```{r show best model 2}
-# print best model
+# Print best model based on lowest BIC
 best <- which.min(model_ranking$BIC)
+# extract formula
 best_pred <- model_ranking$formula[best]
-cat("\nBest model:\n")
-cat(best_pred, "\n")
-cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+# print stats
+cat("\nBest model:", best_pred)
+cat("\nBIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
-
+# show model stats
 # fit linear model with selected variables
 fit_multi <- lm(best_pred, data = train_data)
 multi_var_summary1 <- summary(fit_multi)
@@ -603,7 +616,7 @@ partial_regression_plot <- function(data, outcome, predictor, predictor_list) {
   # regression of predictor variable ~ controls
   lm_pred <- lm(formula_pred, data = temp)
   temp$resid_pred <- resid(lm_pred)
-
+# plot
 ggplot(temp, aes(x = resid_pred, y = resid_outcome)) +
   geom_point() +
   geom_smooth(method = "lm", se = FALSE) +
@@ -640,6 +653,7 @@ train_data$race_black_logit <- pct_to_logit(train_data$racepctblack)
 test_data$race_black_logit <- pct_to_logit(test_data$racepctblack)
 ```
 ```{r logit_model_test}
+# fit logit model to test
 fit_logit <- lm(logViolent ~ 
                 PctPopUnderPov + 
                 PctLess9thGrade +
@@ -648,7 +662,7 @@ fit_logit <- lm(logViolent ~
                 PctImmig,
               data = train_data)
 
-
+# summary and assumptions plots
 multi_var_logit_summary <- summary(fit_logit)
 #multi_var_logit_summary
 plot(fit_logit)
@@ -667,38 +681,47 @@ plots <- lapply(predictor_list, function(predictor) {
 print(wrap_plots(plots, ncol = 3))
 ```
 ```{r interaction term selection 2}
+# extract all coeficients that are not the intercept or PctPopUnderPov
 selected_vars <- setdiff(
   row.names(multi_var_logit_summary$coefficients),
   c("(Intercept)", "PctPopUnderPov")
 )
-
+ # create interaction terms with PctPopUnderPov and the remaining variables
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
 
+# make formulas containing the best model and each interaction term
 formulas_interaction <- sapply(interaction_terms, function(i) {
   paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
                                   i)
 })
-
+# make them formulas
 formulas_interaction <- lapply(formulas_interaction, as.formula)
+# create a model for each formula
 models <- lapply(formulas_interaction, lm, data=train_data)
 
+# reconstruct formula in a way to add in table later (see AI help)
 interaction_models_form <- vapply(formulas_interaction, function(f) 
   paste(deparse(f), collapse = ""), character(1))
+
+# extract summary values function
 summary_val_extraction <- function(x, item) {
   tmp <- summary(x)$coefficients
   tmp[nrow(tmp), item]
 }
+# extract p and t values
 p_vals_interaction <- sapply(models, function(m) 
   summary_val_extraction(m, "Pr(>|t|)"))
 t_vals_interaction <- sapply(models, function(m) 
   summary_val_extraction(m, "t value"))
 
+# calculate the BIC, R squared, adjusted R squared for each model
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 delta_adj_r_square <- sapply(models, function(m) 
   summary(m)$adj.r.squared - summary(fit_multi)$adj.r.squared)
 
+# add values to table
 interaction_table <- data.frame(
   p.vals = p_vals_interaction,
   t.vals = t_vals_interaction,
@@ -707,6 +730,8 @@ interaction_table <- data.frame(
   delta.adj = delta_adj_r_square,
   BIC = bics
 )
+
+# sort based on p-values
 interaction_table <- interaction_table[order(interaction_table$p.vals), ]
 interaction_table
   
@@ -738,39 +763,40 @@ filtered_formulas <- Filter(function(f) {
 
 #change formulas to contain the logit based race variable
 filtered_formulas <- lapply(filtered_formulas, function(f) {
-  f_str <- deparse(f)                                # formula -> character vector
-  f_str <- paste(f_str, collapse = " ")              # collapse into one string
-  f_str <- gsub("racepctblack", "race_black_logit", f_str)  # replace variable name
-  as.formula(f_str)                                  # back to formula
+  f_str <- deparse(f) # make the formula a vector
+  f_str <- paste(f_str, collapse = " ") # make the vectors into strings
+  f_str <- gsub("racepctblack", "race_black_logit", f_str)  # replace racepctblack to logit
+  as.formula(f_str) # revert it to a formula
 })
 
 
 ```
 
 ```{r}
-
+# test each model with a logit transformed variable and only 1 education varibale
 models <- lapply(filtered_formulas, lm, data=train_data)
 
+# calculate the BIC, R squared, adjusted R squared for each model
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 formula_vector <- vapply(filtered_formulas, function(f) paste(deparse(f), collapse = "")
                          , character(1))
 
-# build the frame
+# make it into a dataframe
 model_ranking <- data.frame(
   formula = formula_vector,
   r.square = r_square,
   adj.r.square = adj_r_square,
   BIC = bics
 )
+# rank on BIC
 model_ranking <- model_ranking[order(model_ranking$BIC), ]
 # Print best model
 best <- which.min(model_ranking$BIC)
 best_pred <- model_ranking$formula[best]
-cat("\nBest model:\n")
-cat(best_pred, "\n")
-cat("BIC:", round(model_ranking$BIC[best], 2), "\n")
+cat("\nBest model:", best_pred)
+cat("\nBIC:", round(model_ranking$BIC[best], 2), "\n")
 cat("Adjusted R²:", round(model_ranking$adj.r.square[best], 4), "\n")
 
 fit_multi <- lm(best_pred, data = train_data)
@@ -779,39 +805,41 @@ multi_var_summary2
 ```
 
 ```{r}
+# extract all predictors in the best model
 predictor_list <- row.names(multi_var_summary2$coefficients[-1,])
+# get out all the variables not intercept or poverty
 selected_vars <- setdiff(
   row.names(multi_var_summary$coefficients),
   c("(Intercept)", "PctPopUnderPov")
 )
-
+# make all interaction terms
 interaction_terms <- paste("PctPopUnderPov", selected_vars, sep = ":")
-
+# make formulas for all
 formulas_interaction <- sapply(interaction_terms, function(i) {
   paste("logViolent ~", paste(predictor_list, collapse = " + "), "+",
                                   i)
 })
-
 formulas_interaction <- lapply(formulas_interaction, as.formula)
+# model formulas
 models <- lapply(formulas_interaction, lm, data=train_data)
-
+# get formmula
 interaction_models_form <- vapply(formulas_interaction, function(f) 
   paste(deparse(f), collapse = ""), character(1))
-summary_val_extraction <- function(x, item) {
-  tmp <- summary(x)$coefficients
-  tmp[nrow(tmp), item]
-}
+
+# extract p and t values
 p_vals_interaction <- sapply(models, function(m) 
   summary_val_extraction(m, "Pr(>|t|)"))
 t_vals_interaction <- sapply(models, function(m) 
   summary_val_extraction(m, "t value"))
 
+# calculate the BIC, R squared, adjusted R squared for each model
 bics <- sapply(models, BIC)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 delta_adj_r_square <- sapply(models, function(m) 
   summary(m)$adj.r.squared - summary(fit_multi)$adj.r.squared)
 
+# add values to table
 interaction_table <- data.frame(
   p.vals = p_vals_interaction,
   t.vals = t_vals_interaction,
@@ -820,6 +848,8 @@ interaction_table <- data.frame(
   delta.adj = delta_adj_r_square,
   BIC = bics
 )
+
+# sort based on p-values
 interaction_table <- interaction_table[order(interaction_table$p.vals), ]
 interaction_table
   
