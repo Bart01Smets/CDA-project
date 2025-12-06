@@ -3,8 +3,12 @@ title: "Analysis of Continuous Data project"
 author: "Thomas Sertijn, Ilja Van Bever, Lieselot Van de Putte"
 date: "2025-11-09"
 output:
-  pdf_document: default
-  html_document: default
+  bookdown::pdf_document2:
+    toc: false
+    number_sections: false
+  bookdown::html_document2:
+    toc: false
+    number_sections: false
 ---
 
 ```{r setup, include = FALSE}
