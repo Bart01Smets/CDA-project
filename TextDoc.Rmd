@@ -324,7 +324,7 @@ summary(fit_simple)
 ```
 Here a coefficient for the slope of `r round(coef(fit_simple)[2], 2)` could be found, which represents the expected increase in violent crimes per 100K population if poverty rate increases by one percentage point. The model has a $R^2$ of `r round(summary(fit_simple)$r.squared, 4)`, which is rather small and indicates that poverty by itself is insufficient to explain the variation in violent crime rates.
 
-For the simple linear model the assumptions of linearity are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. Regarding the population size, it can be noted that the residuals for smaller populations are rather negative, while the residuals for larger populations are rather positive. This means that the model tends to underestimate the total number of crimes for large populations and overestimate, while the total number of crimes for small populations are rather underestimated.
+For the simple linear model the assumptions of linearity are violated. Larger outcome values tend to be underestimated, the variance for larger outcome values is larger and the QQ-plot shows violation of the normality assumption. Regarding the population size, it can be noted that the residuals for smaller populations are rather negative, while the residuals for larger populations are rather positive. This means that the model tends to underestimate the total number of crimes for large populations, while the total number of crimes for small populations are rather overestimated.
 
 ```{r Extract relevant statistics, echo=FALSE, include=FALSE}
 
