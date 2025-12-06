@@ -296,7 +296,7 @@ Two extreme values for the *ViolentCrimesPerPop* variable appear. Chestercity ha
 crimes_table_subset[order(crimes_table_subset_num$ViolentCrimesPerPop, decreasing=FALSE), , drop = FALSE]
 ```
 
-It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables. Scatter plots show that communities with a very small population indeed show a very large spread for all variables (fig. \@ref(fig:scattersforpop)).
+It was also investigated whether or not small communities have a higher probability to have more extreme values of the response and predictor variables. Scatter plots show that communities with a very small population indeed show a very large spread for all variables.
 
 ```{r scatter plots population, fig.width=8, fig.height=12}
 # preparing dataframe for plots
@@ -938,7 +938,7 @@ par(mfrow = c(1, 1))
 
 After deciding on the model and the form of the variables, the effect of the outliers was determined. This was done based on the Deleted Studentized residuals, the Cook's distance, the leverage, DFFITS, and DFBETAS. These values were plotted, and values crossing a certain threshold were visualized and seen as influential. If certain datapoints were seen in multiple plots, then these were most likely more influential and possibly problematic outliers.
 
-```{r}
+```{r diagnostics_part1}
 p <- length(coef(fit_final))
 n_train <- nrow(train_data)
 n_test <- nrow(test_data)
@@ -949,7 +949,7 @@ olsrr::ols_plot_resid_lev(fit_final, threshold = NULL, print_plot = TRUE)
 olsrr::ols_plot_resid_stud_fit(fit_final, threshold = NULL, print_plot = TRUE)
 ```
 
-```{r dffits plots, fig.width=10, fig.height=8}
+```{r dffits_plots, fig.width=10, fig.height=8}
 # IMPORTANT remark: the labelled observations are the points with 2 times the threshold (the reason is the visualisation)
 dffits_vals <- data.frame(dffits(fit_final))
 
@@ -968,7 +968,7 @@ plot <- ggplot(dffits_vals) +
 print(plot)
 ```
 
-```{r dfbetas plots, fig.width=10, fig.height=8}
+```{r dfbetas_plots, fig.width=10, fig.height=8}
 # IMPORTANT remark: the labelled observations are the points with 1,5 times the threshold (the reason is the visualisation)
 # DFBETAS values (placing them in a data frame ensures easy compatibility with ggplot2)
 dfbetas_vals <- data.frame(dfbetas(fit_final))
@@ -1075,9 +1075,9 @@ robust <- rlm(formula(fit_final), data = train_data, psi = psi.bisquare)
 summary(robust, method = "XtX")
 ```
 
-```{r}
-par(mfrow=c(2,2))
-plot(fit_final)
+```{r robust_regression_assumsions}
+#par(mfrow=c(2,2))
+#plot(fit_final)
 par(mfrow=c(2,2))
 plot(robust, which = 1)
 qqnorm(resid(robust))
@@ -1086,7 +1086,7 @@ qqline(resid(robust))
 ```
 
 
-```{r influence inference}
+```{r influence_inference}
 # Compare OLS vs Robust coefficients
 comparison <- data.frame(
   OLS = coef(fit_final),
@@ -1212,8 +1212,7 @@ pred_interval_test_simple <- predict(fit_simple, newdata = test_data, interval =
 pred_interval_train_simple <- predict(fit_simple, newdata = train_data, interval = "prediction", level = 0.95)
 ```
 
-
-```{r model validation prediction interval}
+```{r model_validation_prediction_interval}
 # number of observations in test set inside prediction interval (logscale, final model)
 inside_log <- test_data$logViolent >= pred_interval_test_log[, "lwr"] & test_data$logViolent <= pred_interval_test_log[, "upr"]
 
@@ -1255,7 +1254,7 @@ When point estimates are compared to observed values, both the univariate and th
 
 The $R^2$ of the multivariate model is higher than the $R^2$ of the univariate model. However, these values are difficult to compare, because the outcome variable differs between the two models ($ViolentCrimesPerPop$ vs. $\log(ViolentCrimesPerPop)$) and back-transforming the predicted values of $\log(ViolentCrimesPerPop)$ does not yield the expected value for $ViolentCrimesPerPop$ (,except under strict assumptions regarding the residuals).
 
-```{r model plots}
+```{r model_plots}
 # prediction intervals test data (logscale, final model)
 df_prediction_test_logscale <- data.frame(observed = test_data$logViolent, predicted = pred_interval_test_log[, "fit"])
 
@@ -1305,7 +1304,7 @@ ggplot(df_prediction_train_simple, aes(observed, predicted))+
        title = "Train dataset (univariate)")
 ```
 
-```{r model validation MSPR and Rsquared logscale, fig.width=8, fig.height=6}
+```{r model_validation_MSPR_and_Rsquared_logscale, fig.width=8, fig.height=6}
 # MSPR for test data
 mspr_test_log <- mean((test_data$logViolent - pred_interval_test_log[, "fit"])^2)
 
@@ -1370,9 +1369,7 @@ The missing data of *ViolentCrimesPerPop* may interfere with generalizability as
 
 Smaller communities have greater variance in both predictor and outcome variables than larger communities. This can partly be explained by the smaller denominator: in a small community, small changes in the numerator may produce substantial changes in the rate compared to small changes in big communities.
 
-Another caveat is that the FBI’s data is from 1995, while the Census' populations data containing demographic variables are from 1990. If the demographic variables of certain communities changed drastically during this period, the predictor variables would not represent these communities well in 1995 (when the actual crimes happened).
-
-Then, it should be noted that the data are from 1990-1995. Since then, the social and economic environment have changed, implying that our estimated relationships would not hold today as crime rates, reporting practices... have evolved. Thus, these results should be carefully interpreted in today's context as the mechanisms driving these relationships are different in comparison to when the data collection happened.  
+Another caveat is that the FBI’s data is from 1995, while the Census' populations data containing demographic variables are from 1990. If the demographic variables of certain communities changed drastically during this period, the predictor variables would not represent these communities well in 1995 (when the actual crimes happened). Since 1990-1995, the social and economic environment have changed. Thus, results should be carefully interpreted in today's context as the mechanisms driving these relationships are different in comparison to when the data collection happened.  
 
 At last, it is mentioned in the description of the original dataset that many relevant factors are not included. Specifically, it is mentioned that per capita crime rates are calculated using resident populations, so communities with large numbers of visitors are expected to have higher crime rates, even if the actual risk is not different across communities. This, together with other unmeasured factors, implies that our results should be interpreted as correlations and not as causations.
 
@@ -1432,19 +1429,19 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 
 correlation plot:
 
-```{r correlatiion_plot_discriptives, ref.label="cor_discriptives", include=TRUE}
+```{r correlatiion_plot_discriptives, ref.label="cor_discriptives", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 scatter plots:
 
-```{r scatters_descriptives, ref.label="scatter plots", fig.width=8, fig.height=10, include=TRUE}
+```{r scatters_descriptives, ref.label="scatter plots", fig.width=8, fig.height=10, include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 population scatter plots:
 
-```{r scattersforpop, ref.label="scatter plots population", fig.width=8, fig.height=10, include=TRUE}
+```{r scattersforpop, ref.label="scatter plots population", fig.width=8, fig.height=10, include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
@@ -1454,87 +1451,118 @@ population scatter plots:
 
 Simple model assumption plots:
 
-```{r ref.label="simple-lm-diagnostics", include=TRUE}
+```{r ref.label="simple-lm-diagnostics", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Residuals based on population size:
 
-```{r ref.label="outliers_vs_population1", include=TRUE}
+```{r ref.label="outliers_vs_population1", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 #### multivariate model
 
 Assumption checks first multivariate model:
-```{r ref.label="multimodel1_model_diagnostics", include=TRUE}
+```{r ref.label="multimodel1_model_diagnostics", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Assumption checks log transformation test: 
-```{r ref.label="logtransformed_first_model", include=TRUE}
+```{r ref.label="logtransformed_first_model", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 Partial regression plots first log model:
 
-```{r ref.label="partial-regression-plots2", include=TRUE}
+```{r ref.label="partial-regression-plots2", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Logit transformed *racepctblack* model assumsions check:
 
-```{r ref.label="logit_model_test"}
+```{r ref.label="logit_model_test", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Partial regression logits:
 
-```{r ref.label="partial-regression-logit"}
+```{r ref.label="partial-regression-logit", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 VIF check model with *less9thgrade*
-```{r ref.label="VIFs_model"}
+```{r ref.label="VIFs_model", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Assumptions check one education model:
 
-```{r ref.label="model_best1education"}
+```{r ref.label="model_best1education", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Vifs first one education model:
 
-```{r ref.label="viskys"}
+```{r ref.label="viskys", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Assumptions one education model with *PctPopPov:PctBSorMore* interaction:
 
-```{r ref.label="model_1education2"}
+```{r ref.label="model_1education2", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Vifs for *PctPopPov:PctBSorMore* interaction model:
 
-```{r ref.label="vivs2"}
+```{r ref.label="vivs2", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Partials for *PctPopPov:PctBSorMore* interaction model:
 
-```{r ref.label="partials_final_model"}
+```{r ref.label="partials_final_model", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 Plot of outliers vs population:
 
-```{r ref.label="outliers_vs_population2"}
+```{r ref.label="outliers_vs_population2", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
 ### Diagnostics:
+
+Diagnostics plots:
+```{r ref.label="diagnostics_part1", include=TRUE, fig.width=8, fig.height=6}
+
+```
+```{r ref.label="dffits_plots", include=TRUE, fig.width=8, fig.height=6}
+
+```
+```{r ref.label="dfbetas_plots", include=TRUE, fig.width=8, fig.height=6}
+
+```
+
+Robust model plots:
+
+```{r ref.label="robust_regression_assumsions", include=TRUE, fig.width=8, fig.height=6}
+
+```
+
+### Model validation
+
+prediction interval plots validation:
+
+```{r ref.label="model_validation_prediction_interval", include=TRUE, fig.width=8, fig.height=6}
+
+```
+
+prediction tests:
+
+```{r ref.label="model_plots", include=TRUE, fig.width=8, fig.height=6}
+
+```
 
 
 ## Contributions
