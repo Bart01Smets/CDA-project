@@ -1411,6 +1411,8 @@ The univariate linear regression showed a significant positive relationship betw
 
 Several limitations should be highlighted though. The dataset contains missing data, is not very recent and uses outdated demographic predictors. Keeping this context in mind, our results show that the number of violent crimes is associated with socio-economic disadvantage. It's important to mention that all results are interpreted as correlational and not as causal. The theoretical framework, which is essential for establishing causal relationships, is not further developed in this statistical study. Moreover, the number of predictors included in the analysis is very limited, which means confounding could play a significant role.
 
+Given our goal to inform policies to lower violent crime, our model would not be that usefull. Mainly because most of the variables resulting from the model building are demographic characteristics, such as race distributions or age in the communities. These could not be resolved in an ethical way so can not help in trying to lower the violent crime rate. One variable we would have liked to add was the population size as we can see that the residuals are clearly different for these larger populations so adding it would likely improve the model.
+
 # References
 
 Becker GS (1968) Crime and Punishment: An Economic Approach. Journal of Political Economy 76: 169–217
