@@ -347,10 +347,19 @@ cat("Regression equation: ViolentCrimesPerPop =",
     round(coef(fit_simple)[1], 2), "+", 
     round(coef(fit_simple)[2], 2), "* PctPopUnderPov\n\n")
 
+# create function to calculate BIC criterion
+BIC_fun <- function(models, data=train_data) {
+  n <- nrow(data) # Total observations
+  SSE <- sum(residuals(models)^2) # sse of the model
+  p <- length(coef(models)) # mumber coefficients
+  bic <- n * log(SSE) - n * log(n) + (log(n) * p) #formula bic
+  return(bic)
+  } 
+
 # R-squared, R-squared_adjusted and BIC-value
 cat("R-squared:", round(summary(fit_simple)$r.squared, 4), "\n")
 cat("Adjusted R-squared:", round(summary(fit_simple)$adj.r.squared, 4), "\n")
-cat("BIC:", BIC(fit_simple), "\n")
+cat("BIC:", BIC_fun(fit_simple), "\n")
 
 # MSE calculation
 sse_simple <- sum(fit_simple$residuals^2) 
@@ -440,7 +449,7 @@ formulas <- sapply(formulas, as.formula)
 models <- lapply(formulas, lm, data=train_data)
 
 # calculate the BIC, R squared, adjusted R squared for each model
-bics <- sapply(models, BIC)
+bics <- sapply(models, BIC_fun)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
@@ -559,7 +568,7 @@ formulas <- sapply(formulas, as.formula)
 models <- lapply(formulas, lm, data=train_data)
 
 # calculate the BIC, R squared, adjusted R squared for each model
-bics <- sapply(models, BIC)
+bics <- sapply(models, BIC_fun)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 formula_vector <- vapply(formulas, function(f) paste(deparse(f), collapse = "")
@@ -711,7 +720,7 @@ t_vals_interaction <- sapply(models, function(m)
   summary_val_extraction(m, "t value"))
 
 # calculate the BIC, R squared, adjusted R squared for each model
-bics <- sapply(models, BIC)
+bics <- sapply(models, BIC_fun)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 delta_adj_r_square <- sapply(models, function(m) 
@@ -747,7 +756,7 @@ library(car)
 # calculating VIF values
 vif <- vif(fit_less_9thgrade)
 print(vif)
-cat("BIC: ", BIC(fit_less_9thgrade))
+cat("BIC: ", BIC_fun(fit_less_9thgrade))
 ```
 ```{r filtering formulas for education}
 # filtering formulas with more than 1 education variable
@@ -773,7 +782,7 @@ filtered_formulas <- lapply(filtered_formulas, function(f) {
 models <- lapply(filtered_formulas, lm, data=train_data)
 
 # calculate the BIC, R squared, adjusted R squared for each model
-bics <- sapply(models, BIC)
+bics <- sapply(models, BIC_fun)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 formula_vector <- vapply(filtered_formulas, function(f) paste(deparse(f), collapse = "")
@@ -805,7 +814,7 @@ multi_var_summary2
 predictor_list <- row.names(multi_var_summary2$coefficients[-1,])
 # get out all the variables not intercept or poverty
 selected_vars <- setdiff(
-  row.names(multi_var_summary$coefficients),
+  row.names(multi_var_summary2$coefficients),
   c("(Intercept)", "PctPopUnderPov")
 )
 # make all interaction terms
@@ -829,7 +838,7 @@ t_vals_interaction <- sapply(models, function(m)
   summary_val_extraction(m, "t value"))
 
 # calculate the BIC, R squared, adjusted R squared for each model
-bics <- sapply(models, BIC)
+bics <- sapply(models, BIC_fun)
 r_square <- sapply(models, function(m) summary(m)$r.squared)
 adj_r_square <- sapply(models, function(m) summary(m)$adj.r.squared)
 delta_adj_r_square <- sapply(models, function(m) 
@@ -866,7 +875,7 @@ par(mfrow = c(1, 1))
 ```{r viskys}
 vif <- vif(fit_final)
 print(vif)
-cat("BIC: ", BIC(fit_final))
+cat("BIC: ", BIC_fun(fit_final))
 ```
 ```{r model_1education2}
 # fitting final selected linear model with 1 education variable
@@ -884,7 +893,7 @@ par(mfrow = c(1, 1))
 # calculating VIF
 vif <- vif(fit_final)
 print(vif)
-cat("BIC: ", BIC(fit_final))
+cat("BIC: ", BIC_fun(fit_final))
 ```
 ```{r partials_final_model, fig.width=10, fig.height=8, warnings=FALSE}
 # partial regression plots for predictor variables
@@ -1192,7 +1201,7 @@ df1
 df2 <- data.frame(
   R_squared = c(summary(fit_final)$r.squared, summary(fit_final_test)$r.squared, summary(fit_final_total)$r.squared),
   Adjusted_R_squared = c(summary(fit_final)$adj.r.squared, summary(fit_final_test)$adj.r.squared, summary(fit_final_total)$adj.r.squared),
-  BIC_model = c(BIC(fit_final), BIC(fit_final_test), BIC(fit_final_total))
+  BIC_model = c(BIC_fun(fit_final), BIC_fun(fit_final_test, data = test_data), BIC_fun(fit_final_total, data = crimes_table_subset))
 )
 rownames(df2) <- c("fit on training data","fit on test data", "fit on all data")
 df2
@@ -1417,6 +1426,56 @@ Rousseeuw, P. J., & van Zomeren, B. C. (1990). Unmasking Multivariate Outliers a
 
 # Appendix
 
+## AI:
+
+During this project, AI has been used either to find out why certain errors occured, Github related issues, and some practical issues such as for example referencing to figures in a later part of the code:
+
+prompt:
+
+how can i reference to figures in my appendix in r since this is after all text (did not wortk!!!)
+
+Or to fix an error in getting the full formulas in a table during the model building:
+
+prompt:
+model_ranking <- data.frame( + formula = sapply(formulas, deparse), + BIC = bic_values + ) Error in (function (..., row.names = NULL, check.rows = FALSE, check.names = TRUE, : arguments imply differing number of rows: 1, 2, 3. Why do i get this error?
+
+## Contributions
+
+```{r echo=FALSE, include=TRUE}
+# Create the table in R
+schedule <- data.frame(
+  Subject = c("Data extraction",
+              "Data preparation",
+              "Descriptive analyses",
+              "Model building",
+              "Model diagnostics",
+              "Model interpretation",
+              "Model validation",
+              "Statistical discussion linear model",
+              "Final conclusion and discussion"),
+  Code = c("Thomas",
+           "Ilja",
+           "Ilja",
+           "Thomas",
+           "Thomas&Ilja",
+           "Lieselot",
+           "Ilja",
+           "Lieselot",
+           "Lieselot"),
+  Text = c("Thomas",
+           "Ilja",
+           "Ilja",
+           "Thomas",
+           "Thomas",
+           "Lieselot",
+           "Ilja",
+           "Lieselot&Ilja",
+           "Lieselot&Ilja")
+)
+
+schedule
+```
+
 ## Figures
 
 ### Descriptives {#descriptive-boxes}
@@ -1565,59 +1624,6 @@ prediction tests:
 ```{r ref.label="model_plots", include=TRUE, fig.width=8, fig.height=6}
 
 ```
-
-
-## Contributions
-
-```{r echo=FALSE, include=TRUE}
-# Create the table in R
-schedule <- data.frame(
-  Subject = c("Data extraction",
-              "Data preparation",
-              "Descriptive analyses",
-              "Model building",
-              "Model diagnostics",
-              "Model interpretation",
-              "Model validation",
-              "Statistical discussion linear model",
-              "Final conclusion and discussion"),
-  Code = c("Thomas",
-           "Ilja",
-           "Ilja",
-           "Thomas",
-           "Thomas&Ilja",
-           "Lieselot",
-           "Ilja",
-           "Lieselot",
-           "Lieselot"),
-  Text = c("Thomas",
-           "Ilja",
-           "Ilja",
-           "Thomas",
-           "Thomas",
-           "Lieselot",
-           "Ilja",
-           "Lieselot&Ilja",
-           "Lieselot&Ilja")
-)
-
-# Print the table
-kable(schedule, caption = "Project contribution Overview", align = c('l', 'c', 'c'))
-```
-
-## AI:
-
-During this project, AI has been used either to find out why certain errors occured, Github related issues, and some practical issues such as for example referencing to figures in a later part of the code:
-
-prompt:
-
-how can i reference to figures in my appendix in r since this is after all text (did not wortk!!!)
-
-Or to fix an error in getting the full formulas in a table during the model building:
-
-prompt:
-model_ranking <- data.frame( + formula = sapply(formulas, deparse), + BIC = bic_values + ) Error in (function (..., row.names = NULL, check.rows = FALSE, check.names = TRUE, : arguments imply differing number of rows: 1, 2, 3. Why do i get this error?
-
 
 ## Code
 
