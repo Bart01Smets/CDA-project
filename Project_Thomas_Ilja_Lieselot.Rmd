@@ -1503,6 +1503,11 @@ ggplot(plot_df, aes(x = prob, y = resid)) +
 library(hnp)
 hnp(glm_fit, resid.type = "deviance")
 ```
+```{r}
+res <- residuals(glm_fit, type = "deviance")
+outliers <- which(abs(res) > 3)
+
+```
 
 ### Cooks
 dit is gewoon die van thomas overgenomen, geen idee of dat mag op deze manier voor binary
