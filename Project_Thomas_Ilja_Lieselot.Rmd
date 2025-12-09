@@ -348,9 +348,9 @@ print(wrap_plots(plots, ncol = 3))
 
 ```{r}
 crimes_table_subset$y <- crimes_table_subset$ViolentCrimesPerPop
-y_mean <- mean(crimes_table_subset$ViolentCrimesPerPop)
-crimes_table_subset$y[crimes_table_subset_num$y <= y_mean] <- 0
-crimes_table_subset$y[crimes_table_subset_num$y > y_mean] <- 1
+y_mean <- median(crimes_table_subset$ViolentCrimesPerPop)
+crimes_table_subset$y[crimes_table_subset$y <= y_mean] <- 0
+crimes_table_subset$y[crimes_table_subset$y > y_mean] <- 1
 ```
 
 
@@ -1453,8 +1453,6 @@ glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_
 
 glm_summary <- summary(glm_fit)
 glm_summary
-
-
 ```
 
 ### model adequacy check
@@ -1559,6 +1557,11 @@ roc_test <- roc(test_data$y, pred_test_glm) # deze geeft ook auc, kwestie van vo
 roc_test
 
 ```
+
+```{r}
+plot(effect("PctBSorMore",glm_fit))
+```
+
 
 # References
 
