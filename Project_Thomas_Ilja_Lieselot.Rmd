@@ -33,6 +33,7 @@ library(ggcorrplot)
 library(patchwork)
 library(MASS)
 library(stdmod)
+library(effects)
 ```
 
 ## Research question
@@ -1584,7 +1585,17 @@ roc_test
 ```
 
 ```{r}
-plot(effect("PctBSorMore",glm_fit))
+par(mfrow = c(2,2))
+for (variable in attr(terms(glm_fit), "term.labels")){
+  print(plot(effect(variable,glm_fit),multi=TRUE))
+} 
+```
+
+```{r}
+x <- sum(train_data$y)          # number of successes observed
+n <- length(train_data$y)       # number of trials
+binom.confint(x, n, method = "exact", conf.level=0.95)        # Clopper–Pearson
+binom.confint(x, n, method = "asymptotic", conf.level=0.95)   # Wald (approx)
 ```
 
 
