@@ -1436,18 +1436,11 @@ The univariate linear regression showed a significant positive relationship betw
 Several limitations should be highlighted though. The dataset contains missing data, is not very recent and uses outdated demographic predictors. Keeping this context in mind, our results show that the number of violent crimes is associated with socio-economic disadvantage. It's important to mention that all results are interpreted as correlational and not as causal. The theoretical framework, which is essential for establishing causal relationships, is not further developed in this statistical study. Moreover, the number of predictors included in the analysis is very limited, which means confounding could play a significant role.
 Given our goal to inform policies to lower violent crime, our model would not be that useful. The main reason is that the relationships identified by the model are not causal. Our model does suggest that poverty is associated with higher violent crime rates, this could be seen as useful. However, many of the variables emerging from the model-building process are demographic in nature, such as community-level race distributions or age profiles. These could not be resolved in an ethical way so can not help in trying to lower the violent crime rate. One variable we would have liked to add was the population size as we can see that the residuals are clearly different for these larger populations so adding it would likely improve the model.
 
+# Categorical part
+
+For the second part of this project, the response variable *ViolentCrimesPerPop* was converted into binary to fit a generalized linear model. Therefor the whole dataset was split at the median value to create 2 categories, the lower half of the response variables and the top half of the response variable. 
+
 ## Binary
-```{r}
-# y_mean <- median(train_data$ViolentCrimesPerPop)
-# train_data$y <- train_data$ViolentCrimesPerPop
-# train_data$y[train_data$y <= y_mean] <- 0
-# train_data$y[train_data$y > y_mean] <- 1
-# 
-# test_data$y <- test_data$ViolentCrimesPerPop
-# y_mean_test <- median(test_data$ViolentCrimesPerPop)
-# test_data$y[test_data$y <= y_mean_test] <- 0
-# test_data$y[test_data$y > y_mean_test] <- 1
-```
 
 ### model
 
