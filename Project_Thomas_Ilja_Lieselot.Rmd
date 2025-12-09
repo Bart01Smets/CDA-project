@@ -349,8 +349,8 @@ print(wrap_plots(plots, ncol = 3))
 ```{r}
 crimes_table_subset$y <- crimes_table_subset$ViolentCrimesPerPop
 y_mean <- mean(crimes_table_subset$ViolentCrimesPerPop)
-crimes_table_subset$y[crimes_table_subset_num$y <= y_mean] <- 0
-crimes_table_subset$y[crimes_table_subset_num$y > y_mean] <- 1
+crimes_table_subset$y[crimes_table_subset$y <= y_mean] <- 0
+crimes_table_subset$y[crimes_table_subset$y > y_mean] <- 1
 ```
 
 
