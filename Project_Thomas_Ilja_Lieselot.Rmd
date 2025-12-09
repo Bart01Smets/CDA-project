@@ -1556,6 +1556,8 @@ roc <-
 roc
 calc_auc(roc)
 roc_test <- roc(test_data$y, pred_test_glm) # deze geeft ook auc, kwestie van voorkeur
+roc_test
+
 ```
 
 # References
