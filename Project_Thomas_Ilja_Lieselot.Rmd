@@ -1474,28 +1474,35 @@ diff <- (glm_fit$null.deviance - glm_fit$deviance)
 anova(glm_fitnull, glm_fit, test="Chisq")
 diff
 ```
-The chi-squared test based on the deviance indicates that the model performs significantly better than a null model containing only an intercept. The estimated value for $\beta_{\text{PctPopUnderPov}}$ = `r round(glm_fit$coefficients["PctPopUnderPov"], 5)` suggests that more poverty is associated with a higher chance for a large number of violent crimes per 100k population. In fact, the expected value of the odds of having a community with a high number of violent crimes increases with a factor of exp(`r round(glm_fit$coefficients["PctPopUnderPov"], 5)`) = `r round(exp(glm_fit$coefficients["PctPopUnderPov"]), 5)` for each 1-percentage-point increase in poverty. With 95% confidence, this increase lies between a factor of `r exp(conf_int["PctPopUnderPov", "2.5 %"])` and `r exp(conf_int["PctPopUnderPov", "97.5 %"])`.
+The chi-squared test based on the deviance indicates that the model performs significantly better than a null model containing only an intercept. The estimators for the $\beta$ values have the same sign as in the final multivariate linear model. The estimated value for $\beta_{\text{PctPopUnderPov}}$ = `r round(glm_fit$coefficients["PctPopUnderPov"], 5)` suggests that more poverty is associated with a higher chance for a large number of violent crimes per 100k population. In fact, the expected value of the odds of having a community with a high number of violent crimes increases with a factor of exp(`r round(glm_fit$coefficients["PctPopUnderPov"], 5)`) = `r round(exp(glm_fit$coefficients["PctPopUnderPov"]), 5)` for each 1-percentage-point increase in poverty. With 95% confidence, this increase lies between a factor of `r exp(conf_int["PctPopUnderPov", "2.5 %"])` and `r exp(conf_int["PctPopUnderPov", "97.5 %"])`.
 
 ### model adequacy check
 
 ```{r}
-stud_pearson_res  <- rstandard(glm_fit, type = "pearson")
+par(mfrow = c(2,2))
 
+#train_data[["ViolentCrimesPerPop"]] == 0
+
+# Residuals berekenen
+raw_res <- residuals(glm_fit, type = "response")                 # Raw residuals
+stud_pearson_res <- rstandard(glm_fit, type = "pearson")        # Pearson residuals
+stud_deviance_res <- rstandard(glm_fit, type = "deviance")      # Deviance residuals
+stud_student_res <- rstudent(glm_fit)                            # Studentized residuals
+
+# Estimated probabilities
 estimated_prob <- fitted(glm_fit)    
 
-plot_df <- data.frame(
-  resid  = stud_pearson_res,
-  prob   = estimated_prob
-)
 
-library(ggplot2)
-
-ggplot(plot_df, aes(x = prob, y = resid)) +
+ggplot(plot_df, aes(x = prob, y = stud_pearson_res)) +
   geom_point(alpha = 0.1) +
   geom_smooth(se = FALSE, method = "loess") +
   scale_x_continuous(breaks = seq(0,1,0.1)) +
   scale_y_continuous(limits = c(-3,3)) +
   labs(x = "estimated probability", y = "studentized Pearson residuals")
+
+
+
+
 ```
 
 ### half-normal plot (model adequacy + outlier check)
@@ -1559,7 +1566,7 @@ pred_val_train <- ifelse(pred_train_glm > cutoff, 1, 0)
 error_rate_train <- mean(pred_val_train != train_data$y)
 error_rate_train
 ```
-
+The prediction error of the GLM is slightly lower for the test data (`r error_rate_test`) than for the training data (`r error_rate_train`), suggesting that the GLM does not suffer from overfitting. This pattern is consistent with what was observed for the linear model.
 
 ```{r}
 library(plotROC)
