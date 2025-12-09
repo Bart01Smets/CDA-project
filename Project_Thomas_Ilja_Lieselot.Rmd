@@ -1518,8 +1518,9 @@ hnp(glm_fit, resid.type = "deviance")
 ```{r}
 res <- residuals(glm_fit, type = "deviance")
 outliers <- which(abs(res) > 3)
-
+train_data[outliers,]
 ```
+An half-normal plot was used to visualize the absolute values of the standardized deviance residuals plotted against the theoretical quantiles. This visualisation allows us to acces the goodness of fit, potential overdispersion, and visualize potential outliers. For out model, we could see that most of the points fall approximatly within the simulated envelope around the theoretical line, showing that the model fits the data reasonably well. 
 
 ### Cooks
 dit is gewoon die van thomas overgenomen, geen idee of dat mag op deze manier voor binary
