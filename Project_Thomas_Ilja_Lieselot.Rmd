@@ -1392,6 +1392,130 @@ The univariate linear regression showed a significant positive relationship betw
 Several limitations should be highlighted though. The dataset contains missing data, is not very recent and uses outdated demographic predictors. Keeping this context in mind, our results show that the number of violent crimes is associated with socio-economic disadvantage. It's important to mention that all results are interpreted as correlational and not as causal. The theoretical framework, which is essential for establishing causal relationships, is not further developed in this statistical study. Moreover, the number of predictors included in the analysis is very limited, which means confounding could play a significant role.
 Given our goal to inform policies to lower violent crime, our model would not be that useful. The main reason is that the relationships identified by the model are not causal. Our model does suggest that poverty is associated with higher violent crime rates, this could be seen as useful. However, many of the variables emerging from the model-building process are demographic in nature, such as community-level race distributions or age profiles. These could not be resolved in an ethical way so can not help in trying to lower the violent crime rate. One variable we would have liked to add was the population size as we can see that the residuals are clearly different for these larger populations so adding it would likely improve the model.
 
+## Binary
+```{r}
+y_mean <- mean(train_data$ViolentCrimesPerPop)
+train_data$y <- train_data$ViolentCrimesPerPop
+train_data$y[train_data$y <= y_mean] <- 0
+train_data$y[train_data$y > y_mean] <- 1
+
+test_data$y <- test_data$ViolentCrimesPerPop
+y_mean_test <- mean(test_data$ViolentCrimesPerPop)
+test_data$y[test_data$y <= y_mean_test] <- 0
+test_data$y[test_data$y > y_mean_test] <- 1
+```
+
+### model
+
+```{r}
+glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit + PctPopUnderPov:PctBSorMore, data = train_data, family = binomial)
+
+glm_summary <- summary(glm_fit)
+glm_summary
+
+
+```
+
+### model adequacy check
+
+```{r}
+stud_pearson_res  <- rstandard(glm_fit, type = "pearson")
+
+estimated_prob <- fitted(glm_fit)    
+
+plot_df <- data.frame(
+  resid  = stud_pearson_res,
+  prob   = estimated_prob
+)
+
+library(ggplot2)
+
+ggplot(plot_df, aes(x = prob, y = resid)) +
+  geom_point(alpha = 0.1) +
+  geom_smooth(se = FALSE, method = "loess") +
+  scale_x_continuous(breaks = seq(0,1,0.1)) +
+  scale_y_continuous(limits = c(-3,3)) +
+  labs(x = "estimated probability", y = "pearson")
+```
+
+### half-normal plot (model adequacy + outlier check)
+```{r}
+library(hnp)
+hnp(glm_fit, resid.type = "deviance")
+```
+
+### Cooks
+dit is gewoon die van thomas overgenomen, geen idee of dat mag op deze manier voor binary
+
+```{r}
+library(olsrr)
+olsrr::ols_plot_cooksd_bar(glm_fit)
+```
+
+### prediction
+
+```{r}
+pred_test_glm <- predict(glm_fit, newdata = test_data, type = "response")
+pred_train_glm <- predict(glm_fit, newdata = train_data, type = "response")
+```
+
+```{r model plots glm}
+# prediction  test data glm
+df_prediction_test_glm <- data.frame(observed = test_data$y, predicted = pred_test_glm)
+
+ggplot(df_prediction_test_glm, aes(predicted, observed))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  theme_bw() +
+  labs(x = "predicted",
+       y = "observed",
+       title = "Test dataset")
+
+# prediction  training data glm
+df_prediction_train_glm <- data.frame(observed = train_data$y, predicted = pred_train_glm)
+
+ggplot(df_prediction_train_glm, aes(predicted, observed))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  theme_bw() +
+  labs(x = "predicted",
+       y = "observed",
+       title = "Train dataset")
+
+```
+
+```{r}
+cutoff <- 0.5
+pred_val_test <- ifelse(pred_test_glm > cutoff, 1, 0)
+error_rate_test <- mean(pred_val_test != test_data$y)
+error_rate_test
+
+pred_val_train <- ifelse(pred_train_glm > cutoff, 1, 0)
+error_rate_train <- mean(pred_val_train != train_data$y)
+error_rate_train
+```
+
+
+```{r}
+library(plotROC)
+
+
+dfpredict <- data.frame(
+  pi = predict(glm_fit, newdata=test_data, type = "response"),              #dit is van HDDA genomen
+  known.truth = test_data$y)
+
+roc <-
+  dfpredict  %>%
+  ggplot(aes(d = known.truth, m = pi)) +
+  geom_roc(n.cuts = 0) +
+  xlab("1-specificity (FPR)") +
+  ylab("sensitivity (TPR)")
+
+roc
+calc_auc(roc)
+roc_test <- roc(test_data$y, pred_prob_test) # deze geeft ook auc, kwestie van voorkeur
+```
+
 # References
 
 Becker GS (1968) Crime and Punishment: An Economic Approach. Journal of Political Economy 76: 169–217
