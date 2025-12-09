@@ -346,6 +346,14 @@ print(wrap_plots(plots, ncol = 3))
 
 ## Model Building
 
+```{r}
+crimes_table_subset$y <- crimes_table_subset$ViolentCrimesPerPop
+y_mean <- mean(crimes_table_subset$ViolentCrimesPerPop)
+crimes_table_subset$y[crimes_table_subset_num$y <= y_mean] <- 0
+crimes_table_subset$y[crimes_table_subset_num$y > y_mean] <- 1
+```
+
+
 ```{r dataset split}
 # set.seed and splitting dataset at random in test and training dataset
 set.seed(987654321)
@@ -1427,15 +1435,15 @@ Given our goal to inform policies to lower violent crime, our model would not be
 
 ## Binary
 ```{r}
-y_mean <- mean(train_data$ViolentCrimesPerPop)
-train_data$y <- train_data$ViolentCrimesPerPop
-train_data$y[train_data$y <= y_mean] <- 0
-train_data$y[train_data$y > y_mean] <- 1
-
-test_data$y <- test_data$ViolentCrimesPerPop
-y_mean_test <- mean(test_data$ViolentCrimesPerPop)
-test_data$y[test_data$y <= y_mean_test] <- 0
-test_data$y[test_data$y > y_mean_test] <- 1
+# y_mean <- median(train_data$ViolentCrimesPerPop)
+# train_data$y <- train_data$ViolentCrimesPerPop
+# train_data$y[train_data$y <= y_mean] <- 0
+# train_data$y[train_data$y > y_mean] <- 1
+# 
+# test_data$y <- test_data$ViolentCrimesPerPop
+# y_mean_test <- median(test_data$ViolentCrimesPerPop)
+# test_data$y[test_data$y <= y_mean_test] <- 0
+# test_data$y[test_data$y > y_mean_test] <- 1
 ```
 
 ### model
@@ -1531,6 +1539,7 @@ error_rate_train
 
 ```{r}
 library(plotROC)
+library(pROC)
 
 
 dfpredict <- data.frame(
@@ -1546,7 +1555,7 @@ roc <-
 
 roc
 calc_auc(roc)
-roc_test <- roc(test_data$y, pred_prob_test) # deze geeft ook auc, kwestie van voorkeur
+roc_test <- roc(test_data$y, pred_test_glm) # deze geeft ook auc, kwestie van voorkeur
 ```
 
 # References
