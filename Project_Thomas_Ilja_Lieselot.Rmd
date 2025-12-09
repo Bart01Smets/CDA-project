@@ -23,7 +23,6 @@ library(knitr)
 library (glue)
 library(dplyr)
 library(data.table)
-library(dplyr)
 library(stringr)
 library(rvest)
 library(ggplot2)
@@ -111,8 +110,8 @@ variable_names <- list("communityname","state","countyCode", "communityCode", "f
                        "assaults", "assaultPerPop", "burglaries", "burglPerPop", "larcenies", "larcPerPop", "autoTheft", "autoTheftPerPop",
                        "arsons", "arsonsPerPop", "ViolentCrimesPerPop", "nonViolPerPop")
 
-
-colnames(file) <- variable_names
+violent_crimes_table <- data.table(violent_crimes_table)
+colnames(violent_crimes_table) <- unlist(variable_names)
 ```
 
 ------end tempfix-------
@@ -137,6 +136,7 @@ The variable *NumImmig* is converted to a percentage of the total population, si
 crimes_table_subset$ViolentCrimesPerPop <- as.numeric(crimes_table_subset$ViolentCrimesPerPop)
 crimes_table_subset$PctImmig <- crimes_table_subset$NumImmig/crimes_table_subset$population*100
 crimes_table_subset = crimes_table_subset[,-c('NumImmig', 'fold')]
+
 ```
 
 ```{r setting labels}
@@ -161,6 +161,7 @@ na_subset <- crimes_table_subset %>%
   filter(is.na(ViolentCrimesPerPop)
   )
 na_subset <- na_subset[,-'ViolentCrimesPerPop']
+
 na_subset
 ```
 
