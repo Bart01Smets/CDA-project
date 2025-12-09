@@ -1455,6 +1455,31 @@ glm_summary <- summary(glm_fit)
 glm_summary
 ```
 
+All $\beta$ coefficients are significant according to their Wald test statistics, except for the $\beta$ coefficient for the interaction effect *PctPopUnderPov:PctBSorMore*. Because of this reason it's decided to eliminate the interaction effect from the model.
+
+```{r}
+glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = train_data, family = binomial)
+
+glm_summary <- summary(glm_fit)
+glm_summary
+
+coef_table <- glm_summary$coefficients
+coef_table
+```
+
+After fitting the model again, all $\beta$ coefficients are significant.
+
+The estimated value for $\beta_{\text{PctPopUnderPov}}$ = `r round(glm_fit$coefficients["PctPopUnderPov"], 5)` suggests that more poverty is associated with a higher chance for a large number of violent crimes per 100k population. In fact, the odds of success increases with a factor of exp(`r round(glm_fit$coefficients["PctPopUnderPov"], 5)`) = `r round(exp(glm_fit$coefficients["PctPopUnderPov"]), 5)` for each 1 percentage increase in percentage poverty.
+
+
+
+```{r}
+glm_fitnull <- glm(y ~ 1, data = train_data, family = binomial)
+diff <- (glm_fit$null.deviance - glm_fit$deviance)
+anova(glm_fitnull, glm_fit, test="Chisq")
+diff
+```
+
 ### model adequacy check
 
 ```{r}
@@ -1474,7 +1499,7 @@ ggplot(plot_df, aes(x = prob, y = resid)) +
   geom_smooth(se = FALSE, method = "loess") +
   scale_x_continuous(breaks = seq(0,1,0.1)) +
   scale_y_continuous(limits = c(-3,3)) +
-  labs(x = "estimated probability", y = "pearson")
+  labs(x = "estimated probability", y = "studentized Pearson residuals")
 ```
 
 ### half-normal plot (model adequacy + outlier check)
