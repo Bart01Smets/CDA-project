@@ -1562,7 +1562,7 @@ library(pROC)
 
 
 dfpredict <- data.frame(
-  pi = predict(glm_fit, newdata=test_data, type = "response"),              #dit is van HDDA genomen
+  pi = predict(glm_fit, newdata=test_data, type = "response"),
   known.truth = test_data$y)
 
 roc <-
@@ -1576,14 +1576,15 @@ roc
 calc_auc(roc)
 
 ```
-The roc curve is used to show how well a binary classifier can distinguish between the 2 classes for all possible probability tresholds, on this curve we can see a steep rise near the y-axis, showing that the model achieves high sensitivity while keeping false positives low at many thresholds. Showing that the model can successfully distinguish between class 1 and class 0 most of the time, and thus would perform far better then random guessing and would be considered a good-quality classifier. This is combined with a Area under the curve (AUC) of 0.89, which further reflects the fact that the model has a good ability distinguish between positive and negative outcomes.
+The roc curve is used to show how well a binary classifier can distinguish between the 2 classes for all possible probability thresholds, on this curve we can see a steep rise near the y-axis, showing that the model achieves high sensitivity while keeping false positives low at many thresholds. Showing that the model can successfully distinguish between class 1 and class 0 most of the time, and thus would perform far better then random guessing and would be considered a good-quality classifier. This is combined with a Area under the curve (AUC) of 0.89, which further reflects the fact that the model has a good ability distinguish between positive and negative outcomes.
 ```{r}
 par(mfrow = c(2,2))
 for (variable in attr(terms(glm_fit), "term.labels")){
   print(plot(effect(variable,glm_fit),multi=TRUE))
 } 
 ```
-Based on the effect plot of pctPopUnderPov, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the pctPopUnderPov gets larger, probably due to the sparsety of the date at these extreme percentages.
+Based on the effect plot of pctPopUnderPov, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the pctPopUnderPov gets larger, probably due to the sparsety of the data at these extreme percentages.
+
 # References
 
 Becker GS (1968) Crime and Punishment: An Economic Approach. Journal of Political Economy 76: 169–217
