@@ -1528,6 +1528,13 @@ A half-normal plot is used to visualize the absolute values of the standardized 
 
 ### prediction
 
+We validated the model by fitting it on our hold out set. In this model we see that the signs of the coefficients remain the same and there are no substantial changes in magnitude of the coefficients. However the coefficient for *agePct12t29* is no longer significant. This could be due to the unequal proportions of Y= 1 vs Y = 0, or similarly to the linear model just because it is a smaller data set.
+```{r}
+glm_fit_test <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = test_data, family = binomial)
+summary(glm_fit_test)
+```
+
+
 ```{r}
 pred_test_glm <- predict(glm_fit, newdata = test_data, type = "response")
 pred_train_glm <- predict(glm_fit, newdata = train_data, type = "response")
