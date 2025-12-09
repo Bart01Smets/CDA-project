@@ -33,6 +33,7 @@ library(ggcorrplot)
 library(patchwork)
 library(MASS)
 library(stdmod)
+library(effects)
 ```
 
 ## Research question
@@ -1577,11 +1578,13 @@ roc_test <- roc(test_data$y, pred_test_glm) # deze geeft ook auc, kwestie van vo
 roc_test
 
 ```
-
+The roc curve is used to show how well a binary classifier can distinguish between the 2 classes for all possible probability tresholds, on this curve we can see a steep rise near the y-axis, showing that the model achieves high sensitivity while keeping false positives low at many thresholds. Showing that the model can successfully distinguish between class 1 and class 0 most of the time, and thus would perform far better then random guessing and would be considered a good-quality classifier. This is combined with a Area under the curve (AUC) of 0.89, which further reflects the fact that the model has a good ability distinguish between positive and negative outcomes.
 ```{r}
-#plot(effect("PctBSorMore",glm_fit))
+par(mfrow = c(2,2))
+for (variable in attr(terms(glm_fit), "term.labels")){
+  print(plot(effect(variable,glm_fit),multi=TRUE))
+} 
 ```
-
 
 # References
 
