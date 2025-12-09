@@ -33,6 +33,7 @@ library(ggcorrplot)
 library(patchwork)
 library(MASS)
 library(stdmod)
+library(effects)
 ```
 
 ## Research question
@@ -348,7 +349,11 @@ print(wrap_plots(plots, ncol = 3))
 
 ```{r}
 crimes_table_subset$y <- crimes_table_subset$ViolentCrimesPerPop
+<<<<<<< HEAD
 y_mean <- mean(crimes_table_subset$ViolentCrimesPerPop)
+=======
+y_mean <- median(crimes_table_subset$ViolentCrimesPerPop)
+>>>>>>> e00678e00230e4f6980074bc8dd0b31b6cefa254
 crimes_table_subset$y[crimes_table_subset$y <= y_mean] <- 0
 crimes_table_subset$y[crimes_table_subset$y > y_mean] <- 1
 ```
@@ -1453,9 +1458,27 @@ glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_
 
 glm_summary <- summary(glm_fit)
 glm_summary
-
-
 ```
+
+All $\beta$ coefficients are significant according to their Wald test statistics, except for the $\beta$ coefficient for the interaction effect *PctPopUnderPov:PctBSorMore*. Because of this reason it's decided to eliminate the interaction effect from the model. After fitting the model again, all $\beta$ coefficients are significant.
+
+```{r}
+glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = train_data, family = binomial)
+
+glm_summary <- summary(glm_fit)
+glm_summary
+
+conf_int <- confint.default(glm_fit)
+
+coef_table <- glm_summary$coefficients
+coef_table
+
+glm_fitnull <- glm(y ~ 1, data = train_data, family = binomial)
+diff <- (glm_fit$null.deviance - glm_fit$deviance)
+anova(glm_fitnull, glm_fit, test="Chisq")
+diff
+```
+The chi-squared test based on the deviance indicates that the model performs significantly better than a null model containing only an intercept. The estimated value for $\beta_{\text{PctPopUnderPov}}$ = `r round(glm_fit$coefficients["PctPopUnderPov"], 5)` suggests that more poverty is associated with a higher chance for a large number of violent crimes per 100k population. In fact, the expected value of the odds of having a community with a high number of violent crimes increases with a factor of exp(`r round(glm_fit$coefficients["PctPopUnderPov"], 5)`) = `r round(exp(glm_fit$coefficients["PctPopUnderPov"]), 5)` for each 1-percentage-point increase in poverty. With 95% confidence, this increase lies between a factor of `r exp(conf_int["PctPopUnderPov", "2.5 %"])` and `r exp(conf_int["PctPopUnderPov", "97.5 %"])`.
 
 ### model adequacy check
 
@@ -1476,13 +1499,18 @@ ggplot(plot_df, aes(x = prob, y = resid)) +
   geom_smooth(se = FALSE, method = "loess") +
   scale_x_continuous(breaks = seq(0,1,0.1)) +
   scale_y_continuous(limits = c(-3,3)) +
-  labs(x = "estimated probability", y = "pearson")
+  labs(x = "estimated probability", y = "studentized Pearson residuals")
 ```
 
 ### half-normal plot (model adequacy + outlier check)
 ```{r}
 library(hnp)
 hnp(glm_fit, resid.type = "deviance")
+```
+```{r}
+res <- residuals(glm_fit, type = "deviance")
+outliers <- which(abs(res) > 3)
+
 ```
 
 ### Cooks
@@ -1543,7 +1571,7 @@ library(pROC)
 
 
 dfpredict <- data.frame(
-  pi = predict(glm_fit, newdata=test_data, type = "response"),              #dit is van HDDA genomen
+  pi = predict(glm_fit, newdata=test_data, type = "response"),
   known.truth = test_data$y)
 
 roc <-
@@ -1555,10 +1583,16 @@ roc <-
 
 roc
 calc_auc(roc)
-roc_test <- roc(test_data$y, pred_test_glm) # deze geeft ook auc, kwestie van voorkeur
-roc_test
 
 ```
+The roc curve is used to show how well a binary classifier can distinguish between the 2 classes for all possible probability thresholds, on this curve we can see a steep rise near the y-axis, showing that the model achieves high sensitivity while keeping false positives low at many thresholds. Showing that the model can successfully distinguish between class 1 and class 0 most of the time, and thus would perform far better then random guessing and would be considered a good-quality classifier. This is combined with a Area under the curve (AUC) of 0.89, which further reflects the fact that the model has a good ability distinguish between positive and negative outcomes.
+```{r}
+par(mfrow = c(2,2))
+for (variable in attr(terms(glm_fit), "term.labels")){
+  print(plot(effect(variable,glm_fit),multi=TRUE))
+} 
+```
+Based on the effect plot of pctPopUnderPov, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the pctPopUnderPov gets larger, probably due to the sparsety of the data at these extreme percentages.
 
 # References
 
