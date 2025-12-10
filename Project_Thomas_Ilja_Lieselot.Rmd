@@ -350,10 +350,10 @@ print(wrap_plots(plots, ncol = 3))
 ```{r}
 crimes_table_subset$y <- crimes_table_subset$ViolentCrimesPerPop
 
-y_mean <- median(crimes_table_subset$ViolentCrimesPerPop)
+y_median <- median(crimes_table_subset$ViolentCrimesPerPop)
 
-crimes_table_subset$y[crimes_table_subset$y <= y_mean] <- 0
-crimes_table_subset$y[crimes_table_subset$y > y_mean] <- 1
+crimes_table_subset$y[crimes_table_subset$y <= y_median] <- 0
+crimes_table_subset$y[crimes_table_subset$y > y_median] <- 1
 ```
 
 
@@ -1440,9 +1440,7 @@ Given our goal to inform policies to lower violent crime, our model would not be
 
 For the second part of this project, the response variable *ViolentCrimesPerPop* was converted into binary to fit a generalized linear model. Therefor the whole dataset was split at the median value to create 2 categories, the lower half of the response variables and the top half of the response variable. 
 
-## Binary
-
-### model
+## Binary model
 
 ```{r}
 glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit + PctPopUnderPov:PctBSorMore, data = train_data, family = binomial)
@@ -1451,7 +1449,7 @@ glm_summary <- summary(glm_fit)
 glm_summary
 ```
 
-All $\beta$ coefficients are significant according to their Wald test statistics, except for the $\beta$ coefficient for the interaction effect *PctPopUnderPov:PctBSorMore*. Because of this reason it's decided to eliminate the interaction effect from the model. After fitting the model again, all $\beta$ coefficients are significant.
+All $\beta$ coefficients are significant according to their Wald test statistics, except for the $\beta$ coefficient for the interaction effect *PctPopUnderPov:PctBSorMore*. Because of this reason it is decided that the interaction effect should be eliminated from the model. After fitting the model again, all $\beta$ coefficients are significant.
 
 ```{r}
 glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = train_data, family = binomial)
@@ -1470,7 +1468,7 @@ anova(glm_fitnull, glm_fit, test="Chisq")
 diff
 ```
 The chi-squared test based on the deviance indicates that the model performs significantly better than a null model containing only an intercept. The estimators for the $\beta$ values have the same sign as in the final multivariate linear model.The interpretation of every separate coefficient is done with the levels of all other predictors held constant. The estimated value for $\beta_{\text{PctPopUnderPov}}$ = `r round(glm_fit$coefficients["PctPopUnderPov"], 5)` suggests that more poverty is associated with a higher log-odds for a large number of violent crimes per 100k population. In fact, the expected value of the odds of having a community with a high number of violent crimes increases with a factor of exp(`r round(glm_fit$coefficients["PctPopUnderPov"], 5)`) = `r round(exp(glm_fit$coefficients["PctPopUnderPov"]), 5)` for each 1-percentage-point increase in poverty. With 95% confidence, this increase lies between a factor of `r exp(conf_int["PctPopUnderPov", "2.5 %"])` and `r exp(conf_int["PctPopUnderPov", "97.5 %"])`. The same logic can be followed to interpret $\beta_{\text{PctImmig}}$ = `r round(glm_fit$coefficients["PctImmig"], 5)` and  $\beta_{\text{raceblacklogit}}$ = `r round(glm_fit$coefficients["race_black_logit"], 5)` who both have a positive association as well. Where the expected value of the odds of having a community with a high number of violent crimes increases multiplicatively by exp(`r round(glm_fit$coefficients["PctImmig"], 5)`) = `r round(exp(glm_fit$coefficients["PctImmig"]), 5)` for each 1-percentage-point increase in immigration (95% CI:[`r exp(conf_int["PctImmig", "2.5 %"])`, `r exp(conf_int["PctImmig", "97.5 %"])`]). And the expected value of the odds increase multiplicatively by exp(`r round(glm_fit$coefficients["race_black_logit"], 5)`) = `r round(exp(glm_fit$coefficients["race_black_logit"]), 5)` for each unit increase in the log odds of percentage of African Americans (95%CI:[`r exp(conf_int["race_black_logit", "2.5 %"])`, `r exp(conf_int["race_black_logit", "97.5 %"])`]). 
-The estimated values for $\beta_{\text{PctBSorMore}}$ = `r round(glm_fit$coefficients["PctBSorMore"], 5)` and $\beta_{\text{agePct12t29}}$ = `r round(glm_fit$coefficients["agePct12t29"], 5)` suggest that higher percentages of people with higher education or higher percentages of people between the age of 12 and 29 is associated with a lower log-odds for a large number of violent crimes per 100k population (this interpretation is only valid for one parameter at a time).The expected value of the odds decrease multiplicatively by exp(`r round(glm_fit$coefficients["PctBSorMore"], 5)`) = `r round(exp(glm_fit$coefficients["PctBSorMore"]), 5)` for each 1-percentage-point increase in people with a bachelor or more (95%CI:[`r exp(conf_int["PctBSorMore", "2.5 %"])`, `r exp(conf_int["PctBSorMore", "97.5 %"])`]). Lastly the expected value of the odds of having a community with a high number of violent crimes decreases multiplicatively by exp(`r round(glm_fit$coefficients["agePct12t29"], 5)`) = `r round(exp(glm_fit$coefficients["agePct12t29"]), 5)` for each 1-percentage-point increase in people with age between 12 and 29 years (95% CI:[`r exp(conf_int["agePct12t29", "2.5 %"])`, `r exp(conf_int["agePct12t29", "97.5 %"])`]).
+The estimated values for $\beta_{\text{PctBSorMore}}$ = `r round(glm_fit$coefficients["PctBSorMore"], 5)` and $\beta_{\text{agePct12t29}}$ = `r round(glm_fit$coefficients["agePct12t29"], 5)` suggest that higher percentages of people with higher education or higher percentages of people between the age of 12 and 29 is associated with a lower log-odds for a large number of violent crimes per 100k population (this interpretation is only valid for one parameter at a time). The expected value of the odds decrease multiplicatively by exp(`r round(glm_fit$coefficients["PctBSorMore"], 5)`) = `r round(exp(glm_fit$coefficients["PctBSorMore"]), 5)` for each 1-percentage-point increase in people with a bachelor or more (95% CI:[`r exp(conf_int["PctBSorMore", "2.5 %"])`, `r exp(conf_int["PctBSorMore", "97.5 %"])`]). Lastly the expected value of the odds of having a community with a high number of violent crimes decreases multiplicatively by exp(`r round(glm_fit$coefficients["agePct12t29"], 5)`) = `r round(exp(glm_fit$coefficients["agePct12t29"]), 5)` for each 1-percentage-point increase in people with age between 12 and 29 years (95% CI:[`r exp(conf_int["agePct12t29", "2.5 %"])`, `r exp(conf_int["agePct12t29", "97.5 %"])`]).
 
 ### model adequacy check
 
@@ -1509,19 +1507,19 @@ The residuals are plotted, along with the Pearson and Deviance residuals. For al
 
 ### half-normal plot (model adequacy + outlier check)
 ```{r}
+set.seed(987654321)
 library(hnp)
 hnp(glm_fit, resid.type = "deviance")
 ```
 ```{r}
 res <- residuals(glm_fit, type = "deviance")
-outliers <- which(abs(res) > 2.835) # arbitraraly chosen to get top 2 residuals, the outliers
+outliers <- which(abs(res) > 3) # arbitraraly chosen to get top 2 residuals, the outliers
 train_data[outliers,]
 predictions_outliers <-  predict(glm_fit, newdata=train_data[outliers,], type = "response")
 ```
-A half-normal plot is used to visualize the absolute values of the standardized deviance residuals plotted against the theoretical quantiles. This visualisation allows us to access the goodness of fit, potential overdispersion, and visualize potential outliers. For our model, we can see that most of the points fall approximately within the simulated envelope around the theoretical line, showing that the model fits the data reasonably well. However, it could be seen that one point was seen outside this boundary and one on the boundary itself, showing that these points have larger-than-expected residuals. These points can be seen as outliers to our model. Both these points had a high value in the *PctPopUnderPov* and *PctImmig* even reaching among the more uncommon values. Given that our model associates these variables with a high crime rate the higher the value, the model would suspect these to get a 1 value, however these data points themselves are not among the higher portion of the response variable. Predicting these points with our model confirms this as the model predicts a value of `r round(predictions_outliers[1], 3)` and `r round(predictions_outliers[2], 3)` for these 2 points.
+A half-normal plot is used to visualize the absolute values of the standardized deviance residuals plotted against the theoretical quantiles. This visualisation allows us to access the goodness of fit, potential overdispersion, and visualize potential outliers. For our model, we can see that most of the points fall approximately within the simulated envelope around the theoretical line, showing that the model fits the data reasonably well. However, it could be seen that one point, the community of Douglascity, was seen outside this boundary showing that this points have larger-than-expected residuals. These points can be seen as outliers to our model. This points had a high value in the *PctPopUnderPov* and *PctImmig* even reaching among the more uncommon values. Given that our model associates these variables with a high crime rate the higher the value, the model would suspect these to get a 1 value, however this data point was among the lower half of the response variables giving it a 0 value in the binairy model. Predicting this points with our model confirms this as the model predicts a value of `r round(predictions_outliers[1], 3)`, clearly indicating that the model will missclassify this point.
 
-### prediction
-
+### Prediction and model vaildation
 
 ```{r}
 glm_fit_test <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = test_data, family = binomial)
@@ -1530,8 +1528,6 @@ summary(glm_fit_test)
 glm_fit_full <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = crimes_table_subset, family = binomial)
 summary(glm_fit_full)
 ```
-
-
 ```{r}
 pred_test_glm <- predict(glm_fit, newdata = test_data, type = "response")
 pred_train_glm <- predict(glm_fit, newdata = train_data, type = "response")
@@ -1572,7 +1568,6 @@ pred_val_train <- ifelse(pred_train_glm > cutoff, 1, 0)
 error_rate_train <- mean(pred_val_train != train_data$y)
 error_rate_train
 ```
-### model validation
 
 We validated the model by fitting it on our hold out set. In this model we see that the signs of the coefficients remain the same and there are no substantial changes in magnitude of the coefficients. However the coefficient for *agePct12t29* is no longer significant. This could be due to the unequal proportions of binary outcome = 1 vs binary outcome = 0, or similarly to the linear model just because it is a smaller data set.
 
@@ -1602,10 +1597,10 @@ The roc curve is used to show how well a binary classifier can distinguish betwe
 ```{r}
 par(mfrow = c(2,2))
 for (variable in attr(terms(glm_fit), "term.labels")){
-  print(plot(effect(variable,glm_fit),multi=TRUE))
+  print(plot(effect(variable,glm_fit)))
 } 
 ```
-Based on the effect plot of *PctPopUnderPov*, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the *PctPopUnderPov* gets larger, probably due to the sparsity of the data at these extreme percentages.
+Based on the effect plot of *PctPopUnderPov*, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the *PctPopUnderPov* gets larger, probably due to the sparsity of the data at these extreme percentages. Similarly for the other predictors, a slope could be seen in the effect plots in the same direction as the $\beta$ for the predictor. Each time, it could be observed that the in the edges, where data becomes more sparse, the confidence band starts to widen.
 
 ### conclusion
 
@@ -1707,19 +1702,19 @@ schedule
 
 ```
 
-correlation plot:
+##### correlation plot:
 
 ```{r correlatiion_plot_discriptives, ref.label="cor_discriptives", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-scatter plots:
+##### scatter plots:
 
 ```{r scatters_descriptives, ref.label="scatter plots", fig.width=8, fig.height=10, include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-population scatter plots:
+##### population scatter plots:
 
 ```{r scattersforpop, ref.label="scatter plots population", fig.width=8, fig.height=10, include=TRUE, fig.width=8, fig.height=6}
 
@@ -1729,13 +1724,13 @@ population scatter plots:
 
 #### Univariate model
 
-Simple model assumption plots:
+##### Simple model assumption plots:
 
 ```{r ref.label="simple-lm-diagnostics", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Residuals based on population size:
+##### Residuals based on population size:
 
 ```{r ref.label="outliers_vs_population1", include=TRUE, fig.width=8, fig.height=6}
 
@@ -1743,69 +1738,69 @@ Residuals based on population size:
 
 #### multivariate model
 
-Assumption checks first multivariate model:
+##### Assumption checks first multivariate model:
 ```{r ref.label="multimodel1_model_diagnostics", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Assumption checks log transformation test: 
+##### Assumption checks log transformation test: 
 ```{r ref.label="logtransformed_first_model", include=TRUE, fig.width=8, fig.height=6}
 
 ```
-Partial regression plots first log model:
+##### Partial regression plots first log model:
 
 ```{r ref.label="partial-regression-plots2", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Logit transformed *racepctblack* model assumsions check:
+##### Logit transformed *racepctblack* model assumsions check:
 
 ```{r ref.label="logit_model_test", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Partial regression logits:
+##### Partial regression logits:
 
 ```{r ref.label="partial-regression-logit", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-VIF check model with *less9thgrade*
+##### VIF check model with *less9thgrade*
 ```{r ref.label="VIFs_model", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Assumptions check one education model:
+##### Assumptions check one education model:
 
 ```{r ref.label="model_best1education", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Vifs first one education model:
+##### Vifs first one education model:
 
 ```{r ref.label="viskys", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Assumptions one education model with *PctPopPov:PctBSorMore* interaction:
+##### Assumptions one education model with *PctPopPov:PctBSorMore* interaction:
 
 ```{r ref.label="model_1education2", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Vifs for *PctPopPov:PctBSorMore* interaction model:
+##### Vifs for *PctPopPov:PctBSorMore* interaction model:
 
 ```{r ref.label="vivs2", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Partials for *PctPopPov:PctBSorMore* interaction model:
+##### Partials for *PctPopPov:PctBSorMore* interaction model:
 
 ```{r ref.label="partials_final_model", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-Plot of outliers vs population:
+##### Plot of outliers vs population:
 
 ```{r ref.label="outliers_vs_population2", include=TRUE, fig.width=8, fig.height=6}
 
@@ -1813,7 +1808,7 @@ Plot of outliers vs population:
 
 ### Diagnostics:
 
-Diagnostics plots:
+##### Diagnostics plots:
 ```{r ref.label="diagnostics_part1", include=TRUE, fig.width=8, fig.height=6}
 
 ```
@@ -1824,7 +1819,7 @@ Diagnostics plots:
 
 ```
 
-Robust model plots:
+##### Robust model plots:
 
 ```{r ref.label="robust_regression_assumsions", include=TRUE, fig.width=8, fig.height=6}
 
@@ -1832,13 +1827,13 @@ Robust model plots:
 
 ### Model validation
 
-prediction interval plots validation:
+##### prediction interval plots validation:
 
 ```{r ref.label="model_validation_prediction_interval", include=TRUE, fig.width=8, fig.height=6}
 
 ```
 
-prediction tests:
+##### prediction tests:
 
 ```{r ref.label="model_plots", include=TRUE, fig.width=8, fig.height=6}
 
