@@ -1518,7 +1518,7 @@ outliers <- which(abs(res) > 2.835) # arbitraraly chosen to get top 2 residuals,
 train_data[outliers,]
 predictions_outliers <-  predict(glm_fit, newdata=train_data[outliers,], type = "response")
 ```
-A half-normal plot is used to visualize the absolute values of the standardized deviance residuals plotted against the theoretical quantiles. This visualisation allows us to access the goodness of fit, potential overdispersion, and visualize potential outliers. For our model, we can see that most of the points fall approximatly within the simulated envelope around the theoretical line, showing that the model fits the data reasonably well. However, it could be seen that one point was seen outside this boundery and one on the boundry itself, showing that these points have larger-than-expected residuals. These points can be seen as outliers to our model. Both these points had a high value in the *PctPopUnderPov* and *PctImmig* even reaching among the more uncommon values. Given that our model associates these varibales with a high crime rate the higher the value, the model would suspect these to get a 1 value, however these datapoints themselves are not among the higher portion of the response variable. Predicting these points with our model confirms this as the model predicts a value of `r round(predictions_outliers[1], 3)` and `r round(predictions_outliers[2], 3)` for these 2 points.
+A half-normal plot is used to visualize the absolute values of the standardized deviance residuals plotted against the theoretical quantiles. This visualisation allows us to access the goodness of fit, potential overdispersion, and visualize potential outliers. For our model, we can see that most of the points fall approximately within the simulated envelope around the theoretical line, showing that the model fits the data reasonably well. However, it could be seen that one point was seen outside this boundary and one on the boundary itself, showing that these points have larger-than-expected residuals. These points can be seen as outliers to our model. Both these points had a high value in the *PctPopUnderPov* and *PctImmig* even reaching among the more uncommon values. Given that our model associates these variables with a high crime rate the higher the value, the model would suspect these to get a 1 value, however these data points themselves are not among the higher portion of the response variable. Predicting these points with our model confirms this as the model predicts a value of `r round(predictions_outliers[1], 3)` and `r round(predictions_outliers[2], 3)` for these 2 points.
 
 ### prediction
 
@@ -1574,7 +1574,7 @@ error_rate_train
 ```
 ### model validation
 
-We validated the model by fitting it on our hold out set. In this model we see that the signs of the coefficients remain the same and there are no substantial changes in magnitude of the coefficients. However the coefficient for *agePct12t29* is no longer significant. This could be due to the unequal proportions of Y= 1 vs Y = 0, or similarly to the linear model just because it is a smaller data set.
+We validated the model by fitting it on our hold out set. In this model we see that the signs of the coefficients remain the same and there are no substantial changes in magnitude of the coefficients. However the coefficient for *agePct12t29* is no longer significant. This could be due to the unequal proportions of binary outcome = 1 vs binary outcome = 0, or similarly to the linear model just because it is a smaller data set.
 
 The prediction error of the GLM is slightly lower for the test data (`r error_rate_test`) than for the training data (`r error_rate_train`), suggesting that the GLM does not suffer from overfitting. This pattern is consistent with what was observed for the linear model.
 
@@ -1605,7 +1605,7 @@ for (variable in attr(terms(glm_fit), "term.labels")){
   print(plot(effect(variable,glm_fit),multi=TRUE))
 } 
 ```
-Based on the effect plot of *PctPopUnderPov*, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the *PctPopUnderPov* gets larger, probably due to the sparsety of the data at these extreme percentages.
+Based on the effect plot of *PctPopUnderPov*, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the *PctPopUnderPov* gets larger, probably due to the sparsity of the data at these extreme percentages.
 
 ### conclusion
 
