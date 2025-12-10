@@ -1470,7 +1470,7 @@ anova(glm_fitnull, glm_fit, test="Chisq")
 diff
 ```
 The chi-squared test based on the deviance indicates that the model performs significantly better than a null model containing only an intercept. The estimators for the $\beta$ values have the same sign as in the final multivariate linear model.The interpretation of every separate coefficient is done with the levels of all other predictors held constant. The estimated value for $\beta_{\text{PctPopUnderPov}}$ = `r round(glm_fit$coefficients["PctPopUnderPov"], 5)` suggests that more poverty is associated with a higher chance for a large number of violent crimes per 100k population. In fact, the expected value of the odds of having a community with a high number of violent crimes increases with a factor of exp(`r round(glm_fit$coefficients["PctPopUnderPov"], 5)`) = `r round(exp(glm_fit$coefficients["PctPopUnderPov"]), 5)` for each 1-percentage-point increase in poverty. With 95% confidence, this increase lies between a factor of `r exp(conf_int["PctPopUnderPov", "2.5 %"])` and `r exp(conf_int["PctPopUnderPov", "97.5 %"])`. The same logic can be followed to interpret $\beta_{\text{PctImmig}}$ = `r round(glm_fit$coefficients["PctImmig"], 5)` and  $\beta_{\text{raceblacklogit}}$ = `r round(glm_fit$coefficients["race_black_logit"], 5)` who both have a positive association as well. Where the expected value of the odds of having a community with a high number of violent crimes increases multiplicatively by exp(`r round(glm_fit$coefficients["PctImmig"], 5)`) = `r round(exp(glm_fit$coefficients["PctImmig"]), 5)` for each 1-percentage-point increase in immigration (95% CI:[`r exp(conf_int["PctImmig", "2.5 %"])`, `r exp(conf_int["PctImmig", "97.5 %"])`]). And the expected value of the odds increase multiplicatively by exp(`r round(glm_fit$coefficients["race_black_logit"], 5)`) = `r round(exp(glm_fit$coefficients["race_black_logit"]), 5)` for each unit increase in the log odds of percentage of African Americans (95%CI:[`r exp(conf_int["race_black_logit", "2.5 %"])`, `r exp(conf_int["race_black_logit", "97.5 %"])`]). 
-The estimated values for $\beta_{\text{PctBSorMore}}$ = `r round(glm_fit$coefficients["PctBSorMore"], 5)` and $\beta_{\text{agePct12t29}}$ = `r round(glm_fit$coefficients["agePct12t29"], 5)` suggest that higher percentages of people with higher education or higher percentages of people between the age of 12 and 29 is associated with a lower chance for a large number of violent crimes per 100k population (this interpretation is only valid for one parameter at a time).The expected value of the odds decrease multiplicatively by exp(`r round(glm_fit$coefficients["PctBSorMore"], 5)`) = `r round(exp(glm_fit$coefficients["PctBSorMore"]), 5)` for each 1-percentage-point increase in people with a bachelor or more (95%CI:[`r exp(conf_int["PctBSorMore", "2.5 %"])`, `r exp(conf_int["PctBSorMore", "97.5 %"])`]). Lastly the expected value of the odds of having a community with a high number of violent crimes increases multiplicatively by exp(`r round(glm_fit$coefficients["agePct12t29"], 5)`) = `r round(exp(glm_fit$coefficients["agePct12t29"]), 5)` for each 1-percentage-point increase in immigration (95% CI:[`r exp(conf_int["agePct12t29", "2.5 %"])`, `r exp(conf_int["agePct12t29", "97.5 %"])`]).
+The estimated values for $\beta_{\text{PctBSorMore}}$ = `r round(glm_fit$coefficients["PctBSorMore"], 5)` and $\beta_{\text{agePct12t29}}$ = `r round(glm_fit$coefficients["agePct12t29"], 5)` suggest that higher percentages of people with higher education or higher percentages of people between the age of 12 and 29 is associated with a lower chance for a large number of violent crimes per 100k population (this interpretation is only valid for one parameter at a time).The expected value of the odds decrease multiplicatively by exp(`r round(glm_fit$coefficients["PctBSorMore"], 5)`) = `r round(exp(glm_fit$coefficients["PctBSorMore"]), 5)` for each 1-percentage-point increase in people with a bachelor or more (95%CI:[`r exp(conf_int["PctBSorMore", "2.5 %"])`, `r exp(conf_int["PctBSorMore", "97.5 %"])`]). Lastly the expected value of the odds of having a community with a high number of violent crimes decreases multiplicatively by exp(`r round(glm_fit$coefficients["agePct12t29"], 5)`) = `r round(exp(glm_fit$coefficients["agePct12t29"]), 5)` for each 1-percentage-point increase in immigration (95% CI:[`r exp(conf_int["agePct12t29", "2.5 %"])`, `r exp(conf_int["agePct12t29", "97.5 %"])`]).
 
 ### model adequacy check
 
@@ -1506,6 +1506,7 @@ plots <- lapply(colnames(plot_df)[-1], function(res) {
 print(wrap_plots(plots, ncol = 2))
 ```
 The residuals are plotted, along with the Pearson and Deviance residuals. For all three plots, the smoother lies close to zero, indicating that the logistic regression model fits the data well.
+
 ### half-normal plot (model adequacy + outlier check)
 ```{r}
 library(hnp)
@@ -1521,7 +1522,7 @@ A half-normal plot is used to visualize the absolute values of the standardized 
 
 ### prediction
 
-We validated the model by fitting it on our hold out set. In this model we see that the signs of the coefficients remain the same and there are no substantial changes in magnitude of the coefficients. However the coefficient for *agePct12t29* is no longer significant. This could be due to the unequal proportions of Y= 1 vs Y = 0, or similarly to the linear model just because it is a smaller data set.
+
 ```{r}
 glm_fit_test <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = test_data, family = binomial)
 summary(glm_fit_test)
@@ -1575,8 +1576,6 @@ error_rate_train
 
 We validated the model by fitting it on our hold out set. In this model we see that the signs of the coefficients remain the same and there are no substantial changes in magnitude of the coefficients. However the coefficient for *agePct12t29* is no longer significant. This could be due to the unequal proportions of Y= 1 vs Y = 0, or similarly to the linear model just because it is a smaller data set.
 
-We validated the model by fitting it on our hold out set. In this model we see that the signs of the coefficients remain the same and there are no substantial changes in magnitude of the coefficients. However the coefficient for *agePct12t29* is no longer significant. This could be due to the unequal proportions of Y= 1 vs Y = 0, or similarly to the linear model just because it is a smaller data set.
-
 The prediction error of the GLM is slightly lower for the test data (`r error_rate_test`) than for the training data (`r error_rate_train`), suggesting that the GLM does not suffer from overfitting. This pattern is consistent with what was observed for the linear model.
 
 ```{r}
@@ -1606,11 +1605,11 @@ for (variable in attr(terms(glm_fit), "term.labels")){
   print(plot(effect(variable,glm_fit),multi=TRUE))
 } 
 ```
-Based on the effect plot of pctPopUnderPov, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the pctPopUnderPov gets larger, probably due to the sparsety of the data at these extreme percentages.
+Based on the effect plot of *PctPopUnderPov*, it could be seen that a higher percentage of the population for a state living in poverty also results in a higher probability that the violent crimes are among the higher values in the United states. It could also be seen that the 95% Wald confidence band for the predicted probabilities widens when the *PctPopUnderPov* gets larger, probably due to the sparsety of the data at these extreme percentages.
 
 ### conclusion
 
-The logistic model produces predictions with an accuracy of `r error_rate_train` on training data and `r error_rate_test` on test data, and an AUC of `r calc_auc(roc)["AUC"]`. With the exception of the interaction term *PctPopUnderPov:PctBSorMore*, all predictors are statistically significant. All coefficients have the same sign as in the linear model.
+The logistic model produces predictions with an accuracy of `r error_rate_train` on training data and `r error_rate_test` on test data, and an AUC of `r calc_auc(roc)["AUC"]`. With the exception of the interaction term *PctPopUnderPov:PctBSorMore*, all predictors are statistically significant. All coefficients have the same sign as in the linear model. Both models therefore lean towards the same results, though it's hard to compare the two as the scales used in the models are not comparable. Where more subtle results are required, for example to inform policies to lower crime rates, the linear model could be preferred as the binary outcome in the logistic model doesn't allow to differentiate between communities within the higher crime rates (binary outcome = 1). It is important to note that the same limitations of the data and demographic nature of the variables mentioned for the multivariate regression apply here and no causal relationships are identified. 
 
 # References
 
