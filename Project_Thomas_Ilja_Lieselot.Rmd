@@ -1457,12 +1457,16 @@ glm_fit <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_
 glm_summary <- summary(glm_fit)
 glm_summary
 
+# confidence intervals
 conf_int <- confint.default(glm_fit)
 
 coef_table <- glm_summary$coefficients
 coef_table
 
+# fit with only intercept
 glm_fitnull <- glm(y ~ 1, data = train_data, family = binomial)
+
+# likelihood ratio test
 diff <- (glm_fit$null.deviance - glm_fit$deviance)
 anova(glm_fitnull, glm_fit, test="Chisq")
 diff
@@ -1475,35 +1479,26 @@ The estimated values for $\beta_{\text{PctBSorMore}}$ = `r round(glm_fit$coeffic
 ```{r residuals_bin}
 # Residuals
 raw_res <- residuals(glm_fit, type = "response")            # Raw residuals
-pearson_res <- rstandard(glm_fit, type = "pearson")         # Pearson residuals
-deviance_res <- rstandard(glm_fit, type = "deviance")      # Deviance residuals
 
 # Estimated probabilities
 estimated_prob <- fitted(glm_fit) 
 
+# Dataframe for ggplot
 plot_df <- data.frame(
   prob = estimated_prob,
-  raw_res = raw_res,
-  stud_pearson_res = pearson_res,
-  stud_deviance_res = deviance_res
+  raw_res = raw_res
 )
 
-sjlabelled::set_label(plot_df) <- c("estimated probability", "raw residuals", "Pearson residuals", "Deviance residuals")
+sjlabelled::set_label(plot_df) <- c("estimated probability", "raw residuals")
 
-# plots
-plots <- lapply(colnames(plot_df)[-1], function(res) {
-  ggplot(plot_df, aes_string("prob",res))+
+# plot
+ggplot(plot_df, aes_string("prob","raw_res"))+
   geom_point(alpha = 0.1) +
   geom_smooth(se = FALSE, method = "loess") +
   scale_x_continuous(breaks = seq(0,1,0.1)) +
   scale_y_continuous(limits = c(-3,3))
-}
-)
-
-# Print 4 plots per pg
-print(wrap_plots(plots, ncol = 2))
 ```
-The residuals are plotted, along with the Pearson and Deviance residuals. For all three plots, the smoother lies close to zero, indicating that the logistic regression model fits the data well.
+When the residuals are plotted the smoother lies close to zero, indicating that the logistic regression model fits the data well.
 
 ### Half-normal plot (model adequacy + outlier check)
 ```{r half_normalplot}
@@ -1522,9 +1517,11 @@ A half-normal plot is used to visualize the absolute values of the standardized 
 ### Prediction and model vaildation
 
 ```{r}
+# fitting on test data
 glm_fit_test <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = test_data, family = binomial)
 summary(glm_fit_test)
 
+# fitting on full dataset
 glm_fit_full <- glm(y ~ PctPopUnderPov + PctBSorMore + agePct12t29 + PctImmig + race_black_logit, data = crimes_table_subset, family = binomial)
 summary(glm_fit_full)
 ```
@@ -1559,11 +1556,14 @@ ggplot(df_prediction_train_glm, aes(predicted, observed))+
 ```
 
 ```{r}
+
 cutoff <- 0.5
+# prediction for test data
 pred_val_test <- ifelse(pred_test_glm > cutoff, 1, 0)
 error_rate_test <- mean(pred_val_test != test_data$y)
 error_rate_test
 
+# prediction for training data
 pred_val_train <- ifelse(pred_train_glm > cutoff, 1, 0)
 error_rate_train <- mean(pred_val_train != train_data$y)
 error_rate_train
@@ -1577,11 +1577,12 @@ The prediction error of the GLM is slightly lower for the test data (`r error_ra
 library(plotROC)
 library(pROC)
 
-
+# dataframe for ROC curve
 dfpredict <- data.frame(
   pi = predict(glm_fit, newdata=test_data, type = "response"),
   known.truth = test_data$y)
 
+# ROC curce
 roc <-
   dfpredict  %>%
   ggplot(aes(d = known.truth, m = pi)) +
@@ -1589,6 +1590,7 @@ roc <-
   xlab("1-specificity (FPR)") +
   ylab("sensitivity (TPR)")
 
+# Area Under Curve
 roc
 calc_auc(roc)
 
