@@ -57,67 +57,35 @@ Before building the models, some descriptive analysis of the dataset and variabl
 For the multivariate model, an All-variable procedure is emplored to test every combination of possible variables as a model. The best model is chosen based on the Bayesian Information Criterion (BIC). Next, the assumptions of this best model are checked and partial regression plots are generated to check if each of the added variables are in the correct functional form. Afterwards, the most appropriate interaction term  with the main predictor *PctPopUnderPov* is selected based on the same BIC procedure. Finally, multicollinearity is assessed using the Variance Inflation Factor (VIF) to obtain a more interpretable model. After determining the final model, some model diagnostics are calculated to determine outliers and influential points. Finally the model is validated by the holdout dataset.
 
 ```{r load data}
-# violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/211/communities+and+crime+unnormalized.zip")
+violent_crimes_table <- fread("curl https://archive.ics.uci.edu/static/public/211/communities+and+crime+unnormalized.zip")
 ```
 
 ```{r remotely get variable names}
-# 
-# url <- "https://archive.ics.uci.edu/dataset/211/communities+and+crime+unnormalized"
-# 
-# # Read the HTML page
-# page <- read_html(url)
-# 
-# # Extract all text from the page
-# text <- page %>% html_text()
-# 
-# # Split into lines
-# lines <- str_split(text, "\n")[[1]]
-# 
-# start <- grep("Additional Variable Information", lines, ignore.case = TRUE)
-# end   <- grep("Summary Statistics:", lines, ignore.case = TRUE)
-# 
-# # only retain the lines starting with --
-# var_lines <- lines[str_starts(str_trim(lines), "--")]
-# # remove the --
-# var_names <- sapply(strsplit(var_lines, "--"), function(x) str_trim(x[2]))
-# # only retain the variable names by cutting everything after the :
-# var_names <- str_extract(var_names, "^[^:]+")
-```
-------tempfix:------
 
-```{r}
-violent_crimes_table <- read.table("communities+and+crime+unnormalized (1).zip", header = F, sep = ",", skip = 1)
+url <- "https://archive.ics.uci.edu/dataset/211/communities+and+crime+unnormalized"
 
-variable_names <- list("communityname","state","countyCode", "communityCode", "fold", "population", "householdsize",
-                       "racepctblack", "racePctWhite", "racePctAsian", "racePctHisp", "agePct12t21", "agePct12t29", "agePct16t24",
-                       "agePct65up", "numbUrban", "pctUrban", "medIncome", "pctWWage", "pctWFarmSelf", "pctWInvInc", "pctWSocSec",
-                       "pctWPubAsst", "pctWRetire", "medFamInc", "perCapInc", "whitePerCap", "blackPerCap", "indianPerCap", "AsianPerCap",
-                       "OtherPerCap", "HispPerCap", "NumUnderPov", "PctPopUnderPov", "PctLess9thGrade", "PctNotHSGrad", "PctBSorMore",
-                       "PctUnemployed", "PctEmploy", "PctEmplManu", "PctEmplProfServ", "PctOccupManu", "PctOccupMgmtProf", "MalePctDivorce",
-                       "MalePctNevMarr", "FemalePctDiv", "TotalPctDiv", "PersPerFam", "PctFam2Par", "PctKids2Par", "PctYoungKids2Par",
-                       "PctTeen2Par", "PctWorkMomYoungKids", "PctWorkMom", "NumKidsBornNeverMar", "PctKidsBornNeverMar", "NumImmig",
-                       "PctImmigRecent", "PctImmigRec5", "PctImmigRec8", "PctImmigRec10", "PctRecentImmig", "PctRecImmig5", "PctRecImmig8",
-                       "PctRecImmig10", "PctSpeakEnglOnly", "PctNotSpeakEnglWell", "PctLargHouseFam", "PctLargHouseOccup", "PersPerOccupHous",
-                       "PersPerOwnOccHous", "PersPerRentOccHous", "PctPersOwnOccup", "PctPersDenseHous", "PctHousLess3BR", "MedNumBR",
-                       "HousVacant", "PctHousOccup", "PctHousOwnOcc", "PctVacantBoarded", "PctVacMore6Mos", "MedYrHousBuilt",
-                       "PctHousNoPhone", "PctWOFullPlumb", "OwnOccLowQuart", "OwnOccMedVal", "OwnOccHiQuart", "OwnOccQrange", "RentLowQ",
-                       "RentMedian", "RentHighQ", "RentQrange", "MedRent", "MedRentPctHousInc", "MedOwnCostPctInc", "MedOwnCostPctIncNoMtg",
-                       "NumInShelters", "NumStreet", "PctForeignBorn", "PctBornSameState", "PctSameHouse85", "PctSameCity85",
-                       "PctSameState85", "LemasSwornFT", "LemasSwFTPerPop", "LemasSwFTFieldOps", "LemasSwFTFieldPerPop", "LemasTotalReq",
-                       "LemasTotReqPerPop", "PolicReqPerOffic", "PolicPerPop", "RacialMatchCommPol", "PctPolicWhite", "PctPolicBlack",
-                       "PctPolicHisp", "PctPolicAsian", "PctPolicMinor", "OfficAssgnDrugUnits", "NumKindsDrugsSeiz", "PolicAveOTWorked",
-                       "LandArea", "PopDens", "PctUsePubTrans", "PolicCars", "PolicOperBudg", "LemasPctPolicOnPatr", "LemasGangUnitDeploy",
-                       "LemasPctOfficDrugUn", "PolicBudgPerPop", "murders", "murdPerPop", "rapes", "rapesPerPop", "robberies", "robbbPerPop",
-                       "assaults", "assaultPerPop", "burglaries", "burglPerPop", "larcenies", "larcPerPop", "autoTheft", "autoTheftPerPop",
-                       "arsons", "arsonsPerPop", "ViolentCrimesPerPop", "nonViolPerPop")
+# Read the HTML page
+page <- read_html(url)
 
-violent_crimes_table <- data.table(violent_crimes_table)
-colnames(violent_crimes_table) <- unlist(variable_names)
+# Extract all text from the page
+text <- page %>% html_text()
+
+# Split into lines
+lines <- str_split(text, "\n")[[1]]
+
+start <- grep("Additional Variable Information", lines, ignore.case = TRUE)
+end   <- grep("Summary Statistics:", lines, ignore.case = TRUE)
+
+# only retain the lines starting with --
+var_lines <- lines[str_starts(str_trim(lines), "--")]
+# remove the --
+var_names <- sapply(strsplit(var_lines, "--"), function(x) str_trim(x[2]))
+# only retain the variable names by cutting everything after the :
+var_names <- str_extract(var_names, "^[^:]+")
 ```
 
-------end tempfix-------
 ```{r putting colnames}
-#colnames(violent_crimes_table) <- var_names 
+colnames(violent_crimes_table) <- var_names 
 ```
 
 ```{r selecting subset}
